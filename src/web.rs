@@ -10,7 +10,11 @@ use axum::{
     response::{Html, IntoResponse, Redirect},
 };
 use once_cell::sync::Lazy;
-use tantivy::{collector::{Count, TopDocs}, schema::Value, DocAddress, Score, Searcher, TantivyDocument};
+use tantivy::{
+    collector::{Count, TopDocs},
+    schema::Value,
+    DocAddress, Score, Searcher, TantivyDocument,
+};
 use tera::{Context, Tera};
 use tokio::{sync::Mutex, time::Instant};
 
@@ -87,8 +91,12 @@ pub async fn results(
         let count = searcher.search(&query, &Count).unwrap();
 
         let search_st = Instant::now();
-        let resultss: Vec<(Score, DocAddress)> =
-            searcher.search(&query, &TopDocs::with_limit(20).and_offset(params.p.unwrap_or(0))).unwrap();
+        let resultss: Vec<(Score, DocAddress)> = searcher
+            .search(
+                &query,
+                &TopDocs::with_limit(20).and_offset(params.p.unwrap_or(0)),
+            )
+            .unwrap();
         let search_time = search_st.elapsed().as_secs_f32() * 1_000.0;
 
         let gather_st = Instant::now();

@@ -14,17 +14,28 @@ mod page;
 mod ranking;
 mod web;
 
-use std::{fs, io, num::{NonZeroU16, NonZeroUsize}, sync::Arc};
+use std::{
+    fs, io,
+    num::{NonZeroU16, NonZeroUsize},
+    sync::Arc,
+};
 
 use axum::{routing::get, Router};
 use crawler::Crawler;
 use log::LevelFilter;
+use lru::LruCache;
 use page::Page;
 use scraper::Selector;
-use tokio::{net::TcpListener, sync::{mpsc, Mutex}};
-use lru::LruCache;
 use tantivy::{
-    doc, query::QueryParser, schema::{Field, Schema, FAST, STORED, TEXT}, store::{Compressor, ZstdCompressor}, Index, IndexReader, IndexSettings, Searcher
+    doc,
+    query::QueryParser,
+    schema::{Field, Schema, FAST, STORED, TEXT},
+    store::{Compressor, ZstdCompressor},
+    Index, IndexReader, IndexSettings, Searcher,
+};
+use tokio::{
+    net::TcpListener,
+    sync::{mpsc, Mutex},
 };
 
 #[derive(Clone)]
