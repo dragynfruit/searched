@@ -1,0 +1,10 @@
+services:
+  searched:
+    build: ./
+    restart: unless-stopped
+    container_name: "searched"
+    ports:
+      - "3000:6969"
+    volumes:
+      - "./data/index:/usr/local/bin/searched/searched-index"
+      - "./data/db:/usr/local/bin/searched/searched-db"
