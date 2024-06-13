@@ -1,0 +1,39 @@
+{% extends "base.html" %}
+
+{% block content %}
+<table class="search-header">
+<tr>
+	<td>
+	<h3><a href="/">Searched</a></h3>
+	</td>
+	<td>
+<form method="get" action="/search">
+	<input class="results-search" type="search" id="search" name="q" placeholder="Search..." value="{{ query }}" />
+</form>
+	</td>
+</tr>
+</table>
+
+<div class="results">
+	{% for result in results %}
+		<div class="result">
+			<h3><a href="{{ result.url }}">{{ result.title }}</a></h3>
+			<p>{{ result.body_preview }}</p>
+		</div>
+	{% else %}
+		<center>
+			<h2><b>No results</b></h2>
+			<p>Sorry :')</p>
+		</center>
+	{% endfor %}
+</div>
+
+{% set pages = (count / 20) | round(method="ceil") | int %}
+{% for i in range(end=pages) %}
+<a href="?q={{ query }}&p={{ i }}">{{ i }}</a>
+{% endfor %}
+{% endblock content %}
+
+{% block footer %}
+<p>Parse took {{ parse_time | round(precision=3) }} ms. Search took {{ search_time | round(precision=3) }} ms. Gathering took {{ gather_time | round(precision=3) }} ms.</p>
+{% endblock footer %}

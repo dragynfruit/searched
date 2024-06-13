@@ -1,0 +1,16 @@
+{% extends "base.html" %}
+
+{% block content %}
+<center>
+<h1>Searched</h1>
+<p>A search engine</p>
+
+<form method="get" action="/search">
+<input type="search" class="search" id="search" name="q" placeholder="Search..." autofocus />
+</form>
+</center>
+
+<script>
+	{% include "main.js" %}
+</script>
+{% endblock content %}

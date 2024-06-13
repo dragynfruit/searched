@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+		html, body {
+  		height: 100%;
+  		margin: 0;
+			padding: 0;
+		}
+		.content {
+		  padding: 20px;
+		  min-height: 100%;
+		  margin: 0 auto auto auto;
+		  background-color: #121212;
+		}
+		.footer {
+			text-align: center;
+			background-color: #242424;
+			margin: 0;
+			padding: 4pt 0pt 4pt 0pt;
+		}
+		body {
+		  color: magenta;
+		  font-family: sans-serif;
+		}
+		
+		.search-header td {
+			padding: 0pt 5pt 0pt 5pt;
+		}
+		
+		input[type=search] {
+			background-color: #363636;
+			color: #DADADA;
+			border: 0px;
+			border-radius: 2pt;
+		}
+		.search {
+		  font-size: 16pt;
+		  padding: 4pt 8pt 4pt 8pt;
+		}
+		.results-search {
+			font-size: 14pt;
+			padding: 2pt 4pt 2pt 4pt;
+		}
+		</style>
+	</head>
+	<body>
+		<div class="content">
+			{% block content %}{% endblock content %}
+		</div>
+		
+		<div class="footer">
+			{% block footer %}{% endblock footer %}
+			<p>Powered by Searched<br/>Made with &lt;3 by Dragynfruit</p>
+		</div>
+	</body>
+</html>
