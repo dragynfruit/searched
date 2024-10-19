@@ -1,24 +1,50 @@
 {% extends "base.html" %}
 
+{% block title %}{{ query }} | Searched{% endblock title %}
+
 {% block content %}
 <table class="search-header">
-<tr>
-	<td>
-	<h3><a href="/">Searched</a></h3>
-	</td>
-	<td>
-<form method="get" action="/search">
-	<input class="results-search" type="search" id="search" name="q" placeholder="Search..." value="{{ query }}" />
-</form>
-	</td>
-</tr>
+	<tr>
+		<td width="36pt">
+			<a href="/">
+				<img src="assets/dragynfruit.png" />
+			</a>
+		</td>
+		<td width="36pt">
+			<h3 style="margin-left:-8pt"><a href="/">Searched</a></h3>
+		</td>
+		<td>
+			<form method="get" action="/search">
+				<input type="text" name="s" value="duckduckgo" hidden />
+				<input class="results-search" type="search" id="search" name="q" placeholder="Search..." value="{{ query }}" />
+				<button type="search" hidden />
+			</form>
+		</td>
+	</tr>
+	<tr>
+		<td colspan="3">
+			<table class=".kinds">
+				<tr>
+					<td><a href="?q={{ query }}">General</a></td>
+					<td><a href="?q={{ query }}&k=imgs">Images</a></td>
+					<td><a href="?q={{ query }}&k=vids">Videos</a></td>
+					<td><a href="?q={{ query }}&k=news">News</a></td>
+					<td><a href="?q={{ query }}&k=maps">Maps</a></td>
+					<td><a href="?q={{ query }}&k=docs">Documentation</a></td>
+					<td><a href="?q={{ query }}&k=pprs">Papers</a></td>
+				</tr>
+			</table>
+		</td>
+	</tr>
 </table>
 
 <div class="results">
 	{% for result in results %}
-		<div class="result">
-			<h3><a href="{{ result.url }}">{{ result.title }}</a></h3>
-			<p>{{ result.body_preview }}</p>
+		<div>
+			<h3><a href="{{ result.url | safe }}">{{ result.title | safe }}</a></h3>
+			{% if result.general -%}
+				<p>{{ result.general.snippet | safe }}</p>
+			{%- endif %}
 		</div>
 	{% else %}
 		<center>

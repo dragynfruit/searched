@@ -6,22 +6,21 @@ use std::{
 };
 
 use axum::{
-    extract::{Query, State},
-    response::{Html, IntoResponse, Redirect},
+    body::Body, extract::{Query, State}, http::header, response::{Html, IntoResponse, Redirect, Response}
 };
 use once_cell::sync::Lazy;
 use tantivy::{
     collector::{Count, TopDocs},
     schema::Value,
-    DocAddress, Score, Searcher, TantivyDocument,
+    DocAddress, Score, TantivyDocument,
 };
 use tera::{Context, Tera};
 use tokio::{sync::Mutex, time::Instant};
 
-use crate::AppState;
+use crate::{scrapers::{self, duckduckgo::Duckduckgo, Scraper}, AppState};
 
 pub static TEMPLATES: Lazy<Arc<Mutex<Tera>>> = Lazy::new(|| {
-    let mut tera = match Tera::new("views/**/*") {
+    let tera = match Tera::new("views/**/*") {
         Ok(t) => t,
         Err(e) => {
             println!("Parsing error(s): {}", e);
@@ -46,9 +45,11 @@ pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
     .into_response()
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Default)]
 pub struct SearchParams {
     q: Option<String>,
+    k: Option<searched::Kind>,
+    s: Option<String>,
     p: Option<usize>,
 }
 
@@ -63,7 +64,7 @@ pub struct SearchResult {
 pub struct SearchResults {
     query: String,
     count: usize,
-    results: Vec<SearchResult>,
+    results: Vec<searched::Result>,
     parse_time: f32,
     search_time: f32,
     gather_time: f32,
@@ -77,7 +78,7 @@ pub async fn results(
         (*TEMPLATES.lock().await).full_reload().unwrap();
         let mut results: Vec<SearchResult> = Vec::new();
 
-        let reader = st.reader;
+        let reader = st.reader.clone();
         reader.reload().unwrap();
         let searcher = reader.searcher();
 
@@ -117,6 +118,10 @@ pub async fn results(
         }
         let gather_time = gather_st.elapsed().as_secs_f32() * 1_000.0;
 
+        let search_st = Instant::now();
+        let results = scrapers::search(params.s.unwrap().as_str(), st.clone(), searched::Query { query: q.clone(), kind: params.k.unwrap_or_default(), page: params.p.unwrap_or(1) }).await;
+        let search_time = search_st.elapsed().as_secs_f32() * 1_000.0;
+
         return Html(
             (*TEMPLATES.lock().await)
                 .render(
@@ -137,4 +142,8 @@ pub async fn results(
     } else {
         return Redirect::to("/").into_response();
     }
+}
+
+pub async fn dragynfruit_logo() -> impl IntoResponse {
+    Response::builder().header(header::CONTENT_TYPE, "image/png").body(Body::from(include_bytes!("../assets/dragynfruit.png").to_vec())).unwrap()
 }

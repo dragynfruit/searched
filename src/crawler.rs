@@ -1,8 +1,5 @@
 use std::{
-    collections::HashSet,
     error::Error,
-    future::IntoFuture,
-    sync::Arc,
     time::{Duration, Instant},
 };
 

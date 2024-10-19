@@ -1,47 +1,65 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		<title>{% block title %}Searched{% endblock title %}</title>
 		<style>
-		html, body {
-  		height: 100%;
-  		margin: 0;
-			padding: 0;
-		}
-		.content {
-		  padding: 20px;
-		  min-height: 100%;
-		  margin: 0 auto auto auto;
-		  background-color: #121212;
-		}
-		.footer {
-			text-align: center;
-			background-color: #242424;
-			margin: 0;
-			padding: 4pt 0pt 4pt 0pt;
-		}
-		body {
-		  color: magenta;
-		  font-family: sans-serif;
-		}
-		
-		.search-header td {
-			padding: 0pt 5pt 0pt 5pt;
-		}
-		
-		input[type=search] {
-			background-color: #363636;
-			color: #DADADA;
-			border: 0px;
-			border-radius: 2pt;
-		}
-		.search {
-		  font-size: 16pt;
-		  padding: 4pt 8pt 4pt 8pt;
-		}
-		.results-search {
-			font-size: 14pt;
-			padding: 2pt 4pt 2pt 4pt;
-		}
+			html, body {
+  			height: 100%;
+  			margin: 0;
+				padding: 0;
+			  background-color: #121212;
+			}
+			.content {
+			  padding: 20px;
+			  min-height: 100%;
+			  margin: 0 auto auto auto;
+			}
+			.footer {
+				text-align: center;
+				background-color: #242424;
+				margin: 0;
+				padding: 4pt 0pt 4pt 0pt;
+			}
+			body {
+			  color: #CDCDCD;
+			  font-family: sans-serif;
+			}
+			
+			.search-header a {
+				color: #CDCDCD;
+				text-decoration: none;
+			}
+			.search-header td {
+				padding: 0pt 5pt 0pt 5pt;
+				margin: 0pt;
+			}
+			.search-header p {
+				padding: 0pt 5pt 0pt 2pt;
+				margin: 0pt;
+			}
+			
+			input[type=search] {
+				background-color: #363636;
+				color: #DADADA;
+				border: 0px;
+				border-radius: 2pt;
+			}
+			.search {
+			  font-size: 16pt;
+			  padding: 4pt 8pt 4pt 8pt;
+			}
+			.results-search {
+				font-size: 14pt;
+				padding: 2pt 4pt 2pt 4pt;
+				width: 100%;
+			}
+
+			.results > div {
+				margin: 8pt 0pt 8pt 0pt;
+			}
+			.results > div > * {
+				margin: 2pt;
+			}
 		</style>
 	</head>
 	<body>

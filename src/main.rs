@@ -12,26 +12,28 @@ extern crate lru;
 mod crawler;
 mod page;
 mod ranking;
+mod scrapers;
 mod web;
 
-use std::{
-    fs, io,
-    num::{NonZeroU16, NonZeroUsize},
-    sync::Arc,
-};
+use std::{fs, num::NonZeroUsize, sync::Arc, time::Instant};
 
-use axum::{routing::get, Router};
-use crawler::Crawler;
+use axum::{
+    http::{HeaderMap, HeaderValue},
+    routing::get,
+    Router,
+};
 use log::LevelFilter;
 use lru::LruCache;
 use page::Page;
+use reqwest::Client;
 use scraper::Selector;
+use sled::Db;
 use tantivy::{
     doc,
     query::QueryParser,
     schema::{Field, Schema, FAST, STORED, TEXT},
     store::{Compressor, ZstdCompressor},
-    Index, IndexReader, IndexSettings, Searcher,
+    Index, IndexReader, IndexSettings,
 };
 use tokio::{
     net::TcpListener,
@@ -44,6 +46,8 @@ pub struct AppState {
     count_cache: Arc<Mutex<LruCache<String, usize>>>,
     reader: IndexReader,
     query_parser: QueryParser,
+    client: Client,
+    db: Db,
 
     url: Field,
     title: Field,
@@ -52,6 +56,42 @@ pub struct AppState {
 
 #[tokio::main(worker_threads = 12)]
 async fn main() {
+    let mut headers = HeaderMap::new();
+    for (key, val) in [
+        (
+            "User-Agent",
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+        ),
+        (
+            "Accept",
+            "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+        ),
+        ("Accept-Language", "en-US,en;q=0.5"),
+        ("Accept-Encoding", "gzip"),
+        ("DNT", "1"),
+        ("Connection", "keep-alive"),
+        ("Upgrade-Insecure-Requests", "1"),
+        ("Sec-Fetch-Dest", "document"),
+        ("Sec-Fetch-Mode", "navigate"),
+        ("Sec-Fetch-Site", "none"),
+        ("Sec-Fetch-User", "?1"),
+        ("Priority", "u=1"),
+        ("TE", "trailers"),
+    ] {
+        headers.append(key, HeaderValue::from_str(val).unwrap());
+    }
+    let client = reqwest::Client::builder()
+        .default_headers(headers)
+        .build()
+        .unwrap();
+
+    let st = Instant::now();
+    //let res = scrapers::stackexchange::StackExchange::search(client.clone(), Query { query: String::from("rust"), page: 2 }).await;
+    //println!("{res:?}");
+    println!("{:?}", st.elapsed());
+
+    //println!("{res:?}");
+
     env_logger::builder()
         .filter_level(LevelFilter::Info)
         .parse_default_env()
@@ -111,13 +151,13 @@ async fn main() {
         }
     });
 
-    info!("initializing crawler");
-    let cr = Crawler::new(tx).await;
+    //info!("initializing crawler");
+    //let cr = Crawler::new(tx).await;
 
-    info!("starting crawler");
-    tokio::spawn(async move {
-        cr.run().await.unwrap();
-    });
+    //info!("starting crawler");
+    //tokio::spawn(async move {
+    //    cr.run().await.unwrap();
+    //});
 
     let query_parser = QueryParser::for_index(&index, vec![title, body]);
     //let searcher = index.reader().unwrap().searcher();
@@ -144,15 +184,20 @@ async fn main() {
 
     let count_cache = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(500).unwrap())));
 
+    let db = sled::open("searched-db").unwrap();
+
     info!("initializing web");
     let r = Router::new()
         .route("/", get(web::search))
         .route("/search", get(web::results))
+        .route("/assets/dragynfruit.png", get(web::dragynfruit_logo))
         .with_state(AppState {
             //index,
             count_cache,
             reader,
             query_parser,
+            client,
+            db,
 
             url,
             title,

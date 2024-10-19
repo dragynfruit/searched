@@ -6,9 +6,10 @@
 <p>A search engine</p>
 
 <form method="get" action="/search">
-<input type="search" class="search" id="search" name="q" placeholder="Search..." autofocus />
+	<input type="text" name="s" value="duckduckgo" hidden />
+	<input class="search" type="search" id="search" name="q" placeholder="Search..." autofocus />
+	<button type="search" hidden />
 </form>
-</center>
 
 <script>
 	{% include "main.js" %}
