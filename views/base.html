@@ -37,6 +37,15 @@
 				padding: 0pt 5pt 0pt 2pt;
 				margin: 0pt;
 			}
+			.frontpage-lead {
+				margin-top: 30vh;
+				margin-bottom: 18pt;
+			}
+			.frontpage-lead p,
+			.frontpage-lead h1 {
+				margin: 0pt 5pt 0pt 5pt;
+				padding: 0pt;
+			}
 			
 			input[type=search] {
 				background-color: #363636;
@@ -55,6 +64,7 @@
 			}
 
 			.results > div {
+				width: 60%;
 				margin: 8pt 0pt 8pt 0pt;
 			}
 			.results > div > * {
@@ -69,7 +79,7 @@
 		
 		<div class="footer">
 			{% block footer %}{% endblock footer %}
-			<p>Powered by Searched<br/>Made with &lt;3 by Dragynfruit</p>
+			<p>Powered by Searched<br/>Made with &lt;3 by <a href="https://github.com/dragynfruit" target="_blank">Dragynfruit</a></p>
 		</div>
 	</body>
 </html>

@@ -1,12 +1,12 @@
 //pub mod google;
+pub mod bandcamp;
 pub mod duckduckgo;
 pub mod stackexchange;
-pub mod bandcamp;
 
+use bandcamp::Bandcamp;
 use duckduckgo::Duckduckgo;
 use searched::Query;
 use stackexchange::StackExchange;
-use bandcamp::Bandcamp;
 
 use crate::AppState;
 

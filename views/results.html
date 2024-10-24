@@ -41,7 +41,7 @@
 <div class="results">
 	{% for result in results %}
 		<div>
-			<h3><a href="{{ result.url | safe }}">{{ result.title | safe }}</a></h3>
+			<h3><a href="{{ result.url | safe }}" target="_blank">{{ result.title | safe }}</a></h3>
 			{% if result.general -%}
 				<p>{{ result.general.snippet | safe }}</p>
 			{%- endif %}
@@ -54,6 +54,7 @@
 	{% endfor %}
 </div>
 
+<a href="?q={{ query }}&s=duckduckgo&p={{ page+1 }}">{{ page+1 }}</a>
 {% set pages = (count / 20) | round(method="ceil") | int %}
 {% for i in range(end=pages) %}
 <a href="?q={{ query }}&p={{ i }}">{{ i }}</a>

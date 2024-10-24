@@ -1,6 +1,11 @@
+#[macro_use]
+extern crate mlua;
+
+pub mod lua_api;
+
 use serde::{Deserialize, Serialize};
 
-#[derive(Debug, Deserialize, Serialize)]
+#[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum Kind {
     #[serde(rename = "imgs")]
     Images,
@@ -23,7 +28,7 @@ impl Default for Kind {
     }
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Query {
     #[serde(rename = "q")]
     pub query: String,
@@ -33,7 +38,7 @@ pub struct Query {
     pub page: usize,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct Result {
     pub url: String,
     pub title: String,
@@ -42,16 +47,16 @@ pub struct Result {
     pub image: Option<ImageResult>,
 }
 
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct GeneralResult {
     pub snippet: String,
 }
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct ForumResult {
     pub poster_image: Option<String>,
     pub poster_username: String,
     pub poster_url: Option<String>,
     pub tags: Option<Vec<String>>,
 }
-#[derive(Debug, Default, Deserialize, Serialize)]
+#[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct ImageResult {}

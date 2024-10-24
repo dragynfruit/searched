@@ -25,8 +25,10 @@ use axum::{
 use log::LevelFilter;
 use lru::LruCache;
 use page::Page;
+use piccolo::Function;
 use reqwest::Client;
 use scraper::Selector;
+use searched::lua_api::PluginEngine;
 use sled::Db;
 use tantivy::{
     doc,
@@ -37,7 +39,7 @@ use tantivy::{
 };
 use tokio::{
     net::TcpListener,
-    sync::{mpsc, Mutex},
+    sync::{broadcast, mpsc, Mutex}, task::{spawn_local, LocalSet},
 };
 
 #[derive(Clone)]
@@ -48,6 +50,8 @@ pub struct AppState {
     query_parser: QueryParser,
     client: Client,
     db: Db,
+    query_tx: mpsc::Sender<searched::Query>,
+    result_rx: Arc<broadcast::Receiver<(searched::Query, Vec<searched::Result>)>>,
 
     url: Field,
     title: Field,
@@ -186,10 +190,26 @@ async fn main() {
 
     let db = sled::open("searched-db").unwrap();
 
+    let (query_tx, mut rx) = mpsc::channel::<searched::Query>(20);
+    let (tx, result_rx) = broadcast::channel(20);
+    let local = LocalSet::new();
+    let search_proc = local.spawn_local(async move {
+        let engine = PluginEngine::init().await.unwrap();
+
+        loop {
+            if let Some(query) = rx.recv().await {
+                info!("received query: {query:?}");
+                let results = engine.search("duckduckgo".to_string(), query.clone()).await;
+                let _ = tx.send((query, results));
+            }
+        }
+    });
+
     info!("initializing web");
     let r = Router::new()
         .route("/", get(web::search))
         .route("/search", get(web::results))
+        .route("/settings", get(web::settings))
         .route("/assets/dragynfruit.png", get(web::dragynfruit_logo))
         .with_state(AppState {
             //index,
@@ -198,6 +218,8 @@ async fn main() {
             query_parser,
             client,
             db,
+            query_tx,
+            result_rx: Arc::new(result_rx),
 
             url,
             title,
@@ -205,12 +227,19 @@ async fn main() {
         });
 
     tokio::spawn(async {
-        axum::serve(TcpListener::bind("0.0.0.0:6969").await.unwrap(), r)
-            .await
-            .unwrap();
+        axum::serve(
+            TcpListener::bind("0.0.0.0:6969").await.unwrap(),
+            r.into_make_service(),
+        )
+        .await
+        .unwrap();
     });
 
-    tokio::signal::ctrl_c().await.unwrap();
+    tokio::select! {
+        _ = local => {}
+        _ = search_proc => {}
+        _ = tokio::signal::ctrl_c() => {}
+    };
     info!("shutting down");
 }
 

@@ -1,0 +1,5 @@
+--add_search_provider('stackoverflow', function (query)
+--	local res = get('https://api.stackexchange.com/2.3/search/advanced?q=' .. query.query .. '&page=' .. query.page .. '&site=stackoverflow', {})
+--
+--	print(res)
+--end)
