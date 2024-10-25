@@ -1,4 +1,8 @@
---- @meta preserver
+-- Searched Lua API Definition
+-- Licensed MIT.
+-- (c) 2024 Dragynfruit
 
-require('.ranking')
+--- @meta searched
+
 require('.search')
+require('.ranking')

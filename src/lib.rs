@@ -3,6 +3,7 @@ extern crate mlua;
 
 pub mod lua_api;
 
+use mlua::{FromLua, IntoLua, LuaSerdeExt};
 use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
@@ -17,10 +18,24 @@ pub enum Kind {
     News,
     #[serde(rename = "maps")]
     Maps,
+    #[serde(rename = "wiki")]
+    Wiki,
+    #[serde(rename = "qans")]
+    QuestionAnswer,
     #[serde(rename = "docs")]
     Documentation,
     #[serde(rename = "pprs")]
     Papers,
+}
+impl<'lua> IntoLua<'lua> for Kind {
+    fn into_lua(self, lua: &'lua mlua::Lua) -> mlua::Result<mlua::Value<'lua>> {
+        lua.to_value(&self)
+    }
+}
+impl<'lua> FromLua<'lua> for Kind {
+    fn from_lua(value: mlua::Value<'lua>, lua: &'lua mlua::Lua) -> mlua::Result<Self> {
+        lua.from_value(value)
+    }
 }
 impl Default for Kind {
     fn default() -> Self {

@@ -1,10 +1,15 @@
---- @meta preserver
+-- Searched Lua API Definition
+-- Licensed MIT.
+-- (c) 2024 Dragynfruit
+
+--- @meta searched
 
 --- Add a search provider
 ---
 --- @param name string
+--- @param kind Kind
 --- @param callback fun(query: Query): [Result]
-function add_search_provider(name, callback) end
+function add_search_provider(name, kind, callback) end
 
 --- Make a GET request
 ---
@@ -31,13 +36,15 @@ function parse_json(raw) end
 
 --- @enum Kind
 Kind = {
-	General       = 'sear',
-	Images        = 'imgs',
-	Videos        = 'vids',
-	News          = 'news',
-	Maps          = 'maps',
-	Documentation = 'docs',
-	Papers        = 'pprs',
+	General        = 'sear',
+	Images         = 'imgs',
+	Videos         = 'vids',
+	News           = 'news',
+	Maps           = 'maps',
+	Wiki           = 'wiki',
+	QuestionAnswer = 'qans',
+	Documentation  = 'docs',
+	Papers         = 'pprs',
 }
 
 --- @class Query
@@ -52,7 +59,7 @@ Query = {}
 ---
 --- @field public url string
 --- @field public title string
---- @field public general? string
+--- @field public snippet? string
 Result = {}
 
 --- @class Element

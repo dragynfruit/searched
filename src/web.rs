@@ -1,10 +1,4 @@
-use std::{
-    io::{stdout, Write},
-    ops::Deref,
-    process,
-    sync::Arc,
-    time::Duration,
-};
+use std::{process, sync::Arc};
 
 use axum::{
     body::Body,
@@ -13,19 +7,10 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
 };
 use once_cell::sync::Lazy;
-use searched::lua_api::PluginEngine;
-use tantivy::{
-    collector::{Count, TopDocs},
-    schema::Value,
-    DocAddress, Score, TantivyDocument,
-};
 use tera::{Context, Tera};
-use tokio::{sync::Mutex, task::spawn_local, time::Instant};
+use tokio::sync::Mutex;
 
-use crate::{
-    scrapers::{self, duckduckgo::Duckduckgo, Scraper},
-    AppState,
-};
+use crate::AppState;
 
 pub static TEMPLATES: Lazy<Arc<Mutex<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
@@ -142,14 +127,19 @@ pub async fn results(
         //let search_time = search_st.elapsed().as_secs_f32() * 1_000.0;
 
         let results = {
-            let results = st.eng.lock().await.search(
-                params.s.unwrap(),
-                searched::Query {
-                    query: q.clone(),
-                    kind: params.k.unwrap_or_default(),
-                    page: params.p.unwrap_or(1),
-                },
-            ).await;
+            let results = st
+                .eng
+                .lock()
+                .await
+                .search(
+                    params.s.unwrap(),
+                    searched::Query {
+                        query: q.clone(),
+                        kind: params.k.unwrap_or_default(),
+                        page: params.p.unwrap_or(1),
+                    },
+                )
+                .await;
             results
         };
 
@@ -199,19 +189,27 @@ pub async fn settings(State(st): State<AppState>) -> impl IntoResponse {
 
     Html(
         (*TEMPLATES.lock().await)
-        .render(
-            "settings.html",
-            &Context::new(),
-        ).unwrap()
-    ).into_response()
+            .render("settings.html", &Context::new())
+            .unwrap(),
+    )
+    .into_response()
 }
 
-pub async fn dragynfruit_logo() -> impl IntoResponse {
+pub async fn favicon() -> impl IntoResponse {
+    Response::builder()
+        .header(header::CONTENT_TYPE, "image/ico")
+        .header(header::CACHE_CONTROL, "max-age=604800")
+        .body(Body::from(include_bytes!("../assets/favicon.ico").to_vec()))
+        .unwrap()
+        .into_response()
+}
+
+pub async fn logo() -> impl IntoResponse {
     Response::builder()
         .header(header::CONTENT_TYPE, "image/png")
         .header(header::CACHE_CONTROL, "max-age=604800")
         .body(Body::from(
-            include_bytes!("../assets/dragynfruit.png").to_vec(),
+            include_bytes!("../assets/logo.png").to_vec(),
         ))
         .unwrap()
         .into_response()

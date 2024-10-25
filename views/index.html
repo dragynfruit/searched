@@ -1,15 +1,16 @@
 {% extends "base.html" %}
 
 {% block content %}
+{% set motd = "<i>Blazingly</i> fast" %}
 <center>
 <table class="frontpage-lead">
 	<tr>
 		<td>
-			<img src="assets/dragynfruit.png" />
+			<img src="assets/logo.png" />
 		</td>
 		<td>
 			<h1>Searched</h1>
-			<p>A search engine</p>
+			<p>{{ motd | safe }}</p>
 		</td>
 	</tr>
 </table>
@@ -17,7 +18,10 @@
 <form method="get" action="/search">
 	<input type="text" name="s" value="duckduckgo" hidden />
 	<input class="search" type="search" id="search" name="q" placeholder="Search..." autofocus />
-	<br><a style="color:#CDCDCD" href="/settings">Settings</a>
+	<p>
+		<a href="">Pasted</a> |
+		<a href="/settings">Settings</a>
+	</p>
 	<button type="search" hidden />
 </form>
 

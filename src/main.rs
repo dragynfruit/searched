@@ -12,7 +12,6 @@ extern crate lru;
 mod crawler;
 mod page;
 mod ranking;
-mod scrapers;
 mod web;
 
 use std::{fs, num::NonZeroUsize, sync::Arc, time::Instant};
@@ -25,7 +24,6 @@ use axum::{
 use log::LevelFilter;
 use lru::LruCache;
 use page::Page;
-use piccolo::Function;
 use reqwest::Client;
 use scraper::Selector;
 use searched::lua_api::PluginEngine;
@@ -39,7 +37,7 @@ use tantivy::{
 };
 use tokio::{
     net::TcpListener,
-    sync::{broadcast, mpsc, Mutex}, task::{spawn_local, LocalSet},
+    sync::{mpsc, Mutex},
 };
 
 #[derive(Clone)]
@@ -53,7 +51,6 @@ pub struct AppState {
     eng: Arc<Mutex<PluginEngine>>,
     //query_tx: mpsc::Sender<searched::Query>,
     //result_rx: Arc<broadcast::Receiver<(searched::Query, Vec<searched::Result>)>>,
-
     url: Field,
     title: Field,
     body: Field,
@@ -169,50 +166,19 @@ async fn main() {
     //let res = searcher.search(&query_parser.parse_query("").unwrap(), &TopDocs::with_limit(20)).unwrap();
     //println!("{} {}", searcher.num_docs(), res.len());
     let reader = index.reader().unwrap();
-
-    /*
-    loop {
-        let mut input = String::new();
-        if stdin.read_line(&mut input).unwrap() > 0 {
-
-            let query = query_parser.parse_query(&input).unwrap();
-            let results: Vec<(Score, DocAddress)> =
-                searcher.search(&query, &TopDocs::with_limit(20)).unwrap();
-            for (_score, doc_address) in results {
-                // Retrieve the actual content of documents given its `doc_address`.
-                let retrieved_doc = searcher.doc::<TantivyDocument>(doc_address).unwrap();
-                println!("{}", retrieved_doc.to_json(&schema));
-            }
-        }
-    }
-    */
-
     let count_cache = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(500).unwrap())));
 
     let db = sled::open("searched-db").unwrap();
 
     let (engine, local) = PluginEngine::new().await.unwrap();
-    //let (query_tx, mut rx) = mpsc::channel::<searched::Query>(20);
-    //let (tx, result_rx) = broadcast::channel(20);
-    //let local = LocalSet::new();
-    //let search_proc = local.spawn_local(async move {
-    //    let engine = PluginEngine::new().await.unwrap();
-
-    //    loop {
-    //        if let Some(query) = rx.recv().await {
-    //            info!("received query: {query:?}");
-    //            let results = engine.search("duckduckgo".to_string(), query.clone()).await;
-    //            let _ = tx.send((query, results));
-    //        }
-    //    }
-    //});
 
     info!("initializing web");
     let r = Router::new()
         .route("/", get(web::search))
         .route("/search", get(web::results))
         .route("/settings", get(web::settings))
-        .route("/assets/dragynfruit.png", get(web::dragynfruit_logo))
+        .route("/assets/logo.png", get(web::logo))
+        .route("/favicon.ico", get(web::favicon))
         .with_state(AppState {
             //index,
             count_cache,
@@ -221,8 +187,6 @@ async fn main() {
             client,
             db,
             eng: Arc::new(Mutex::new(engine)),
-            //query_tx,
-            //result_rx: Arc::new(result_rx),
 
             url,
             title,
@@ -239,15 +203,8 @@ async fn main() {
     });
 
     tokio::select! {
-        //_ = local => {}
-        //_ = search_proc => {}
         _ = local => {}
         _ = tokio::signal::ctrl_c() => {}
     };
     info!("shutting down");
 }
-
-// fn main() {
-//     let result = get_rate_page("http://www.varmintal.com/ahunt.htm".to_string()).unwrap();
-//     println!("{:?}", result.rating);
-// }

@@ -2,9 +2,7 @@
 -- Licensed MIT.
 -- (c) 2024 Dragynfruit
 
-__VQDS = {}
-
-add_search_provider('duckduckgo', function (query)
+add_search_provider('duckduckgo', 'sear', function (query)
 	local offset
 	if query.page == 2 then
 		offset = (query.page - 1) * 20
@@ -21,7 +19,7 @@ add_search_provider('duckduckgo', function (query)
 			o = 'json',
 			dc = string(offset + 1),
 			api = 'd.js',
-			vqd = __VQDS[query.query],
+			vqd = '',
 			kl = 'wt-wt',
 		}
 	end
@@ -35,9 +33,7 @@ add_search_provider('duckduckgo', function (query)
 
 	assert(scr ~= nil)
 
-	if __VQDS[query.query] == nil then
-		__VQDS[query.query] = scr:select('input[name=vqd]')[1]:attr('value')
-	end
+	-- TODO: need to add vqd handling
 
 	local links = scr:select('a.result-link')
 	local snippets = scr:select('td.result-snippet')

@@ -1,13 +1,17 @@
 use std::{
-    cell::UnsafeCell, collections::{BTreeMap, HashMap}, error::Error, fs::{read_dir, File}, future::IntoFuture, io::Read, marker::PhantomData, ops::Deref, sync::Arc, time::Duration
+    cell::UnsafeCell,
+    collections::HashMap,
+    error::Error,
+    fs::{read_dir, File},
+    io::Read,
 };
 
 use mlua::prelude::*;
 use reqwest::Client;
-use scraper::{node::Element, ElementRef, Html, Selector};
-use tokio::{sync::{oneshot, watch, Mutex}, task::{spawn_local, AbortHandle, JoinHandle, LocalSet}};
+use scraper::{node::Element, Html, Selector};
+use tokio::{sync::watch, task::LocalSet};
 
-use crate::Query;
+use crate::{Kind, Query};
 
 impl LuaUserData for Query {
     fn add_fields<'lua, F: LuaUserDataFields<'lua, Self>>(fields: &mut F) {
@@ -53,20 +57,21 @@ impl LuaUserData for Scraper {
     fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_function("new", |_, raw_html: String| {
             let html = Html::parse_document(&raw_html);
-            Ok(Self {
-                inner: html.into(),
-            })
+            Ok(Self { inner: html.into() })
         });
         methods.add_method("select", |lua, this, selector: String| {
             let sel = Selector::parse(&selector).unwrap();
-            Ok(lua.create_sequence_from(
-                    unsafe {
-                this.inner.get().as_ref().unwrap()
-                    .select(&sel)
-                    .map(|x| ElementWrapper(x.inner_html(), x.value().clone()))},
-            ).unwrap())
+            Ok(lua
+                .create_sequence_from(unsafe {
+                    this.inner
+                        .get()
+                        .as_ref()
+                        .unwrap()
+                        .select(&sel)
+                        .map(|x| ElementWrapper(x.inner_html(), x.value().clone()))
+                })
+                .unwrap())
         });
-
     }
 }
 
@@ -100,15 +105,26 @@ impl PluginEngine {
             Self::inner(rx, tx).await.unwrap();
         });
 
-        Ok((Self {
-            query_tx,
-            results_rx,
-        }, local))
+        Ok((
+            Self {
+                query_tx,
+                results_rx,
+            },
+            local,
+        ))
     }
-    pub async fn inner(mut rx: watch::Receiver<(String, crate::Query)>, tx: watch::Sender<Vec<crate::Result>>) -> Result<(), Box<dyn Error>> {
+
+    /// Actual Lua init and event loop
+    async fn inner(
+        mut rx: watch::Receiver<(String, crate::Query)>,
+        tx: watch::Sender<Vec<crate::Result>>,
+    ) -> Result<(), Box<dyn Error>> {
         let lua = Lua::new();
 
-        lua.globals().set("__searched_providers__", lua.create_table()?)?;
+        // Add Lua interfaces
+
+        lua.globals()
+            .set("__searched_providers__", lua.create_table()?)?;
         lua.globals().set("Query", lua.create_proxy::<Query>()?)?;
         lua.globals()
             .set("Scraper", lua.create_proxy::<Scraper>()?)?;
@@ -117,19 +133,12 @@ impl PluginEngine {
 
         async fn add_search_provider<'eng>(
             lua: &Lua,
-            (name, callback): (String, LuaFunction<'eng>),
+            (name, kind, callback): (String, Kind, LuaFunction<'eng>),
         ) -> LuaResult<()> {
             lua.globals()
                 .get::<_, LuaTable<'_>>("__searched_providers__")
                 .unwrap()
                 .set(name, callback.clone())
-                .unwrap();
-            callback
-                .call_async::<Query, ()>(Query {
-                    query: "rust".to_string(),
-                    ..Default::default()
-                })
-                .await
                 .unwrap();
 
             Ok(())
@@ -173,16 +182,27 @@ impl PluginEngine {
 
             req = req.form(&form_);
 
-            Ok(req.send().await.unwrap().text().await.unwrap())
+            Ok(req
+                .send()
+                .await
+                .map_err(|err| err.into_lua_err())?
+                .text()
+                .await
+                .map_err(|err| err.into_lua_err())?)
         }
         lua.globals()
             .set("post", lua.create_async_function(post)?)?;
 
-        lua.globals().set("parse_json", lua.create_function(|lua, raw: String| {
-            let json = serde_json::to_value(raw).unwrap();
-            Ok(lua.to_value(&json).unwrap())
-        })?)?;
+        lua.globals().set(
+            "parse_json",
+            lua.create_function(|lua, raw: String| {
+                let json = serde_json::from_str::<serde_json::Value>(&raw)
+                    .map_err(|err| err.into_lua_err())?;
+                Ok(lua.to_value(&json)?)
+            })?,
+        )?;
 
+        // Load scrapers
         for path in read_dir("plugins/scrapers").unwrap() {
             if let Ok(path) = path {
                 let mut buf = String::new();
@@ -192,62 +212,52 @@ impl PluginEngine {
             }
         }
 
+        // Event loop
         while let Ok(()) = rx.changed().await {
             let (provider, query) = rx.borrow_and_update().clone();
 
-            let provider_ = lua.globals()
-            .get::<_, LuaTable>("__searched_providers__")
-            .unwrap()
-            .get::<_, LuaFunction>(provider)
-            .unwrap();
+            let provider_ = lua
+                .globals()
+                .get::<_, LuaTable>("__searched_providers__")
+                .unwrap()
+                .get::<_, LuaFunction>(provider)
+                .unwrap();
 
+            let results = provider_
+                .call_async::<Query, Vec<HashMap<String, String>>>(query)
+                .await;
 
-            let results = provider_.call_async::<Query, Vec<HashMap<String, String>>>(query).await.unwrap();
-
-            tx.send(results.into_iter()
-                .map(|r| {
-                    crate::Result {
-                        url: r.get("url").unwrap().to_string(),
-                        title: r.get("title").unwrap().to_string(),
-                        general: Some(crate::GeneralResult {
-                            snippet: r.get("snippet").map(|x| x.to_string()).unwrap_or_default(),
-                        }),
-                        ..Default::default()
-                    }
-                })
-                .collect()).unwrap();
-
+            match results {
+                Ok(results) => {
+                    tx.send(
+                        results
+                            .into_iter()
+                            .map(|r| crate::Result {
+                                url: r.get("url").unwrap().to_string(),
+                                title: r.get("title").unwrap().to_string(),
+                                general: Some(crate::GeneralResult {
+                                    snippet: r
+                                        .get("snippet")
+                                        .map(|x| x.to_string())
+                                        .unwrap_or_default(),
+                                }),
+                                ..Default::default()
+                            })
+                            .collect(),
+                    )
+                    .unwrap();
+                }
+                Err(err) => {
+                    tx.send(Vec::new()).unwrap();
+                }
+            }
         }
 
         Ok(())
     }
-    //pub async fn search(&mut self, provider: String, query: Query) -> Vec<crate::Result> {
+
+    /// Use the given provider to process the given query
     pub async fn search(&mut self, provider: String, query: Query) -> Vec<crate::Result> {
-       // let provider_ = self.lua.globals()
-       //     .get::<_, LuaTable>("__searched_providers__")
-       //     .unwrap()
-       //     .get::<_, LuaFunction>(provider)
-       //     .unwrap();
-
-
-       //     let results = provider_.call_async::<Query, Vec<HashMap<String, String>>>(query).await.unwrap();
-
-       //     results.into_iter()
-       //         .map(|r| {
-       //             let r = r.clone();
-
-       //             crate::Result {
-       //                 url: r.get("url").unwrap().to_string(),
-       //                 title: r.get("title").unwrap().to_string(),
-       //                 general: Some(crate::GeneralResult {
-       //                     snippet: r.get("snippet").map(|x| x.to_string()).unwrap_or_default(),
-       //                 }),
-       //                 ..Default::default()
-       //             }
-       //             .clone()
-       //         })
-       //         .collect()
-
         self.results_rx.mark_unchanged();
         self.query_tx.send((provider, query)).unwrap();
         self.results_rx.changed().await.unwrap();
