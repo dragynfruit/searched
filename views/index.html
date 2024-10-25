@@ -1,27 +1,36 @@
 {% extends "base.html" %}
 
 {% block content %}
-<center>
-<table class="frontpage-lead">
-	<tr>
-		<td>
-			<img src="assets/dragynfruit.png" />
-		</td>
-		<td>
-			<h1>Searched</h1>
-			<p>A search engine</p>
-		</td>
-	</tr>
-</table>
+<div class="center">
+	<div>
+		<table class="frontpage-lead">
+			<tr>
+				<td>
+					<img src="assets/searched.svg" width="100" height="100" />
+				</td>
+				<td>
+					<h1>Searched</h1>
+					<p>A search engine</p>
+				</td>
+			</tr>
+		</table>
 
-<form method="get" action="/search">
-	<input type="text" name="s" value="duckduckgo" hidden />
-	<input class="search" type="search" id="search" name="q" placeholder="Search..." autofocus />
+		<form method="get" action="/search">
+			<input type="text" name="s" value="duckduckgo" hidden />
+			<input class="search" type="search" id="search" name="q" placeholder="Search..." autofocus />
+			<button type="search" hidden></button>
+		</form>
+	</div>
+</div>
+
+<div id="topleft">
 	<br><a style="color:#CDCDCD" href="/settings">Settings</a>
-	<button type="search" hidden />
-</form>
+</div>
 
 <script>
-	{% include "main.js" %}
+	const search = document.getElementById('search');
+	document.addEventListener('keydown', function () {
+		document.activeElement !== search && search.focus();
+	});
 </script>
 {% endblock content %}

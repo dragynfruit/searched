@@ -206,12 +206,34 @@ pub async fn settings(State(st): State<AppState>) -> impl IntoResponse {
     ).into_response()
 }
 
-pub async fn dragynfruit_logo() -> impl IntoResponse {
+pub async fn logo() -> impl IntoResponse {
     Response::builder()
         .header(header::CONTENT_TYPE, "image/png")
         .header(header::CACHE_CONTROL, "max-age=604800")
         .body(Body::from(
-            include_bytes!("../assets/dragynfruit.png").to_vec(),
+            include_bytes!("../assets/searched.png").to_vec(),
+        ))
+        .unwrap()
+        .into_response()
+}
+
+pub async fn icon() -> impl IntoResponse {
+    Response::builder()
+        .header(header::CONTENT_TYPE, "image/x-icon")
+        .header(header::CACHE_CONTROL, "max-age=604800")
+        .body(Body::from(
+            include_bytes!("../assets/searched.ico").to_vec(),
+        ))
+        .unwrap()
+        .into_response()
+}
+
+pub async fn svg() -> impl IntoResponse {
+    Response::builder()
+        .header(header::CONTENT_TYPE, "image/svg+xml")
+        .header(header::CACHE_CONTROL, "max-age=604800")
+        .body(Body::from(
+            include_bytes!("../assets/searched.svg").to_vec(),
         ))
         .unwrap()
         .into_response()

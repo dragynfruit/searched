@@ -212,7 +212,9 @@ async fn main() {
         .route("/", get(web::search))
         .route("/search", get(web::results))
         .route("/settings", get(web::settings))
-        .route("/assets/dragynfruit.png", get(web::dragynfruit_logo))
+        .route("/assets/searched.png", get(web::logo))
+        .route("/assets/searched.svg", get(web::svg))
+        .route("/favicon.ico", get(web::icon))
         .with_state(AppState {
             //index,
             count_cache,
