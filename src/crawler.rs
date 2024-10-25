@@ -26,7 +26,7 @@ pub struct Crawler {
 }
 impl Crawler {
     pub async fn new(chan: mpsc::UnboundedSender<Page>) -> Self {
-        let db = sled::open("searched-db").unwrap();
+        let db = sled::open("data/db").unwrap();
 
         let queue = db.open_tree("queue").unwrap();
         if queue.is_empty() {
