@@ -1,16 +1,11 @@
 use std::{
-    collections::{BTreeMap, HashMap},
-    error::Error,
-    fs::{read_dir, File},
-    io::Read,
-    marker::PhantomData,
-    ops::Deref, time::Duration,
+    cell::UnsafeCell, collections::{BTreeMap, HashMap}, error::Error, fs::{read_dir, File}, future::IntoFuture, io::Read, marker::PhantomData, ops::Deref, sync::Arc, time::Duration
 };
 
 use mlua::prelude::*;
 use reqwest::Client;
 use scraper::{node::Element, ElementRef, Html, Selector};
-use tokio::{sync::oneshot, task::{spawn_local, LocalSet}};
+use tokio::{sync::{oneshot, watch, Mutex}, task::{spawn_local, AbortHandle, JoinHandle, LocalSet}};
 
 use crate::Query;
 
@@ -50,28 +45,34 @@ impl LuaUserData for Results {
 }
 
 struct Scraper {
-    inner: Html,
+    inner: UnsafeCell<Html>,
 }
+unsafe impl Sync for Scraper {}
+unsafe impl Send for Scraper {}
 impl LuaUserData for Scraper {
     fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
         methods.add_function("new", |_, raw_html: String| {
+            let html = Html::parse_document(&raw_html);
             Ok(Self {
-                inner: Html::parse_document(&raw_html),
+                inner: html.into(),
             })
         });
         methods.add_method("select", |lua, this, selector: String| {
             let sel = Selector::parse(&selector).unwrap();
             Ok(lua.create_sequence_from(
-                this.inner
+                    unsafe {
+                this.inner.get().as_ref().unwrap()
                     .select(&sel)
-                    .map(|x| ElementWrapper(x.inner_html(), x.value().clone())),
-            ))
+                    .map(|x| ElementWrapper(x.inner_html(), x.value().clone()))},
+            ).unwrap())
         });
+
     }
 }
 
 #[derive(Clone)]
 struct ElementWrapper(String, Element);
+unsafe impl Send for ElementWrapper {}
 impl LuaUserData for ElementWrapper {
     fn add_fields<'lua, F: LuaUserDataFields<'lua, Self>>(fields: &mut F) {
         fields.add_field_method_get("inner_html", |_, this| Ok(this.0.clone()));
@@ -83,11 +84,28 @@ impl LuaUserData for ElementWrapper {
     }
 }
 
+#[derive(Clone)]
 pub struct PluginEngine {
-    lua: Lua,
+    query_tx: watch::Sender<(String, crate::Query)>,
+    results_rx: watch::Receiver<Vec<crate::Result>>,
 }
 impl PluginEngine {
-    pub async fn init() -> Result<Self, Box<dyn Error>> {
+    pub async fn new() -> Result<(Self, LocalSet), Box<dyn Error>> {
+        let (query_tx, rx) = watch::channel(Default::default());
+        let (tx, results_rx) = watch::channel(Default::default());
+
+        let local = LocalSet::new();
+
+        let jh = local.spawn_local(async move {
+            Self::inner(rx, tx).await.unwrap();
+        });
+
+        Ok((Self {
+            query_tx,
+            results_rx,
+        }, local))
+    }
+    pub async fn inner(mut rx: watch::Receiver<(String, crate::Query)>, tx: watch::Sender<Vec<crate::Result>>) -> Result<(), Box<dyn Error>> {
         let lua = Lua::new();
 
         lua.globals().set("__searched_providers__", lua.create_table()?)?;
@@ -160,8 +178,9 @@ impl PluginEngine {
         lua.globals()
             .set("post", lua.create_async_function(post)?)?;
 
-        lua.globals().set("parse_json", lua.create_function(|_, raw: String| {
-            Ok(serde_json::from_str::<BTreeMap<String, String>>(&raw).unwrap())
+        lua.globals().set("parse_json", lua.create_function(|lua, raw: String| {
+            let json = serde_json::to_value(raw).unwrap();
+            Ok(lua.to_value(&json).unwrap())
         })?)?;
 
         for path in read_dir("plugins/scrapers").unwrap() {
@@ -173,11 +192,10 @@ impl PluginEngine {
             }
         }
 
-        Ok(Self { lua })
-    }
-    //pub async fn search(&mut self, provider: String, query: Query) -> Vec<crate::Result> {
-    pub async fn search(&self, provider: String, query: Query) -> Vec<crate::Result> {
-        let provider_ = self.lua.globals()
+        while let Ok(()) = rx.changed().await {
+            let (provider, query) = rx.borrow_and_update().clone();
+
+            let provider_ = lua.globals()
             .get::<_, LuaTable>("__searched_providers__")
             .unwrap()
             .get::<_, LuaFunction>(provider)
@@ -186,10 +204,8 @@ impl PluginEngine {
 
             let results = provider_.call_async::<Query, Vec<HashMap<String, String>>>(query).await.unwrap();
 
-            results.into_iter()
+            tx.send(results.into_iter()
                 .map(|r| {
-                    let r = r.clone();
-
                     crate::Result {
                         url: r.get("url").unwrap().to_string(),
                         title: r.get("title").unwrap().to_string(),
@@ -198,8 +214,43 @@ impl PluginEngine {
                         }),
                         ..Default::default()
                     }
-                    .clone()
                 })
-                .collect()
+                .collect()).unwrap();
+
+        }
+
+        Ok(())
+    }
+    //pub async fn search(&mut self, provider: String, query: Query) -> Vec<crate::Result> {
+    pub async fn search(&mut self, provider: String, query: Query) -> Vec<crate::Result> {
+       // let provider_ = self.lua.globals()
+       //     .get::<_, LuaTable>("__searched_providers__")
+       //     .unwrap()
+       //     .get::<_, LuaFunction>(provider)
+       //     .unwrap();
+
+
+       //     let results = provider_.call_async::<Query, Vec<HashMap<String, String>>>(query).await.unwrap();
+
+       //     results.into_iter()
+       //         .map(|r| {
+       //             let r = r.clone();
+
+       //             crate::Result {
+       //                 url: r.get("url").unwrap().to_string(),
+       //                 title: r.get("title").unwrap().to_string(),
+       //                 general: Some(crate::GeneralResult {
+       //                     snippet: r.get("snippet").map(|x| x.to_string()).unwrap_or_default(),
+       //                 }),
+       //                 ..Default::default()
+       //             }
+       //             .clone()
+       //         })
+       //         .collect()
+
+        self.results_rx.mark_unchanged();
+        self.query_tx.send((provider, query)).unwrap();
+        self.results_rx.changed().await.unwrap();
+        self.results_rx.borrow_and_update().clone()
     }
 }

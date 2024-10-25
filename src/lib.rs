@@ -7,6 +7,8 @@ use serde::{Deserialize, Serialize};
 
 #[derive(Debug, PartialEq, Clone, Deserialize, Serialize)]
 pub enum Kind {
+    #[serde(rename = "sear")]
+    General,
     #[serde(rename = "imgs")]
     Images,
     #[serde(rename = "vids")]
@@ -19,8 +21,6 @@ pub enum Kind {
     Documentation,
     #[serde(rename = "pprs")]
     Papers,
-    #[serde(other)]
-    General,
 }
 impl Default for Kind {
     fn default() -> Self {

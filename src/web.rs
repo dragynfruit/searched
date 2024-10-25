@@ -141,34 +141,34 @@ pub async fn results(
         //.await;
         //let search_time = search_st.elapsed().as_secs_f32() * 1_000.0;
 
-        //let results = {
-        //    let results = PluginEngine::init().unwrap().search(
-        //        params.s.unwrap(),
-        //        searched::Query {
-        //            query: q.clone(),
-        //            kind: params.k.unwrap_or_default(),
-        //            page: params.p.unwrap_or(1),
-        //        },
-        //    ).await;
-        //    results
-        //};
+        let results = {
+            let results = st.eng.lock().await.search(
+                params.s.unwrap(),
+                searched::Query {
+                    query: q.clone(),
+                    kind: params.k.unwrap_or_default(),
+                    page: params.p.unwrap_or(1),
+                },
+            ).await;
+            results
+        };
 
-        let mut rx = st.result_rx.resubscribe();
-        let send_query = searched::Query {
-                query: q.clone(),
-                kind: params.k.unwrap_or_default(),
-                page: params.p.unwrap_or(1),
-            };
-        st.query_tx.send(send_query.clone()).await.unwrap();
+        //let mut rx = st.result_rx.resubscribe();
+        //let send_query = searched::Query {
+        //        query: q.clone(),
+        //        kind: params.k.unwrap_or_default(),
+        //        page: params.p.unwrap_or(1),
+        //    };
+        //st.query_tx.send(send_query.clone()).await.unwrap();
 
-        let results = tokio::time::timeout(Duration::from_secs(3), async {
-            while let Ok((query, results)) = rx.recv().await {
-                if send_query == query {
-                    return results;
-                }
-            }
-            Vec::new()
-        }).await.unwrap_or_default();
+        //let results = tokio::time::timeout(Duration::from_secs(3), async {
+        //    while let Ok((query, results)) = rx.recv().await {
+        //        if send_query == query {
+        //            return results;
+        //        }
+        //    }
+        //    Vec::new()
+        //}).await.unwrap_or_default();
 
         Html(
             (*TEMPLATES.lock().await)
@@ -176,7 +176,7 @@ pub async fn results(
                     "results.html",
                     &Context::from_serialize(SearchResults {
                         query: q,
-                        page: send_query.page,
+                        //page: send_query.page,
                         //count,
                         results: results.to_vec(),
                         //parse_time,
@@ -209,6 +209,7 @@ pub async fn settings(State(st): State<AppState>) -> impl IntoResponse {
 pub async fn dragynfruit_logo() -> impl IntoResponse {
     Response::builder()
         .header(header::CONTENT_TYPE, "image/png")
+        .header(header::CACHE_CONTROL, "max-age=604800")
         .body(Body::from(
             include_bytes!("../assets/dragynfruit.png").to_vec(),
         ))

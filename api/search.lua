@@ -29,6 +29,17 @@ function post(url, headers, form) end
 --- @return table<string|number, any>
 function parse_json(raw) end
 
+--- @enum Kind
+Kind = {
+	General       = 'sear',
+	Images        = 'imgs',
+	Videos        = 'vids',
+	News          = 'news',
+	Maps          = 'maps',
+	Documentation = 'docs',
+	Papers        = 'pprs',
+}
+
 --- @class Query
 --- A search query
 ---
