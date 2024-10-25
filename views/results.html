@@ -7,7 +7,7 @@
 	<tr>
 		<td width="36pt">
 			<a href="/">
-				<img src="assets/dragynfruit.png" />
+				<img src="assets/logo.png" />
 			</a>
 		</td>
 		<td width="36pt">
@@ -17,7 +17,7 @@
 			<form method="get" action="/search">
 				<input type="text" name="s" value="duckduckgo" hidden />
 				<input class="results-search" type="search" id="search" name="q" placeholder="Search..." value="{{ query }}" />
-				<button type="search" hidden />
+				<button type="search" hidden></button>
 			</form>
 		</td>
 	</tr>
@@ -47,10 +47,10 @@
 			{%- endif %}
 		</div>
 	{% else %}
-		<center>
+		<div>
 			<h2><b>No results</b></h2>
 			<p>Sorry :')</p>
-		</center>
+		</div>
 	{% endfor %}
 </div>
 

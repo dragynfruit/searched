@@ -20,34 +20,6 @@ impl LuaUserData for Query {
     }
 }
 
-//impl LuaUserData for crate::Result {
-//    fn add_fields<'lua, F: LuaUserDataFields<'lua, Self>>(fields: &mut F) {
-//        fields.add_field_method_set("url", |_, this, value: String| {
-//        })
-//    }
-//}
-
-struct Results {
-    inner: Vec<crate::Result>,
-}
-impl LuaUserData for Results {
-    fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
-        methods.add_method_mut(
-            "add",
-            |_, this, (url, title, snippet): (String, String, String)| {
-                this.inner.push(crate::Result {
-                    url,
-                    title,
-                    general: Some(crate::GeneralResult { snippet }),
-                    ..Default::default()
-                });
-
-                Ok(())
-            },
-        );
-    }
-}
-
 struct Scraper {
     inner: UnsafeCell<Html>,
 }
@@ -101,7 +73,7 @@ impl PluginEngine {
 
         let local = LocalSet::new();
 
-        let jh = local.spawn_local(async move {
+        local.spawn_local(async move {
             Self::inner(rx, tx).await.unwrap();
         });
 
@@ -193,12 +165,31 @@ impl PluginEngine {
         lua.globals()
             .set("post", lua.create_async_function(post)?)?;
 
+        async fn stringify_params(_: &Lua, params: LuaTable<'_>) -> LuaResult<String> {
+            let mut form_: HashMap<String, String> = HashMap::new();
+
+            for ent in params.pairs::<String, String>() {
+                if let Ok((k, v)) = ent {
+                    form_.insert(k, v);
+                }
+            }
+
+            Ok(form_
+                .iter()
+                .map(|(k, v)| format!("{}={}", k, v))
+                .collect::<Vec<_>>()
+                .join("&"))
+        }
+        lua.globals().set(
+            "stringify_params",
+            lua.create_async_function(stringify_params)?,
+        )?;
+
         lua.globals().set(
             "parse_json",
             lua.create_function(|lua, raw: String| {
-                let json = serde_json::from_str::<serde_json::Value>(&raw)
-                    .map_err(|err| err.into_lua_err())?;
-                Ok(lua.to_value(&json)?)
+                let json = serde_json::to_value(raw).unwrap();
+                Ok(lua.to_value(&json).unwrap())
             })?,
         )?;
 
@@ -247,7 +238,7 @@ impl PluginEngine {
                     )
                     .unwrap();
                 }
-                Err(err) => {
+                Err(_err) => {
                     tx.send(Vec::new()).unwrap();
                 }
             }

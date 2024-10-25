@@ -112,12 +112,12 @@ async fn main() {
 
     let schema = schema.build();
 
-    let mut index = match Index::open_in_dir("searched-index") {
+    let mut index = match Index::open_in_dir("data/index") {
         Ok(index) => index,
         Err(_) => {
             warn!("no existing index found, creating one");
 
-            fs::create_dir_all("searched-index").unwrap();
+            fs::create_dir_all("data/index").unwrap();
 
             Index::builder()
                 .schema(schema.clone())
@@ -127,7 +127,7 @@ async fn main() {
                     }),
                     ..Default::default()
                 })
-                .create_in_dir("searched-index")
+                .create_in_dir("data/index")
                 .unwrap()
         }
     };
@@ -168,7 +168,7 @@ async fn main() {
     let reader = index.reader().unwrap();
     let count_cache = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(500).unwrap())));
 
-    let db = sled::open("searched-db").unwrap();
+    let db = sled::open("data/db").unwrap();
 
     let (engine, local) = PluginEngine::new().await.unwrap();
 
@@ -178,7 +178,7 @@ async fn main() {
         .route("/search", get(web::results))
         .route("/settings", get(web::settings))
         .route("/assets/logo.png", get(web::logo))
-        .route("/favicon.ico", get(web::favicon))
+        .route("/favicon.ico", get(web::icon))
         .with_state(AppState {
             //index,
             count_cache,

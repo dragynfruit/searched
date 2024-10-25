@@ -28,6 +28,13 @@ function get(url, headers) end
 --- @return string
 function post(url, headers, form) end
 
+--- Stringify parameters
+--- 
+--- @param params table<string, string>
+--- 
+--- @return string
+function stringify_params(params) end
+
 --- Parse JSON
 ---
 --- @param raw string
