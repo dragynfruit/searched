@@ -1,6 +1,10 @@
 #[macro_use]
+extern crate log;
 extern crate mlua;
 
+pub mod crawler;
+pub mod page;
+pub mod ranking;
 pub mod lua_api;
 
 use mlua::{FromLua, IntoLua, LuaSerdeExt};
@@ -27,13 +31,13 @@ pub enum Kind {
     #[serde(rename = "pprs")]
     Papers,
 }
-impl<'lua> IntoLua<'lua> for Kind {
-    fn into_lua(self, lua: &'lua mlua::Lua) -> mlua::Result<mlua::Value<'lua>> {
+impl IntoLua for Kind {
+    fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
         lua.to_value(&self)
     }
 }
-impl<'lua> FromLua<'lua> for Kind {
-    fn from_lua(value: mlua::Value<'lua>, lua: &'lua mlua::Lua) -> mlua::Result<Self> {
+impl FromLua for Kind {
+    fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
         lua.from_value(value)
     }
 }

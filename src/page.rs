@@ -44,11 +44,11 @@ impl Page {
             .map(|element| element.text().collect())
             .unwrap_or_else(|| "".to_string());
 
-        let content = dom
-            .select(&Selector::parse("body").unwrap())
-            .next()
-            .map(|element| element.text().collect())
-            .unwrap_or_else(|| "".to_string());
+        //let content = dom
+        //    .select(&Selector::parse("body").unwrap())
+        //    .next()
+        //    .map(|element| element.text().collect())
+        //    .unwrap_or_else(|| "".to_string());
 
         Self {
             url,

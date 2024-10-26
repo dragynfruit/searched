@@ -14,7 +14,7 @@ use tokio::{sync::watch, task::LocalSet};
 use crate::{Kind, Query};
 
 impl LuaUserData for Query {
-    fn add_fields<'lua, F: LuaUserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("query", |_, this| Ok(this.query.clone()));
         fields.add_field_method_get("page", |_, this| Ok(this.page));
     }
@@ -26,7 +26,7 @@ struct Scraper {
 unsafe impl Sync for Scraper {}
 unsafe impl Send for Scraper {}
 impl LuaUserData for Scraper {
-    fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_function("new", |_, raw_html: String| {
             let html = Html::parse_document(&raw_html);
             Ok(Self { inner: html.into() })
@@ -51,10 +51,10 @@ impl LuaUserData for Scraper {
 struct ElementWrapper(String, Element);
 unsafe impl Send for ElementWrapper {}
 impl LuaUserData for ElementWrapper {
-    fn add_fields<'lua, F: LuaUserDataFields<'lua, Self>>(fields: &mut F) {
+    fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("inner_html", |_, this| Ok(this.0.clone()));
     }
-    fn add_methods<'lua, M: LuaUserDataMethods<'lua, Self>>(methods: &mut M) {
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("attr", |_, this, value: String| {
             Ok(this.1.attr(&value).unwrap().to_string())
         });
@@ -103,12 +103,12 @@ impl PluginEngine {
         lua.globals()
             .set("Element", lua.create_proxy::<ElementWrapper>()?)?;
 
-        async fn add_search_provider<'eng>(
-            lua: &Lua,
-            (name, kind, callback): (String, Kind, LuaFunction<'eng>),
+        async fn add_search_provider(
+            lua: Lua,
+            (name, _kind, callback): (String, Kind, LuaFunction),
         ) -> LuaResult<()> {
             lua.globals()
-                .get::<_, LuaTable<'_>>("__searched_providers__")
+                .get::<LuaTable>("__searched_providers__")
                 .unwrap()
                 .set(name, callback.clone())
                 .unwrap();
@@ -121,7 +121,7 @@ impl PluginEngine {
             lua.create_async_function(add_search_provider)?,
         )?;
 
-        async fn get(_: &Lua, (url, headers): (String, LuaTable<'_>)) -> LuaResult<String> {
+        async fn get(_: Lua, (url, headers): (String, LuaTable)) -> LuaResult<String> {
             let mut req = Client::new().get(url);
 
             for ent in headers.pairs::<String, String>() {
@@ -135,8 +135,8 @@ impl PluginEngine {
         lua.globals().set("get", lua.create_async_function(get)?)?;
 
         async fn post(
-            _: &Lua,
-            (url, headers, form): (String, LuaTable<'_>, LuaTable<'_>),
+            _: Lua,
+            (url, headers, form): (String, LuaTable, LuaTable),
         ) -> LuaResult<String> {
             let mut form_: HashMap<String, String> = HashMap::new();
             let mut req = Client::new().post(url);
@@ -165,7 +165,7 @@ impl PluginEngine {
         lua.globals()
             .set("post", lua.create_async_function(post)?)?;
 
-        async fn stringify_params(_: &Lua, params: LuaTable<'_>) -> LuaResult<String> {
+        async fn stringify_params(_: Lua, params: LuaTable) -> LuaResult<String> {
             let mut form_: HashMap<String, String> = HashMap::new();
 
             for ent in params.pairs::<String, String>() {
@@ -209,13 +209,13 @@ impl PluginEngine {
 
             let provider_ = lua
                 .globals()
-                .get::<_, LuaTable>("__searched_providers__")
+                .get::<LuaTable>("__searched_providers__")
                 .unwrap()
-                .get::<_, LuaFunction>(provider)
+                .get::<LuaFunction>(provider)
                 .unwrap();
 
             let results = provider_
-                .call_async::<Query, Vec<HashMap<String, String>>>(query)
+                .call_async::<Vec<HashMap<String, String>>>(query)
                 .await;
 
             match results {

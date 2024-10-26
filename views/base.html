@@ -1,90 +1,17 @@
 <!DOCTYPE html>
 <html>
 	<head>
+		{% block head %}
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<link rel="shortcut icon" type="image/png" href="/assets/logo.png">
+
 		<title>{% block title %}Searched{% endblock title %}</title>
-		<style>
-			html, body {
-  			height: 100%;
-  			margin: 0;
-				padding: 0;
-			  background-color: #121212;
-			}
-			.content {
-			  padding: 20px;
-			  min-height: 100%;
-			  margin: 0 auto auto auto;
-			}
-			.footer {
-				text-align: center;
-				background-color: #242424;
-				margin: 0;
-				padding: 4pt 0pt 4pt 0pt;
-			}
+		{% endblock head %}
 
-			body {
-			  color: #CDCDCD;
-			  font-family: sans-serif;
-			}
-			
-			.search-header a {
-				color: #CDCDCD;
-				text-decoration: none;
-			}
-			.search-header td {
-				padding: 0pt 5pt 0pt 5pt;
-				margin: 0pt;
-			}
-			.search-header p {
-				padding: 0pt 5pt 0pt 2pt;
-				margin: 0pt;
-			}
-			.frontpage-lead {
-				margin-top: 30vh;
-				margin-bottom: 18pt;
-			}
-			.frontpage-lead p,
-			.frontpage-lead h1 {
-				margin: 0pt 5pt 0pt 5pt;
-				padding: 0pt;
-			}
-			
-			input[type=search] {
-				background-color: #363636;
-				color: #DADADA;
-				border: 0px;
-				border-radius: 2pt;
-			}
-			.search {
-			  font-size: 16pt;
-			  padding: 4pt 8pt 4pt 8pt;
-			}
-			.results-search {
-				font-size: 14pt;
-				padding: 2pt 4pt 2pt 4pt;
-				width: 100%;
-			}
-
-			.results > div {
-				width: 60%;
-				margin: 8pt 0pt 8pt 0pt;
-			}
-			.results > div > * {
-				margin: 2pt;
-			}
-
-			form > p > a {
-				color: #CDCDCD;
-			}
-		</style>
+		{% include "style.html" %}
 	</head>
 	<body>
-		<div class="content">
-			{% block content %}{% endblock content %}
-		</div>
-		
-		<div class="footer">
-			{% block footer %}{% endblock footer %}
-			<p>Powered by Searched<br/>Made with &lt;3 by <a href="https://github.com/dragynfruit" target="_blank">Dragynfruit</a></p>
-		</div>
+		{% block content %}{% endblock content %}
 	</body>
 </html>

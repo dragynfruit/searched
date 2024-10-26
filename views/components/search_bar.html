@@ -1,0 +1,56 @@
+{% macro generate_style() %}
+<style>
+	.search-bar {
+		display: inline-block;
+		background-color: #363636;
+		border-radius: 5px;
+		height: 40px;
+	}
+
+	.search-bar input[type=search] {
+		color: #DADADA;
+		border: 0px;
+		outline: transparent;
+		background-color: transparent;
+		font-size: 16pt;
+		padding: 8px 3px;
+		margin: 0px;
+		padding-left: 9px;
+		width: 500px;
+		height: 100%;
+		border-top-left-radius: 5px;
+		border-bottom-left-radius: 5px;
+	}
+
+	.search-bar button[type=submit] {
+		background-color: transparent;
+		border: 0px;
+		outline: transparent;
+		color: #DADADA;
+		cursor: pointer;
+		height: 100%;
+		padding: 6px;
+		margin: 0px;
+		padding-right: 9px;
+		font-size: 16pt;
+		transition: all 0.3s;
+		border-top-right-radius: 5px;
+		border-bottom-right-radius: 5px;
+	}
+
+	.search-bar button[type=submit]:hover {
+		background-color: #ff4755;
+		color: white;
+	}
+</style>
+{% endmacro generate_style %}
+
+{% macro generate_content(value="") %}
+<form method="get" action="/search">
+    <input type="text" name="s" value="duckduckgo" hidden />
+    <div class="search-bar">
+        <input type="search" name="q" placeholder="Search..." autocomplete="off" value="{{ value }}" autofocus />
+        <button type="submit"><b>&#x2315;&#xFE0E;</b></button>
+    </div>
+</form>
+{% endmacro %}

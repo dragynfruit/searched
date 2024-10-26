@@ -24,10 +24,11 @@ pub static TEMPLATES: Lazy<Arc<Mutex<Tera>>> = Lazy::new(|| {
 });
 
 pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
-    if let Some(q) = params.q {
+    if let Some(_q) = params.q {
         return Redirect::to("/search").into_response();
     }
 
+    #[cfg(debug_assertions)]
     (*TEMPLATES.lock().await).full_reload().unwrap();
 
     Html(
@@ -70,6 +71,7 @@ pub async fn results(
     State(st): State<AppState>,
 ) -> impl IntoResponse {
     if let Some(q) = params.q {
+        #[cfg(debug_assertions)]
         (*TEMPLATES.lock().await).full_reload().unwrap();
         //let mut results: Vec<SearchResult> = Vec::new();
 
@@ -184,7 +186,7 @@ pub async fn results(
     }
 }
 
-pub async fn settings(State(st): State<AppState>) -> impl IntoResponse {
+pub async fn settings(State(_st): State<AppState>) -> impl IntoResponse {
     (*TEMPLATES.lock().await).full_reload().unwrap();
 
     Html(

@@ -9,12 +9,9 @@ extern crate tera;
 extern crate serde;
 extern crate lru;
 
-mod crawler;
-mod page;
-mod ranking;
 mod web;
 
-use std::{fs, num::NonZeroUsize, sync::Arc, time::Instant};
+use std::{sync::Arc, time::Instant};
 
 use axum::{
     http::{HeaderMap, HeaderValue},
@@ -22,38 +19,38 @@ use axum::{
     Router,
 };
 use log::LevelFilter;
-use lru::LruCache;
-use page::Page;
-use reqwest::Client;
-use scraper::Selector;
+//use lru::LruCache;
+//use searched::page::Page;
+//use reqwest::Client;
+//use scraper::Selector;
 use searched::lua_api::PluginEngine;
-use sled::Db;
-use tantivy::{
-    doc,
-    query::QueryParser,
-    schema::{Field, Schema, FAST, STORED, TEXT},
-    store::{Compressor, ZstdCompressor},
-    Index, IndexReader, IndexSettings,
-};
+//use sled::Db;
+//use tantivy::{
+//    doc,
+//    query::QueryParser,
+//    schema::{Field, Schema, FAST, STORED, TEXT},
+//    store::{Compressor, ZstdCompressor},
+//    Index, IndexReader, IndexSettings,
+//};
 use tokio::{
     net::TcpListener,
-    sync::{mpsc, Mutex},
+    sync::Mutex,
 };
 
 #[derive(Clone)]
 pub struct AppState {
     //index: Index,
-    count_cache: Arc<Mutex<LruCache<String, usize>>>,
-    reader: IndexReader,
-    query_parser: QueryParser,
-    client: Client,
-    db: Db,
+    //count_cache: Arc<Mutex<LruCache<String, usize>>>,
+    //reader: IndexReader,
+    //query_parser: QueryParser,
+    //client: Client,
+    //db: Db,
     eng: Arc<Mutex<PluginEngine>>,
     //query_tx: mpsc::Sender<searched::Query>,
     //result_rx: Arc<broadcast::Receiver<(searched::Query, Vec<searched::Result>)>>,
-    url: Field,
-    title: Field,
-    body: Field,
+    //url: Field,
+    //title: Field,
+    //body: Field,
 }
 
 #[tokio::main(worker_threads = 12)]
@@ -82,10 +79,10 @@ async fn main() {
     ] {
         headers.append(key, HeaderValue::from_str(val).unwrap());
     }
-    let client = reqwest::Client::builder()
-        .default_headers(headers)
-        .build()
-        .unwrap();
+    //let client = reqwest::Client::builder()
+    //    .default_headers(headers)
+    //    .build()
+    //    .unwrap();
 
     let st = Instant::now();
     //let res = scrapers::stackexchange::StackExchange::search(client.clone(), Query { query: String::from("rust"), page: 2 }).await;
@@ -101,57 +98,57 @@ async fn main() {
 
     info!("Starting up...");
 
-    let (tx, mut rx): (mpsc::UnboundedSender<Page>, mpsc::UnboundedReceiver<Page>) =
-        mpsc::unbounded_channel();
+    //let (tx, mut rx): (mpsc::UnboundedSender<Page>, mpsc::UnboundedReceiver<Page>) =
+    //    mpsc::unbounded_channel();
 
-    let mut schema = Schema::builder();
+    //let mut schema = Schema::builder();
 
-    let url = schema.add_text_field("url", TEXT | FAST | STORED);
-    let title = schema.add_text_field("title", TEXT | FAST | STORED);
-    let body = schema.add_text_field("body", TEXT);
+    //let url = schema.add_text_field("url", TEXT | FAST | STORED);
+    //let title = schema.add_text_field("title", TEXT | FAST | STORED);
+    //let body = schema.add_text_field("body", TEXT);
 
-    let schema = schema.build();
+    //let schema = schema.build();
 
-    let mut index = match Index::open_in_dir("data/index") {
-        Ok(index) => index,
-        Err(_) => {
-            warn!("no existing index found, creating one");
+    //let mut index = match Index::open_in_dir("data/index") {
+    //    Ok(index) => index,
+    //    Err(_) => {
+    //        warn!("no existing index found, creating one");
 
-            fs::create_dir_all("data/index").unwrap();
+    //        fs::create_dir_all("data/index").unwrap();
 
-            Index::builder()
-                .schema(schema.clone())
-                .settings(IndexSettings {
-                    docstore_compression: Compressor::Zstd(ZstdCompressor {
-                        compression_level: Some(10),
-                    }),
-                    ..Default::default()
-                })
-                .create_in_dir("data/index")
-                .unwrap()
-        }
-    };
-    index.set_default_multithread_executor().unwrap();
+    //        Index::builder()
+    //            .schema(schema.clone())
+    //            .settings(IndexSettings {
+    //                docstore_compression: Compressor::Zstd(ZstdCompressor {
+    //                    compression_level: Some(10),
+    //                }),
+    //                ..Default::default()
+    //            })
+    //            .create_in_dir("data/index")
+    //            .unwrap()
+    //    }
+    //};
+    //index.set_default_multithread_executor().unwrap();
 
-    let mut wr = index.writer(100_000_000).unwrap();
+    //let mut wr = index.writer(100_000_000).unwrap();
 
-    tokio::spawn(async move {
-        let body_sel = Selector::parse("body").unwrap();
+    //tokio::spawn(async move {
+    //    let body_sel = Selector::parse("body").unwrap();
 
-        loop {
-            if let Some(page) = rx.recv().await {
-                wr.add_document(doc! {
-                    url => page.url().to_string(),
-                    title => page.title(),
-                    body => page.dom().select(&body_sel).next().map(|element| element.text().collect()).unwrap_or_else(|| "".to_string()),
-                }).unwrap();
+    //    loop {
+    //        if let Some(page) = rx.recv().await {
+    //            wr.add_document(doc! {
+    //                url => page.url().to_string(),
+    //                title => page.title(),
+    //                body => page.dom().select(&body_sel).next().map(|element| element.text().collect()).unwrap_or_else(|| "".to_string()),
+    //            }).unwrap();
 
-                println!("{} ({})", page.title(), page.url());
+    //            println!("{} ({})", page.title(), page.url());
 
-                wr.commit().unwrap();
-            }
-        }
-    });
+    //            wr.commit().unwrap();
+    //        }
+    //    }
+    //});
 
     //info!("initializing crawler");
     //let cr = Crawler::new(tx).await;
@@ -161,14 +158,14 @@ async fn main() {
     //    cr.run().await.unwrap();
     //});
 
-    let query_parser = QueryParser::for_index(&index, vec![title, body]);
+    //let query_parser = QueryParser::for_index(&index, vec![title, body]);
     //let searcher = index.reader().unwrap().searcher();
     //let res = searcher.search(&query_parser.parse_query("").unwrap(), &TopDocs::with_limit(20)).unwrap();
     //println!("{} {}", searcher.num_docs(), res.len());
-    let reader = index.reader().unwrap();
-    let count_cache = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(500).unwrap())));
+    //let reader = index.reader().unwrap();
+    //let count_cache = Arc::new(Mutex::new(LruCache::new(NonZeroUsize::new(500).unwrap())));
 
-    let db = sled::open("data/db").unwrap();
+    //let db = sled::open("data/db").unwrap();
 
     let (engine, local) = PluginEngine::new().await.unwrap();
 
@@ -181,16 +178,16 @@ async fn main() {
         .route("/favicon.ico", get(web::icon))
         .with_state(AppState {
             //index,
-            count_cache,
-            reader,
-            query_parser,
-            client,
-            db,
+            //count_cache,
+            //reader,
+            //query_parser,
+            //client,
+            //db,
             eng: Arc::new(Mutex::new(engine)),
 
-            url,
-            title,
-            body,
+            //url,
+            //title,
+            //body,
         });
 
     tokio::spawn(async {
