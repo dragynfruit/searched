@@ -1,29 +1,114 @@
+{% import "components/search_bar.html" as search_bar %}
 {% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+<style>
+	a {
+		color: #CDCDCD;
+	}
+
+	#layout {
+		width: 100%;
+		height: 100%;
+	}
+
+	#header,
+	#footer {
+		height: 30px;
+	}
+
+	/* header */
+	#header td {
+		width: 33%;
+	}
+
+	/* content */
+	#content {
+		height: 100%;
+	}
+
+	#content td {
+		vertical-align: middle;
+		text-align: center;
+	}
+
+	/* footer */
+	#footer {
+		background-color: #242424;
+	}
+
+	#footer td {
+		text-align: center;
+		vertical-align: middle;
+	}
+
+	#footer a {
+		color: #CDCDCD;
+	}
+
+	#lead {
+		margin: 0 auto;
+		margin-bottom: 50px;
+	}
+
+	#lead h1,
+	#lead p {
+		padding: 0;
+		margin: 0;
+	}
+
+	.icon {
+		font-size: 24pt;
+	}
+</style>
+
+{{ search_bar::generate_style() }}
+{% endblock head %}
 
 {% block content %}
 {% set motd = "<i>Blazingly</i> fast" %}
-<center>
-<table class="frontpage-lead">
-	<tr>
-		<td>
-			<img src="assets/logo.png" />
+
+<table id="layout">
+	<tr id="header">
+		<td style="text-align: left;"></td>
+		<td style="text-align: center;"></td>
+		<td style="text-align: right;">
+			<a href="/settings" class="icon" style="text-decoration: none;"><b>&#x26ED;&#xFE0E;</b></a>
 		</td>
-		<td>
-			<h1>Searched</h1>
-			<p>{{ motd | safe }}</p>
+	</tr>
+
+	<tr id="content">
+		<td colspan="3">
+			<table id="lead" cellspacing="0">
+				<tr>
+					<td rowspan="2">
+						<img src="assets/logo.png" />
+					</td>
+					<td>
+						<h1>Searched</h1>
+					</td>
+				</tr>
+				<tr>
+					<td style="text-align: left;">
+						<p>{{ motd | safe }}</p>
+					</td>
+				</tr>
+			</table>
+			
+			{{ search_bar::generate_content() }}
+		</td>
+	</tr>
+
+	<tr id="footer">
+		<td colspan="3">
+			<div>
+				<p>Powered by Searched<br />Made with &lt;3 by <a href="https://github.com/dragynfruit"
+						target="_blank">Dragynfruit</a></p>
+			</div>
 		</td>
 	</tr>
 </table>
-
-<form method="get" action="/search">
-	<input type="text" name="s" value="duckduckgo" hidden />
-	<input class="search" type="search" id="search" name="q" placeholder="Search..." autofocus />
-	<p>
-		<a href="">Pasted</a> |
-		<a href="/settings">Settings</a>
-	</p>
-	<button type="search" hidden />
-</form>
 
 <script>
 	{% include "main.js" %}

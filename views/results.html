@@ -1,24 +1,26 @@
+{% import "components/search_bar.html" as search_bar %}
 {% extends "base.html" %}
 
 {% block title %}{{ query }} | Searched{% endblock title %}
 
+{% block head %}
+{{ super() }}
+{{ search_bar::generate_style() }}
+{% endblock head %}
+
 {% block content %}
 <table class="search-header">
 	<tr>
-		<td width="36pt">
+		<td>
 			<a href="/">
 				<img src="assets/logo.png" />
 			</a>
 		</td>
-		<td width="36pt">
-			<h3 style="margin-left:-8pt"><a href="/">Searched</a></h3>
+		<td>
+			<h3 style="margin-left: -8pt;"><a href="/">Searched</a></h3>
 		</td>
 		<td>
-			<form method="get" action="/search">
-				<input type="text" name="s" value="duckduckgo" hidden />
-				<input class="results-search" type="search" id="search" name="q" placeholder="Search..." value="{{ query }}" />
-				<button type="search" hidden></button>
-			</form>
+			{{ search_bar::generate_content(value=query) }}
 		</td>
 	</tr>
 	<tr>
