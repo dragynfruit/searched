@@ -3,7 +3,11 @@ name = "searched"
 version = "0.1.0"
 edition = "2021"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+[features]
+default = ["__lua54"]
+prod = ["__luau-jit", "mlua/vendored"]
+__lua54 = ["mlua/lua54"]
+__luau-jit = ["mlua/luau-jit"]
 
 [dependencies]
 axum = "0.7.7"
@@ -29,13 +33,12 @@ tokio = { version = "1.41.0", features = [
 ] }
 url = "2.5.2"
 serde_qs = "0.13.0"
-mlua = { version = "0.10.0", features = ["lua54", "async", "macros", "serialize", "send", "vendored"] }
+mlua = { version = "0.10.0", features = ["async", "macros", "serialize", "send"] }
 axum-macros = "0.4.2"
 piccolo = "0.3.3"
 piccolo-util = "0.3.3"
 serde_json = "1.0.132"
 crossbeam-channel = "0.5.13"
-#mlua = { version = "0.9.9", features = ["luau-jit", "vendored", "async", "macros", "serialize"] }
 
 [profile.dev.package.'*']
 opt-level = 3
