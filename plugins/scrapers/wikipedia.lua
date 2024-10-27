@@ -1,3 +1,7 @@
+-- -- Wikipedia scraper for Searched
+-- -- Licensed MIT.
+-- -- (c) 2024 Dragynfruit
+
 add_search_provider('wikipedia', 'wiki', function (query)
 	local res = get('https://en.wikipedia.org/w/api.php?action=opensearch&format=json&limit=10&namespace=0&search='..query.query, {})
 

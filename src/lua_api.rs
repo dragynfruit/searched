@@ -98,6 +98,8 @@ impl PluginEngine {
 
         lua.globals()
             .set("__searched_providers__", lua.create_table()?)?;
+        lua.globals()
+            .set("__searched_engines__", lua.create_table()?)?;
         lua.globals().set("Query", lua.create_proxy::<Query>()?)?;
         lua.globals()
             .set("Scraper", lua.create_proxy::<Scraper>()?)?;
@@ -120,6 +122,39 @@ impl PluginEngine {
         lua.globals().set(
             "add_search_provider",
             lua.create_async_function(add_search_provider)?,
+        )?;
+
+        async fn add_engine(
+            lua: Lua,
+            (name, callback): (String, LuaFunction),
+        ) -> LuaResult<()> {
+            lua.globals()
+                .get::<LuaTable>("__searched_engines__")
+                .unwrap()
+                .set(name, callback.clone())
+                .unwrap();
+
+            Ok(())
+        }
+
+        lua.globals().set(
+            "add_engine",
+            lua.create_async_function(add_engine)?,
+        )?;
+
+        async fn use_engine(
+            lua: Lua,
+            name: String,
+        ) -> LuaResult<LuaFunction> {
+            lua.globals()
+                .get::<LuaTable>("__searched_engines__")
+                .unwrap()
+                .get::<LuaFunction>(name)
+        }
+
+        lua.globals().set(
+            "use_engine",
+            lua.create_async_function(use_engine)?,
         )?;
 
         async fn get(_: Lua, (url, headers): (String, LuaTable)) -> LuaResult<String> {
@@ -196,6 +231,16 @@ impl PluginEngine {
 
         // Load scrapers
         for path in read_dir("plugins/scrapers").unwrap() {
+            if let Ok(path) = path {
+                let mut buf = String::new();
+                let mut f = File::open(path.path()).unwrap();
+                f.read_to_string(&mut buf).unwrap();
+                lua.load(&buf).exec_async().await.unwrap();
+            }
+        }
+
+        // Load engines
+        for path in read_dir("plugins/engines").unwrap() {
             if let Ok(path) = path {
                 let mut buf = String::new();
                 let mut f = File::open(path.path()).unwrap();

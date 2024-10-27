@@ -11,6 +11,19 @@
 --- @param callback fun(query: Query): [Result]
 function add_search_provider(name, kind, callback) end
 
+--- Add a engine
+---
+--- @param name string
+--- @param callback fun(query: Query): [Result]
+function add_search_provider(name, callback) end
+
+--- Use a engine
+---
+--- @param name string
+---
+--- @return fun(url: string, query: Query): [Result]
+function use_engine(name) end
+
 --- Make a GET request
 ---
 --- @param url string
