@@ -8,7 +8,7 @@ use axum::{
 };
 use once_cell::sync::Lazy;
 use tera::{Context, Tera};
-use tokio::sync::Mutex;
+use tokio::sync::{oneshot, Mutex};
 
 use crate::AppState;
 
@@ -128,22 +128,15 @@ pub async fn results(
         //.await;
         //let search_time = search_st.elapsed().as_secs_f32() * 1_000.0;
 
-        let results = {
-            let results = st
-                .eng
-                .lock()
-                .await
-                .search(
-                    params.s.unwrap(),
-                    searched::Query {
-                        query: q.clone(),
-                        kind: params.k.unwrap_or_default(),
-                        page: params.p.unwrap_or(1),
-                    },
-                )
-                .await;
-            results
-        };
+        let results = st
+            .pool
+            .search(searched::Query {
+                provider: params.s.unwrap_or("duckduckgo".to_string()),
+                query: q.clone(),
+                kind: params.k.unwrap_or_default(),
+                page: params.p.unwrap_or(1),
+            })
+            .await;
 
         //let mut rx = st.result_rx.resubscribe();
         //let send_query = searched::Query {
@@ -201,9 +194,7 @@ pub async fn logo() -> impl IntoResponse {
     Response::builder()
         .header(header::CONTENT_TYPE, "image/png")
         .header(header::CACHE_CONTROL, "max-age=604800")
-        .body(Body::from(
-            include_bytes!("../assets/logo.png").to_vec(),
-        ))
+        .body(Body::from(include_bytes!("../assets/logo.png").to_vec()))
         .unwrap()
         .into_response()
 }

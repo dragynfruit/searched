@@ -1,15 +1,21 @@
 use std::{
     cell::UnsafeCell,
-    collections::HashMap,
+    collections::{HashMap, VecDeque},
     error::Error,
     fs::{read_dir, File},
+    future::IntoFuture,
     io::Read,
+    sync::Arc,
+    thread,
 };
 
 use mlua::prelude::*;
 use reqwest::Client;
 use scraper::{node::Element, Html, Selector};
-use tokio::{sync::watch, task::LocalSet};
+use tokio::{
+    sync::{oneshot, watch, Mutex},
+    task::{spawn_local, JoinHandle, JoinSet, LocalSet},
+};
 
 use crate::{Kind, Query};
 
@@ -63,32 +69,27 @@ impl LuaUserData for ElementWrapper {
 
 #[derive(Clone)]
 pub struct PluginEngine {
-    query_tx: watch::Sender<(String, crate::Query)>,
+    query_tx: watch::Sender<crate::Query>,
     results_rx: watch::Receiver<Vec<crate::Result>>,
 }
 impl PluginEngine {
-    pub async fn new() -> Result<(Self, LocalSet), Box<dyn Error>> {
+    pub async fn new() -> Result<Self, Box<dyn Error>> {
         let (query_tx, rx) = watch::channel(Default::default());
         let (tx, results_rx) = watch::channel(Default::default());
 
-        let local = LocalSet::new();
-
-        local.spawn_local(async move {
+        spawn_local(async move {
             Self::inner(rx, tx).await.unwrap();
         });
 
-        Ok((
-            Self {
-                query_tx,
-                results_rx,
-            },
-            local,
-        ))
+        Ok(Self {
+            query_tx,
+            results_rx,
+        })
     }
 
     /// Actual Lua init and event loop
     async fn inner(
-        mut rx: watch::Receiver<(String, crate::Query)>,
+        mut rx: watch::Receiver<crate::Query>,
         tx: watch::Sender<Vec<crate::Result>>,
     ) -> Result<(), Box<dyn Error>> {
         let lua = Lua::new();
@@ -205,13 +206,13 @@ impl PluginEngine {
 
         // Event loop
         while let Ok(()) = rx.changed().await {
-            let (provider, query) = rx.borrow_and_update().clone();
+            let query = rx.borrow_and_update().clone();
 
             let provider_ = lua
                 .globals()
                 .get::<LuaTable>("__searched_providers__")
                 .unwrap()
-                .get::<LuaFunction>(provider)
+                .get::<LuaFunction>(query.provider.clone())
                 .unwrap();
 
             let results = provider_
@@ -248,10 +249,54 @@ impl PluginEngine {
     }
 
     /// Use the given provider to process the given query
-    pub async fn search(&mut self, provider: String, query: Query) -> Vec<crate::Result> {
+    pub async fn search(&mut self, query: Query) -> Vec<crate::Result> {
         self.results_rx.mark_unchanged();
-        self.query_tx.send((provider, query)).unwrap();
+        self.query_tx.send(query).unwrap();
         self.results_rx.changed().await.unwrap();
         self.results_rx.borrow_and_update().clone()
+    }
+}
+
+#[derive(Clone)]
+pub struct PluginEnginePool {
+    queue: Arc<Mutex<VecDeque<(crate::Query, oneshot::Sender<Vec<crate::Result>>)>>>,
+}
+impl PluginEnginePool {
+    pub async fn new() -> (Self, JoinSet<()>) {
+        let queue: Arc<Mutex<VecDeque<(crate::Query, oneshot::Sender<Vec<crate::Result>>)>>> =
+            Arc::new(Mutex::const_new(VecDeque::new()));
+        let mut joinset = JoinSet::new();
+
+        for _ in 0..4 {
+            let queue = queue.clone();
+
+            std::thread::spawn(move || {
+                let rt = tokio::runtime::Builder::new_current_thread()
+                    .enable_all()
+                    .build()
+                    .unwrap();
+                rt.block_on(async move {
+                    LocalSet::new()
+                        .run_until(async move {
+                            let mut eng = PluginEngine::new().await.unwrap();
+                            loop {
+                                let query = queue.lock().await.pop_front();
+
+                                if let Some((query, res_tx)) = query {
+                                    res_tx.send(eng.search(query).await).unwrap();
+                                }
+                            }
+                        })
+                        .await;
+                });
+            });
+        }
+
+        (Self { queue }, joinset)
+    }
+    pub async fn search(&self, query: Query) -> Vec<crate::Result> {
+        let (res_tx, rx) = oneshot::channel::<Vec<crate::Result>>();
+        self.queue.lock().await.push_back((query, res_tx));
+        rx.await.unwrap_or_default()
     }
 }

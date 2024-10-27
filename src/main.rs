@@ -8,6 +8,7 @@ extern crate tera;
 #[macro_use]
 extern crate serde;
 extern crate lru;
+extern crate searched;
 
 mod web;
 
@@ -23,7 +24,7 @@ use log::LevelFilter;
 //use searched::page::Page;
 //use reqwest::Client;
 //use scraper::Selector;
-use searched::lua_api::PluginEngine;
+use searched::lua_api::PluginEnginePool;
 //use sled::Db;
 //use tantivy::{
 //    doc,
@@ -32,10 +33,7 @@ use searched::lua_api::PluginEngine;
 //    store::{Compressor, ZstdCompressor},
 //    Index, IndexReader, IndexSettings,
 //};
-use tokio::{
-    net::TcpListener,
-    sync::Mutex,
-};
+use tokio::net::TcpListener;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -45,7 +43,8 @@ pub struct AppState {
     //query_parser: QueryParser,
     //client: Client,
     //db: Db,
-    eng: Arc<Mutex<PluginEngine>>,
+    //eng: Arc<Mutex<PluginEngine>>,
+    pool: PluginEnginePool,
     //query_tx: mpsc::Sender<searched::Query>,
     //result_rx: Arc<broadcast::Receiver<(searched::Query, Vec<searched::Result>)>>,
     //url: Field,
@@ -167,7 +166,8 @@ async fn main() {
 
     //let db = sled::open("data/db").unwrap();
 
-    let (engine, local) = PluginEngine::new().await.unwrap();
+    //let (engine, local) = PluginEngine::new().await.unwrap();
+    let (pool, joinset) = PluginEnginePool::new().await;
 
     info!("initializing web");
     let r = Router::new()
@@ -183,8 +183,8 @@ async fn main() {
             //query_parser,
             //client,
             //db,
-            eng: Arc::new(Mutex::new(engine)),
-
+            //eng: Arc::new(Mutex::new(engine)),
+            pool,
             //url,
             //title,
             //body,
@@ -200,7 +200,7 @@ async fn main() {
     });
 
     tokio::select! {
-        _ = local => {}
+      //  _ = joinset.join_all() => {}
         _ = tokio::signal::ctrl_c() => {}
     };
     info!("shutting down");

@@ -1,11 +1,12 @@
 #[macro_use]
 extern crate log;
 extern crate mlua;
+extern crate tokio;
 
 pub mod crawler;
+pub mod lua_api;
 pub mod page;
 pub mod ranking;
-pub mod lua_api;
 
 use mlua::{FromLua, IntoLua, LuaSerdeExt};
 use serde::{Deserialize, Serialize};
@@ -49,6 +50,8 @@ impl Default for Kind {
 
 #[derive(Debug, Default, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Query {
+    #[serde(rename = "pr")]
+    pub provider: String,
     #[serde(rename = "q")]
     pub query: String,
     #[serde(rename = "k")]
