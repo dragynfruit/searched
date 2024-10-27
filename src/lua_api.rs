@@ -224,7 +224,7 @@ impl PluginEngine {
         lua.globals().set(
             "parse_json",
             lua.create_function(|lua, raw: String| {
-                let json = serde_json::to_value(raw).unwrap();
+                let json: serde_json::Value = serde_json::from_str(&raw).unwrap();
                 Ok(lua.to_value(&json).unwrap())
             })?,
         )?;
