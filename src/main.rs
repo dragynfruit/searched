@@ -3,11 +3,11 @@ extern crate log;
 extern crate axum;
 extern crate env_logger;
 extern crate reqwest;
-extern crate tantivy;
+//extern crate tantivy;
 extern crate tera;
 #[macro_use]
 extern crate serde;
-extern crate lru;
+//extern crate lru;
 extern crate searched;
 
 mod web;
@@ -24,7 +24,7 @@ use log::LevelFilter;
 //use searched::page::Page;
 //use reqwest::Client;
 //use scraper::Selector;
-use searched::lua_api::PluginEnginePool;
+use searched::{config::Config, lua_api::PluginEnginePool};
 //use sled::Db;
 //use tantivy::{
 //    doc,
@@ -45,6 +45,7 @@ pub struct AppState {
     //db: Db,
     //eng: Arc<Mutex<PluginEngine>>,
     pool: PluginEnginePool,
+    config: Config,
     //query_tx: mpsc::Sender<searched::Query>,
     //result_rx: Arc<broadcast::Receiver<(searched::Query, Vec<searched::Result>)>>,
     //url: Field,
@@ -169,6 +170,8 @@ async fn main() {
     //let (engine, local) = PluginEngine::new().await.unwrap();
     let (pool, joinset) = PluginEnginePool::new().await;
 
+    let config = Config::load("searched.toml");
+
     info!("initializing web");
     let r = Router::new()
         .route("/", get(web::search))
@@ -184,6 +187,7 @@ async fn main() {
             //client,
             //db,
             //eng: Arc::new(Mutex::new(engine)),
+            config,
             pool,
             //url,
             //title,
