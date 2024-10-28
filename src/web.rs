@@ -8,11 +8,11 @@ use axum::{
 };
 use once_cell::sync::Lazy;
 use tera::{Context, Tera};
-use tokio::sync::{oneshot, Mutex};
+use tokio::sync::RwLock;
 
 use crate::AppState;
 
-pub static TEMPLATES: Lazy<Arc<Mutex<Tera>>> = Lazy::new(|| {
+pub static TEMPLATES: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
         Ok(t) => t,
         Err(e) => {
@@ -20,8 +20,21 @@ pub static TEMPLATES: Lazy<Arc<Mutex<Tera>>> = Lazy::new(|| {
             process::exit(1);
         }
     };
-    Arc::new(Mutex::new(tera))
+    Arc::new(RwLock::new(tera))
 });
+
+const MOTD: &'static [&'static str] = &[
+    "<i>Blazingly</i> fast",
+    "RIIR",
+    "\"It's not a cult\"",
+    "Search for sigmas",
+    "Install Gentoo",
+];
+
+#[derive(Serialize)]
+struct SearchCtx {
+    motd: &'static str,
+}
 
 pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
     if let Some(_q) = params.q {
@@ -29,11 +42,13 @@ pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
     }
 
     #[cfg(debug_assertions)]
-    (*TEMPLATES.lock().await).full_reload().unwrap();
+    (*TEMPLATES.write().await).full_reload().unwrap();
 
     Html(
-        (*TEMPLATES.lock().await)
-            .render("index.html", &Context::new())
+        (*TEMPLATES.read().await)
+            .render("index.html", &Context::from_serialize(SearchCtx {
+                motd: MOTD[fastrand::usize(..MOTD.len())],
+            }).unwrap())
             .unwrap(),
     )
     .into_response()
@@ -72,7 +87,7 @@ pub async fn results(
 ) -> impl IntoResponse {
     if let Some(q) = params.q {
         #[cfg(debug_assertions)]
-        (*TEMPLATES.lock().await).full_reload().unwrap();
+        (*TEMPLATES.write().await).full_reload().unwrap();
         //let mut results: Vec<SearchResult> = Vec::new();
 
         //let reader = st.reader.clone();
@@ -156,7 +171,7 @@ pub async fn results(
         //}).await.unwrap_or_default();
 
         Html(
-            (*TEMPLATES.lock().await)
+            (*TEMPLATES.read().await)
                 .render(
                     "results.html",
                     &Context::from_serialize(SearchResults {
@@ -180,10 +195,11 @@ pub async fn results(
 }
 
 pub async fn settings(State(_st): State<AppState>) -> impl IntoResponse {
-    (*TEMPLATES.lock().await).full_reload().unwrap();
+    #[cfg(debug_assertions)]
+    (*TEMPLATES.write().await).full_reload().unwrap();
 
     Html(
-        (*TEMPLATES.lock().await)
+        (*TEMPLATES.read().await)
             .render("settings.html", &Context::new())
             .unwrap(),
     )
