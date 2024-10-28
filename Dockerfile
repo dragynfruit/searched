@@ -4,7 +4,7 @@ WORKDIR /usr/src/searched
 COPY . .
 
 RUN apk add --no-cache -U musl-dev openssl-dev
-RUN cargo build --release
+RUN cargo build --release --features prod
 
 FROM alpine:latest
 
