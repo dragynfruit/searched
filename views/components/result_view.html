@@ -1,0 +1,93 @@
+{% macro generate_style() %}
+<style>
+    .result {
+        padding: 10px;
+    }
+
+    .list {
+        font-size: 10pt;
+    }
+
+    .list a {
+        text-decoration: none;
+        color: #a0a0a0;
+    }
+
+    .list a:hover {
+        text-decoration: underline;
+    }
+
+    a.domain {
+        color: #ff4755;
+    }
+
+    .title {
+        font-size: 14pt;
+        text-decoration: none;
+        color: #CDCDCD;
+    }
+
+    .title:visited {
+        color: #a0a0a0;
+    }
+
+    .title:hover {
+        text-decoration: underline;
+    }
+
+    .snippet {
+        font-size: 12pt;
+        max-width: 800px;
+        padding: 0;
+        margin: 0;
+        color: #bbbbbb;
+    }
+</style>
+{% endmacro generate_style %}
+
+{% macro generate_content(result) %}
+<table class="result">
+    <tr>
+        <td>
+            {% set split_protocol = result.url | split(pat="://") %}
+            {% set protocol = split_protocol[0] %}
+            {% set url = split_protocol[1] %}
+            {% set split_path = url | split(pat="/") %}
+            {% set domain = protocol ~ "://" ~ split_path[0] %}
+            {% set_global current_path = domain %}
+
+            <span class="list">
+                <a href="{{ domain }}" class="domain">{{ domain }}</a>
+                &#x276F;
+                {% for i in range(start=1, end=split_path | length) %}
+                {% set path = split_path[i] %}
+                {% set_global current_path = current_path ~ "/" ~ path %}
+                {% if i == split_path | length - 1 %}
+                <a href="{{ result.url }}"><b>{{ path }}</b></a>
+                {% else %}
+                <a href="{{ current_path }}">{{ path }}</a>
+                {% endif %}
+                {% if i != split_path | length - 1 %}
+                &#x276F;
+                {% endif %}
+                {% endfor %}
+            </span>
+        </td>
+    </tr>
+    <tr>
+        <td>
+            <a href="{{ result.url }}" class="title"><b>{{ result.title | safe }}</b></a>
+        </td>
+    </tr>
+    {% if result.general %}
+    <tr>
+        <td>
+            <p class="snippet">
+                {{ result.general.snippet | safe }}
+            </p>
+        </td>
+    </tr>
+    {% endif %}
+    <tr></tr>
+</table>
+{% endmacro %}

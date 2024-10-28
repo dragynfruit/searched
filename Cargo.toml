@@ -24,7 +24,7 @@ sled = "0.34.7"
 #  "mmap",
 #  "stopwords",
 #] }
-tera = "1.20.0"
+tera = { version = "1.20.0", default-features = false }
 #texting_robots = "0.2.2"
 tokio = { version = "1.41.0", features = [
   "rt-multi-thread",

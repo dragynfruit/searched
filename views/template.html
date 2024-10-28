@@ -1,0 +1,77 @@
+{% import "components/search_bar.html" as search_bar %}
+{% extends "base.html" %}
+
+{% block head %}
+{{ super() }}
+
+<style>
+    html, body {
+        height: 100%;
+        margin: 0;
+        padding: 0;
+    }
+
+    #layout {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* content */
+    #content {
+        height: 100%;
+        vertical-align: top;
+    }
+
+    /* footer */
+    #footer {
+        background-color: #242424;
+    }
+
+    #footer td {
+        text-align: center;
+        vertical-align: middle;
+    }
+
+    #footer a {
+        color: #CDCDCD;
+    }
+</style>
+
+{% endblock head %}
+
+{% block body %}
+{% set motd = "<i>Blazingly</i> fast" %}
+
+<table id="layout" cellspacing="0">
+    <tr id="header">
+        {% block header %}
+        <td style="text-align: left;">
+            {% block left_header %}{% endblock left_header %}
+        </td>
+        <td style="text-align: center;">
+            {% block center_header %}{% endblock center_header %}
+        </td>
+        <td style="text-align: right;">
+            {% block right_header %}
+            <a href="/settings" class="icon" style="text-decoration: none;"><b>&#x26ED;&#xFE0E;</b></a>
+            {% endblock right_header %}
+        </td>
+        {% endblock header %}
+    </tr>
+
+    <tr id="content">
+        <td colspan="3">
+            {% block content %}{% endblock content %}
+        </td>
+    </tr>
+
+    <tr id="footer">
+        <td colspan="3">
+            {% block footer %}
+            <p>Powered by Searched<br />Made with &lt;3 by <a href="https://github.com/dragynfruit"
+                    target="_blank">Dragynfruit</a></p>
+            {% endblock footer %}
+        </td>
+    </tr>
+</table>
+{% endblock body %}

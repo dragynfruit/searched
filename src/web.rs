@@ -7,6 +7,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
 };
 use once_cell::sync::Lazy;
+use searched::Kind;
 use tera::{Context, Tera};
 use tokio::sync::RwLock;
 
@@ -74,6 +75,7 @@ pub struct SearchResults {
     query: String,
     count: usize,
     page: usize,
+    kind: Kind,
     results: Vec<searched::Result>,
     parse_time: f32,
     search_time: f32,
@@ -142,13 +144,14 @@ pub async fn results(
         //)
         //.await;
         //let search_time = search_st.elapsed().as_secs_f32() * 1_000.0;
+        let kind = params.k.unwrap_or_default();
 
         let results = st
             .pool
             .search(searched::Query {
                 provider: params.s.unwrap_or("duckduckgo".to_string()),
                 query: q.clone(),
-                kind: params.k.unwrap_or_default(),
+                kind: kind.clone(),
                 page: params.p.unwrap_or(1),
             })
             .await;
@@ -175,6 +178,7 @@ pub async fn results(
                 .render(
                     "results.html",
                     &Context::from_serialize(SearchResults {
+                        kind,
                         query: q,
                         //page: send_query.page,
                         //count,

@@ -9,9 +9,23 @@
 		<title>{% block title %}Searched{% endblock title %}</title>
 		{% endblock head %}
 
-		{% include "style.html" %}
+		<style>
+			html,
+			body {
+				height: 100%;
+				margin: 0;
+				padding: 0;
+				background-color: #121212;
+				color: #CDCDCD;
+				font-family: sans-serif;
+			}
+		
+			.icon {
+				font-size: 24pt;
+			}
+		</style>
 	</head>
 	<body>
-		{% block content %}{% endblock content %}
+		{% block body %}{% endblock body %}
 	</body>
 </html>
