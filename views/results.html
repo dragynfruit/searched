@@ -8,8 +8,7 @@
 {{ super() }}
 
 <style>
-	#search-header,
-	#results {
+	#search-header {
 		padding: 10px;
 	}
 
@@ -56,7 +55,18 @@
 	}
 
 	#results {
+		height: 100%;
 		background: radial-gradient(circle at 100% 0%, rgba(152, 219, 124, 0.15), transparent 50%), radial-gradient(circle at 0% 100%, rgba(255, 71, 85, 0.15), transparent 50%);
+	}
+
+	#no-results {
+		width: 100%;
+		height: 100%;
+	}
+
+	#no-results td {
+		text-align: center;
+		vertical-align: middle;
 	}
 
 	#ferris {
@@ -146,9 +156,20 @@
 
 {% block content %}
 <div id="results">
+	{% if results %}
 	{% for result in results %}
 	{{ result_view::generate_content(result=result) }}
 	{% endfor %}
+	{% else %}
+	<table id="no-results">
+		<tr>
+			<td>
+				<h1>No results found</h1>
+			</td>
+		</tr>
+	</table>
+	{% endif %}
+
 </div>
 {% endblock content %}
 
