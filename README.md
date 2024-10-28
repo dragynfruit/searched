@@ -1,2 +1,6 @@
+
+![Searched logo](https://raw.githubusercontent.com/dragynfruit/branded/refs/heads/main/projects/searched.png)
+
 # Searched
-A search engine
+
+A blazingly fast metasearch engine written in Rust
