@@ -14,8 +14,8 @@ function add_search_provider(name, kind, callback) end
 --- Add a engine
 ---
 --- @param name string
---- @param callback fun(query: Query): [Result]
-function add_search_provider(name, callback) end
+--- @param callback fun(query: Query, url: string|nil): [Result]
+function add_engine(name, callback) end
 
 --- Use a engine
 ---

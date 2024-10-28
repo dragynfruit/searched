@@ -10,6 +10,7 @@ kinds = ["sear"]
 
 [provider.wiby]
 engine = "json_engine"
+url = "https://wiby.me/json?q={query}&page={page}"
 name = "Wiby"
 description = "blah blah"
 kinds = ["sear"]

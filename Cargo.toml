@@ -39,6 +39,7 @@ axum-macros = "0.4.2"
 #piccolo-util = "0.3.3"
 serde_json = "1.0.132"
 toml = { version = "0.8.19", default-features = false, features = ["parse"] }
+strfmt = "0.2.4"
 
 [profile.dev.package.'*']
 opt-level = 3

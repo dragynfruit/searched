@@ -12,12 +12,13 @@ use std::{
 use mlua::prelude::*;
 use reqwest::Client;
 use scraper::{node::Element, Html, Selector};
+use strfmt::{strfmt, Format};
 use tokio::{
     sync::{oneshot, watch, Mutex},
     task::{spawn_local, JoinHandle, JoinSet, LocalSet},
 };
 
-use crate::{Kind, Query};
+use crate::{config::{self, Config}, Kind, Query};
 
 impl LuaUserData for Query {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
@@ -74,11 +75,12 @@ pub struct PluginEngine {
 }
 impl PluginEngine {
     pub async fn new() -> Result<Self, Box<dyn Error>> {
+        let config = Config::load("plugins/providers.toml");
         let (query_tx, rx) = watch::channel(Default::default());
         let (tx, results_rx) = watch::channel(Default::default());
 
         spawn_local(async move {
-            Self::inner(rx, tx).await.unwrap();
+            Self::inner(config.clone(), rx, tx).await.unwrap();
         });
 
         Ok(Self {
@@ -87,8 +89,10 @@ impl PluginEngine {
         })
     }
 
+
     /// Actual Lua init and event loop
     async fn inner(
+        config: Config,
         mut rx: watch::Receiver<crate::Query>,
         tx: watch::Sender<Vec<crate::Result>>,
     ) -> Result<(), Box<dyn Error>> {
@@ -97,32 +101,12 @@ impl PluginEngine {
         // Add Lua interfaces
 
         lua.globals()
-            .set("__searched_providers__", lua.create_table()?)?;
-        lua.globals()
             .set("__searched_engines__", lua.create_table()?)?;
         lua.globals().set("Query", lua.create_proxy::<Query>()?)?;
         lua.globals()
             .set("Scraper", lua.create_proxy::<Scraper>()?)?;
         lua.globals()
             .set("Element", lua.create_proxy::<ElementWrapper>()?)?;
-
-        async fn add_search_provider(
-            lua: Lua,
-            (name, _kind, callback): (String, Kind, LuaFunction),
-        ) -> LuaResult<()> {
-            lua.globals()
-                .get::<LuaTable>("__searched_providers__")
-                .unwrap()
-                .set(name, callback.clone())
-                .unwrap();
-
-            Ok(())
-        }
-
-        lua.globals().set(
-            "add_search_provider",
-            lua.create_async_function(add_search_provider)?,
-        )?;
 
         async fn add_engine(
             lua: Lua,
@@ -136,25 +120,9 @@ impl PluginEngine {
 
             Ok(())
         }
-
         lua.globals().set(
             "add_engine",
             lua.create_async_function(add_engine)?,
-        )?;
-
-        async fn use_engine(
-            lua: Lua,
-            name: String,
-        ) -> LuaResult<LuaFunction> {
-            lua.globals()
-                .get::<LuaTable>("__searched_engines__")
-                .unwrap()
-                .get::<LuaFunction>(name)
-        }
-
-        lua.globals().set(
-            "use_engine",
-            lua.create_async_function(use_engine)?,
         )?;
 
         async fn get(_: Lua, (url, headers): (String, LuaTable)) -> LuaResult<String> {
@@ -229,15 +197,15 @@ impl PluginEngine {
             })?,
         )?;
 
-        // Load scrapers
-        for path in read_dir("plugins/scrapers").unwrap() {
-            if let Ok(path) = path {
-                let mut buf = String::new();
-                let mut f = File::open(path.path()).unwrap();
-                f.read_to_string(&mut buf).unwrap();
-                lua.load(&buf).exec_async().await.unwrap();
-            }
-        }
+        //// Load scrapers
+        //for path in read_dir("plugins/scrapers").unwrap() {
+        //    if let Ok(path) = path {
+        //        let mut buf = String::new();
+        //        let mut f = File::open(path.path()).unwrap();
+        //        f.read_to_string(&mut buf).unwrap();
+        //        lua.load(&buf).exec_async().await.unwrap();
+        //    }
+        //}
 
         // Load engines
         for path in read_dir("plugins/engines").unwrap() {
@@ -253,15 +221,33 @@ impl PluginEngine {
         while let Ok(()) = rx.changed().await {
             let query = rx.borrow_and_update().clone();
 
-            let provider_ = lua
+            let provider = config.providers.get(&query.provider).unwrap();
+            
+            let engine = provider.engine.clone().unwrap_or(query.provider.clone());
+
+            let engine_ = lua
                 .globals()
-                .get::<LuaTable>("__searched_providers__")
+                .get::<LuaTable>("__searched_engines__")
                 .unwrap()
-                .get::<LuaFunction>(query.provider.clone())
+                .get::<LuaFunction>(engine)
                 .unwrap();
 
-            let results = provider_
-                .call_async::<Vec<HashMap<String, String>>>(query)
+            let url = {
+                if let Some(url_fmt) = &provider.url {
+                    let query = query.clone();
+                    let map = HashMap::from_iter([
+                            ("query".to_string(), query.query),
+                            ("page".to_string(), query.page.to_string()),
+                    ]);
+
+                    Some(url_fmt.format(&map).unwrap())
+                } else {
+                    None
+                }
+            };
+
+            let results = engine_
+                .call_async::<Vec<HashMap<String, String>>>((query, url))
                 .await;
 
             match results {

@@ -2,7 +2,7 @@
 -- Licensed MIT.
 -- (c) 2024 Dragynfruit
 
-add_search_provider('duckduckgo', 'sear', function (query)
+add_engine('duckduckgo', function (query, _)
 	local offset
 	if query.page == 2 then
 		offset = (query.page - 1) * 20

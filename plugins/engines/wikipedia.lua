@@ -2,7 +2,7 @@
 -- -- Licensed MIT.
 -- -- (c) 2024 Dragynfruit
 
-add_search_provider('wikipedia', 'wiki', function (query)
+add_engine('mediawiki', function (query, _)
 	local res = get('https://en.wikipedia.org/w/api.php?action=opensearch&format=json&limit=10&namespace=0&search='..query.query, {})
 
 	local data = parse_json(res)

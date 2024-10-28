@@ -1,4 +1,4 @@
-add_search_provider('stackoverflow', 'qans', function (query)
+add_engine('stackoverflow', function (query, _)
 	local res = get('https://api.stackexchange.com/2.3/search/advanced?q=' .. query.query .. '&page=' .. query.page .. '&site=stackoverflow', {})
 
 	print(res)

@@ -170,7 +170,7 @@ async fn main() {
     //let (engine, local) = PluginEngine::new().await.unwrap();
     let (pool, joinset) = PluginEnginePool::new().await;
 
-    let config = Config::load("searched.toml");
+    let config = Config::load("plugins/providers.toml");
 
     info!("initializing web");
     let r = Router::new()

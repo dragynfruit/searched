@@ -2,8 +2,9 @@
 -- -- Licensed MIT.
 -- -- (c) 2024 Dragynfruit
 
-add_engine("json_engine", function(url, query) 
-    local res = get(string.format(url, query.query, query.page), {})
+add_engine("json_engine", function(_, url)
+	if url ~= nil then
+    local res = get(url, {})
     local data = parse_json(res)
 
     local results = {}
@@ -15,5 +16,9 @@ add_engine("json_engine", function(url, query)
         }
     end
 
-	return results
+		return results
+	else
+		print('wtf')
+		return {}
+	end
 end)
