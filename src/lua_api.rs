@@ -3,22 +3,20 @@ use std::{
     collections::{HashMap, VecDeque},
     error::Error,
     fs::{read_dir, File},
-    future::IntoFuture,
     io::Read,
     sync::Arc,
-    thread,
 };
 
 use mlua::prelude::*;
 use reqwest::Client;
 use scraper::{node::Element, Html, Selector};
-use strfmt::{strfmt, Format};
+use strfmt::Format;
 use tokio::{
     sync::{oneshot, watch, Mutex},
-    task::{spawn_local, JoinHandle, JoinSet, LocalSet},
+    task::{spawn_local, LocalSet},
 };
 
-use crate::{config::{self, Config}, Kind, Query};
+use crate::{config::Config, Query};
 
 impl LuaUserData for Query {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
@@ -293,10 +291,9 @@ pub struct PluginEnginePool {
     queue: Arc<Mutex<VecDeque<(crate::Query, oneshot::Sender<Vec<crate::Result>>)>>>,
 }
 impl PluginEnginePool {
-    pub async fn new() -> (Self, JoinSet<()>) {
+    pub async fn new() -> Self {
         let queue: Arc<Mutex<VecDeque<(crate::Query, oneshot::Sender<Vec<crate::Result>>)>>> =
             Arc::new(Mutex::const_new(VecDeque::new()));
-        let mut joinset = JoinSet::new();
 
         for _ in 0..4 {
             let queue = queue.clone();
@@ -323,7 +320,7 @@ impl PluginEnginePool {
             });
         }
 
-        (Self { queue }, joinset)
+        Self { queue }
     }
     pub async fn search(&self, query: Query) -> Vec<crate::Result> {
         let (res_tx, rx) = oneshot::channel::<Vec<crate::Result>>();
