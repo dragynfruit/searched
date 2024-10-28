@@ -105,15 +105,15 @@ pub async fn results(
 
         let kind = params.k.unwrap_or_default();
 
-        let results = st
+        let results = tokio::time::timeout(st
             .pool
             .search(searched::Query {
                 provider: params.s.unwrap_or("duckduckgo".to_string()),
                 query: q.clone(),
                 kind: kind.clone(),
                 page: params.p.unwrap_or(1),
-            })
-            .await;
+            }), Duration::from_secs(3))
+            .await.unwrap();
 
         Html(
             (*TEMPLATES.read().await)

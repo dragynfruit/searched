@@ -127,6 +127,7 @@ pub struct PluginEngine {
     results_rx: watch::Receiver<Vec<crate::Result>>,
 }
 impl PluginEngine {
+    /// Initialize a new engine for running plugins
     pub async fn new(client: Client) -> Result<Self, Box<dyn Error>> {
         let providers = ProvidersConfig::load("plugins/providers.toml");
         let (query_tx, rx) = watch::channel(Default::default());
@@ -220,32 +221,32 @@ impl PluginEngine {
         while let Ok(()) = rx.changed().await {
             let query = rx.borrow_and_update().clone();
 
-            let provider = providers.0.get(&query.provider).unwrap();
+            if let Some(provider) = providers.0.get(&query.provider) {
 
             let engine = provider.engine.clone().unwrap_or(query.provider.clone());
 
-            let engine_ = lua
+            // Get engine implementation
+            let eng_impl = lua
                 .globals()
                 .get::<LuaTable>("__searched_engines__")
                 .unwrap()
                 .get::<LuaFunction>(engine)
                 .unwrap();
 
-            let url = {
-                if let Some(url_fmt) = &provider.url {
-                    let query = query.clone();
-                    let map = HashMap::from_iter([
-                        ("query", query.query),
-                        ("page", query.page.to_string()),
-                    ]);
+            // Build the URL
+            let url = if let Some(url_fmt) = &provider.url {
+                let query = query.clone();
+                let map = HashMap::from_iter([
+                    ("query", query.query),
+                    ("page", query.page.to_string()),
+                ]);
 
-                    Some(searched_parser::Url::parse(url_fmt.as_bytes()).build(map))
-                } else {
-                    None
-                }
+                Some(searched_parser::Url::parse(url_fmt.as_bytes()).build(map))
+            } else {
+                None
             };
 
-            let results = engine_
+            let results = eng_impl
                 .call_async::<Vec<HashMap<String, String>>>((
                     ClientWrapper(client.clone()),
                     query,
@@ -277,6 +278,7 @@ impl PluginEngine {
                     tx.send(Vec::new()).unwrap();
                 }
             }
+            }
         }
 
         Ok(())
@@ -285,8 +287,8 @@ impl PluginEngine {
     /// Use the given provider to process the given query
     pub async fn search(&mut self, query: Query) -> Vec<crate::Result> {
         self.results_rx.mark_unchanged();
-        self.query_tx.send(query).unwrap();
-        self.results_rx.changed().await.unwrap();
+        let _ = self.query_tx.send(query);
+        let _ = self.results_rx.changed().await;
         self.results_rx.borrow_and_update().clone()
     }
 }
@@ -319,7 +321,7 @@ impl PluginEnginePool {
                                 let query = queue.lock().await.pop_front();
 
                                 if let Some((query, res_tx)) = query {
-                                    res_tx.send(eng.search(query).await).unwrap();
+                                    res_tx.send(eng.search(query).await).ok();
                                 }
                             }
                         })
