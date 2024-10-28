@@ -21,6 +21,10 @@
 		margin-bottom: 50px;
 	}
 
+	#lead td {
+		text-align: left;
+	}
+
 	#lead h1,
 	#lead p {
 		padding: 0;
@@ -56,16 +60,16 @@
 		<td rowspan="2">
 			<img src="assets/logo.png" />
 		</td>
-		<td>
+		<td id="title">
 			<h1>Searched</h1>
 		</td>
 	</tr>
 	<tr>
-		<td style="text-align: left;">
+		<td>
 			<p>{{ motd | safe }}</p>
 		</td>
 	</tr>
 </table>
 
-{{ search_bar::generate_content() }}
+{{ search_bar::generate_content(autofocus=true) }}
 {% endblock content %}

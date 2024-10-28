@@ -46,11 +46,11 @@
 </style>
 {% endmacro generate_style %}
 
-{% macro generate_content(value="") %}
+{% macro generate_content(value="", autofocus=false) %}
 <form method="get" action="/search">
     <input type="text" name="s" value="duckduckgo" hidden />
     <div class="search-bar">
-        <input type="search" id="search" name="q" placeholder="Search..." autocomplete="off" value="{{ value }}" autofocus />
+        <input type="search" id="search" name="q" placeholder="Search..." autocomplete="off" value="{{ value }}" {% if autofocus %}autofocus{% endif %} />
         <button type="submit"><b>&#x2315;&#xFE0E;</b></button>
     </div>
 </form>

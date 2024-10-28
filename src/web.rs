@@ -30,6 +30,13 @@ const MOTD: &'static [&'static str] = &[
     "\"It's not a cult\"",
     "Search for sigmas",
     "Install Gentoo",
+    "Don't be evil",
+    "mikerowesoft.com",
+    "Check out <a href=\"https://github.com/dragynfruit/pasted\">pasted</a>!",
+    "Drink water",
+    "The cake is a lie",
+    "<a onclick=\"alert('Hello, world!')\" href=\"#\">Click me!</a>",
+    "We <3 <a href=\"https://archive.org\">IA</a>",
 ];
 
 #[derive(Serialize)]
