@@ -5,10 +5,7 @@ extern crate tokio;
 #[macro_use]
 extern crate serde;
 
-//pub mod crawler;
 pub mod lua_api;
-//pub mod page;
-//pub mod ranking;
 pub mod config;
 
 use mlua::{FromLua, IntoLua, LuaSerdeExt};
