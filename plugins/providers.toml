@@ -1,14 +1,14 @@
-[provider.duckduckgo]
+[duckduckgo]
 name = "DuckDuckGo"
 description = "A privacy-respecting search engine"
 kinds = ["sear"]
 
-[provider.google]
+[google]
 name = "Google"
 description = "The most popular search engine"
 kinds = ["sear"]
 
-[provider.wiby]
+[wiby]
 engine = "json_engine"
 url = "https://wiby.me/json?q={query}&page={page}"
 name = "Wiby"

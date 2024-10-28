@@ -4,9 +4,10 @@ extern crate mlua;
 extern crate tokio;
 #[macro_use]
 extern crate serde;
+extern crate searched_parser;
 
-pub mod lua_api;
 pub mod config;
+pub mod lua_api;
 
 use mlua::{FromLua, IntoLua, LuaSerdeExt};
 use serde::{Deserialize, Serialize};

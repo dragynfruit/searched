@@ -37,6 +37,7 @@ const MOTD: &'static [&'static str] = &[
     "The cake is a lie",
     "<a onclick=\"alert('Hello, world!')\" href=\"#\">Click me!</a>",
     "We <3 <a href=\"https://archive.org\">IA</a>",
+    "<i>\"If it is on the Internet then it must be true.\"</i><br>&mdash; Abraham Lincoln",
 ];
 
 #[derive(Serialize)]
@@ -54,9 +55,13 @@ pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
 
     Html(
         (*TEMPLATES.read().await)
-            .render("index.html", &Context::from_serialize(SearchCtx {
-                motd: MOTD[fastrand::usize(..MOTD.len())],
-            }).unwrap())
+            .render(
+                "index.html",
+                &Context::from_serialize(SearchCtx {
+                    motd: MOTD[fastrand::usize(..MOTD.len())],
+                })
+                .unwrap(),
+            )
             .unwrap(),
     )
     .into_response()
@@ -97,60 +102,7 @@ pub async fn results(
     if let Some(q) = params.q {
         #[cfg(debug_assertions)]
         (*TEMPLATES.write().await).full_reload().unwrap();
-        //let mut results: Vec<SearchResult> = Vec::new();
 
-        //let reader = st.reader.clone();
-        //reader.reload().unwrap();
-        //let searcher = reader.searcher();
-
-        //let parse_st = Instant::now();
-        //let query = st.query_parser.parse_query(&q).unwrap();
-        //let parse_time = parse_st.elapsed().as_secs_f32() * 1_000.0;
-
-        ////let count = (*st.count_cache.lock().await).get_or_insert(q.clone(), || {
-        ////    searcher.search(&query, &Count).unwrap()
-        ////}).clone();
-        //let count = searcher.search(&query, &Count).unwrap();
-
-        //let search_st = Instant::now();
-        //let resultss: Vec<(Score, DocAddress)> = searcher
-        //    .search(
-        //        &query,
-        //        &TopDocs::with_limit(20).and_offset(params.p.unwrap_or(0)),
-        //    )
-        //    .unwrap();
-        //let search_time = search_st.elapsed().as_secs_f32() * 1_000.0;
-
-        //let gather_st = Instant::now();
-        //for (_score, doc_address) in resultss {
-        //    // Retrieve the actual content of documents given its `doc_address`.
-        //    let retrieved_doc = searcher.doc::<TantivyDocument>(doc_address).unwrap();
-
-        //    let url = retrieved_doc.get_first(st.url).unwrap().as_str().unwrap();
-        //    let title = retrieved_doc.get_first(st.title).unwrap().as_str().unwrap();
-        //    //let body = retrieved_doc.get_first(st.body).unwrap().as_str().unwrap();
-
-        //    results.push(SearchResult {
-        //        url: url.to_string(),
-        //        title: title.to_string(),
-        //        //body_preview: body.to_string(),
-        //        body_preview: String::from("WIP"),
-        //    });
-        //}
-        //let gather_time = gather_st.elapsed().as_secs_f32() * 1_000.0;
-
-        //let search_st = Instant::now();
-        //let results = scrapers::search(
-        //    params.s.unwrap().as_str(),
-        //    st.clone(),
-        //    searched::Query {
-        //        query: q.clone(),
-        //        kind: params.k.unwrap_or_default(),
-        //        page: params.p.unwrap_or(1),
-        //    },
-        //)
-        //.await;
-        //let search_time = search_st.elapsed().as_secs_f32() * 1_000.0;
         let kind = params.k.unwrap_or_default();
 
         let results = st
@@ -163,23 +115,6 @@ pub async fn results(
             })
             .await;
 
-        //let mut rx = st.result_rx.resubscribe();
-        //let send_query = searched::Query {
-        //        query: q.clone(),
-        //        kind: params.k.unwrap_or_default(),
-        //        page: params.p.unwrap_or(1),
-        //    };
-        //st.query_tx.send(send_query.clone()).await.unwrap();
-
-        //let results = tokio::time::timeout(Duration::from_secs(3), async {
-        //    while let Ok((query, results)) = rx.recv().await {
-        //        if send_query == query {
-        //            return results;
-        //        }
-        //    }
-        //    Vec::new()
-        //}).await.unwrap_or_default();
-
         Html(
             (*TEMPLATES.read().await)
                 .render(
@@ -187,12 +122,7 @@ pub async fn results(
                     &Context::from_serialize(SearchResults {
                         kind,
                         query: q,
-                        //page: send_query.page,
-                        //count,
                         results: results.to_vec(),
-                        //parse_time,
-                        //search_time,
-                        //gather_time,
                         ..Default::default()
                     })
                     .unwrap(),

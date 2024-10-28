@@ -1,5 +1,5 @@
-add_engine('stackoverflow', function (query, _)
-	local res = get('https://api.stackexchange.com/2.3/search/advanced?q=' .. query.query .. '&page=' .. query.page .. '&site=stackoverflow', {})
+add_engine('stackoverflow', function (client, query, _)
+	local res = client:get('https://api.stackexchange.com/2.3/search/advanced?q=' .. query.query .. '&page=' .. query.page .. '&site=stackoverflow', {})
 
 	print(res)
 	local data = parse_json(res)

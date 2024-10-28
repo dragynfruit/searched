@@ -2,7 +2,7 @@
 -- Licensed MIT.
 -- (c) 2024 Dragynfruit
 
-add_engine('duckduckgo', function (query, _)
+add_engine('duckduckgo', function (client, query, _)
 	local offset
 	if query.page == 2 then
 		offset = (query.page - 1) * 20
@@ -24,7 +24,7 @@ add_engine('duckduckgo', function (query, _)
 		}
 	end
 
-	local res = post('https://lite.duckduckgo.com/lite/', {
+	local res = client:post('https://lite.duckduckgo.com/lite/', {
 		['Content-Type'] = 'application/x-www-form-urlencoded',
 		['Referer'] = 'https://lite.duckduckgo.com/',
 	}, headers)

@@ -73,7 +73,7 @@ async fn main() {
 
     info!("Starting up...");
 
-    let pool = PluginEnginePool::new().await;
+    let pool = PluginEnginePool::new(4).await;
 
     let config = Config::load("plugins/providers.toml");
 
@@ -84,10 +84,7 @@ async fn main() {
         .route("/settings", get(web::settings))
         .route("/assets/logo.png", get(web::logo))
         .route("/favicon.ico", get(web::icon))
-        .with_state(AppState {
-            config,
-            pool,
-        });
+        .with_state(AppState { config, pool });
 
     tokio::spawn(async {
         axum::serve(

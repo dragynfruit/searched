@@ -1,12 +1,12 @@
-FROM rust:alpine as builder
+FROM docker.io/library/rust:alpine as builder
 
 WORKDIR /usr/src/searched
 COPY . .
 
 RUN apk add --no-cache -U musl-dev openssl-dev
-RUN cargo build --release --features prod
+RUN cargo build --release --no-default-features --features prod
 
-FROM alpine:latest
+FROM docker.io/library/alpine:latest
 
 COPY --from=builder /usr/src/searched/target/release/searched /usr/local/bin/searched/searched
 COPY --from=builder /usr/src/searched/views /usr/local/bin/searched/views

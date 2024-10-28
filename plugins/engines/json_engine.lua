@@ -2,9 +2,9 @@
 -- -- Licensed MIT.
 -- -- (c) 2024 Dragynfruit
 
-add_engine("json_engine", function(_, url)
+add_engine("json_engine", function(client, _, url)
 	if url ~= nil then
-    local res = get(url, {})
+    local res = client:get(url, {})
     local data = parse_json(res)
 
     local results = {}

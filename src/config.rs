@@ -4,10 +4,20 @@ use crate::Kind;
 
 #[derive(Deserialize, Serialize, Default, Clone, Debug)]
 pub struct Config {
-    #[serde(rename = "provider")]
-    pub providers: HashMap<String, CfgProvider>,
+    /// Address to listen on
+    pub listen_addr: Option<String>,
 }
 impl Config {
+    pub fn load(path: impl AsRef<Path>) -> Self {
+        let mut buf = String::new();
+        File::open(path).unwrap().read_to_string(&mut buf).unwrap();
+        toml::from_str(&buf).unwrap()
+    }
+}
+
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
+pub struct ProvidersConfig(pub HashMap<String, CfgProvider>);
+impl ProvidersConfig {
     pub fn load(path: impl AsRef<Path>) -> Self {
         let mut buf = String::new();
         File::open(path).unwrap().read_to_string(&mut buf).unwrap();

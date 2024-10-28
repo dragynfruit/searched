@@ -4,42 +4,11 @@
 
 --- @meta searched
 
---- Add a search provider
----
---- @param name string
---- @param kind Kind
---- @param callback fun(query: Query): [Result]
-function add_search_provider(name, kind, callback) end
-
 --- Add a engine
 ---
 --- @param name string
---- @param callback fun(query: Query, url: string|nil): [Result]
+--- @param callback fun(client: Client, query: Query, url: string|nil): [Result]
 function add_engine(name, callback) end
-
---- Use a engine
----
---- @param name string
----
---- @return fun(url: string, query: Query): [Result]
-function use_engine(name) end
-
---- Make a GET request
----
---- @param url string
---- @param headers table<string, string>
----
---- @return string
-function get(url, headers) end
-
---- Make a POST request
----
---- @param url string
---- @param headers table<string, string>
---- @param form table<string, string>
----
---- @return string
-function post(url, headers, form) end
 
 --- Stringify parameters
 --- 
@@ -92,6 +61,27 @@ Element = {}
 --- @param attr string
 --- @return string
 function Element:attr(attr) end
+
+--- @class Client
+--- An HTTP client
+Client = {}
+
+--- Make a GET request
+---
+--- @param url string
+--- @param headers table<string, string>
+---
+--- @return string
+function Client:get(url, headers) end
+
+--- Make a POST request
+---
+--- @param url string
+--- @param headers table<string, string>
+--- @param form table<string, string>
+---
+--- @return string
+function Client:post(url, headers, form) end
 
 --- @class Scraper
 --- An HTML scraper
