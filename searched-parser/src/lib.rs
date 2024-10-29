@@ -25,23 +25,24 @@ impl Url {
         let mut pos = 0usize;
         let mut st = 0usize;
 
+        let mut unclosed = false;
+
         while pos < len {
-            while pos < len && src[pos] != b'{' {
+            if src[pos] != b'{' && src[pos] != b'}' {
                 pos += 1;
-            }
-            elems.push(UrlElem::Static(st..pos));
-            if src[pos] == b'{' {
+            } else {
+                if src[pos] == b'{' {
+                    assert!(!unclosed, "can't open another dynamic before closing the last one");
+                    elems.push(UrlElem::Static(st..pos));
+                } else {
+                    assert!(unclosed, "can't close before opening a dynamic");
+                    elems.push(UrlElem::Dynamic(st..pos));
+                }
+
+                unclosed = !unclosed;
+
                 st = pos + 1;
                 pos = st;
-
-                while pos < len && src[pos] != b'}' {
-                    pos += 1;
-                }
-                if src[pos] == b'}' {
-                    elems.push(UrlElem::Dynamic(st..pos));
-                    st = pos + 1;
-                    pos = st;
-                }
             }
         }
 
