@@ -15,6 +15,7 @@ use tokio::{
     sync::{oneshot, watch, Mutex},
     task::{spawn_local, LocalSet},
 };
+use url::Url;
 
 use crate::{config::ProvidersConfig, Query};
 
@@ -22,6 +23,19 @@ impl LuaUserData for Query {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("query", |_, this| Ok(this.query.clone()));
         fields.add_field_method_get("page", |_, this| Ok(this.page));
+    }
+}
+
+struct UrlWrapper(Url);
+impl LuaUserData for UrlWrapper {
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        methods.add_function("from_template", |_, (template, values): (String, LuaTable)| -> LuaResult<Self> {
+            let values = HashMap::from_iter(values.pairs::<String, String>().map(|x| x.unwrap()).map(|(k, v)| (k, v)));
+            Url::parse(&searched_parser::Url::parse(template.as_bytes()).build(values)).map(|x| UrlWrapper(x)).into_lua_err()
+        });
+        methods.add_method("string", |_, this, ()| -> LuaResult<String> {
+            Ok(this.0.to_string())
+        });
     }
 }
 
@@ -152,6 +166,7 @@ impl PluginEngine {
 
         lua.globals()
             .set("__searched_engines__", lua.create_table()?)?;
+        lua.globals().set("Url", lua.create_proxy::<UrlWrapper>()?)?;
         lua.globals().set("Query", lua.create_proxy::<Query>()?)?;
         lua.globals()
             .set("Client", lua.create_proxy::<ClientWrapper>()?)?;
@@ -164,7 +179,6 @@ impl PluginEngine {
 
         lua.globals().set(
             "add_engine",
-            //lua.create_async_function(add_engine)?,
             lua.create_function(|lua, (name, callback): (String, LuaFunction)| {
                 lua.globals()
                     .get::<LuaTable>("__searched_engines__")
@@ -228,25 +242,11 @@ impl PluginEngine {
                     .get::<LuaFunction>(engine)
                     .unwrap();
 
-                // Build the URL
-                let url = if let Some(url_fmt) = &provider.url {
-                    let query = query.clone();
-                    let map = HashMap::from_iter([
-                        ("query", query.query),
-                        ("page", query.page.to_string()),
-                    ]);
-
-                    Some(searched_parser::Url::parse(url_fmt.as_bytes()).build(map))
-                } else {
-                    None
-                };
-
                 let results = eng_impl
                     .call_async::<Vec<HashMap<String, String>>>((
                         ClientWrapper(client.clone()),
                         query,
-                        url,
-                        lua.to_value(&provider.clone().extra.unwrap_or(HashMap::new())),
+                        lua.to_value(&provider.clone().extra.unwrap_or_default()),
                     ))
                     .await;
 

@@ -51,7 +51,7 @@ impl Url {
             elems,
         }
     }
-    pub fn build(&self, values: HashMap<&str, String>) -> String {
+    pub fn build(&self, values: HashMap<String, String>) -> String {
         self.elems
             .iter()
             .map(|elem| match elem {

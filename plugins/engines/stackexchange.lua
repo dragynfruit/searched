@@ -1,10 +1,10 @@
-add_engine("stackoverflow", function(client, query, _)
+add_engine('stackoverflow', function(client, query, _)
 	local res = client:get(
-		"https://api.stackexchange.com/2.3/search/advanced?q="
+		'https://api.stackexchange.com/2.3/search/advanced?q='
 			.. query.query
-			.. "&page="
+			.. '&page='
 			.. query.page
-			.. "&site=stackoverflow",
+			.. '&site=stackoverflow',
 		{}
 	)
 
@@ -14,9 +14,9 @@ add_engine("stackoverflow", function(client, query, _)
 	local results = {}
 	for i, item in ipairs(data) do
 		results[i] = {
-			url = item["link"],
-			title = item["title"],
-			snippet = table.concat(item["tags"], " "),
+			url = item['link'],
+			title = item['title'],
+			snippet = table.concat(item['tags'], ' '),
 		}
 	end
 

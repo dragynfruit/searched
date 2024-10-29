@@ -6,3 +6,4 @@
 
 require('.search')
 require('.ranking')
+require('.url')

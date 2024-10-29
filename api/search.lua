@@ -7,13 +7,13 @@
 --- Add a engine
 ---
 --- @param name string
---- @param callback fun(client: Client, query: Query, url: string|nil, options: table<string, string|number|boolean>): [Result]
+--- @param callback fun(client: Client, query: Query, options: table<string, string|number|boolean>): [Result]
 function add_engine(name, callback) end
 
 --- Stringify parameters
---- 
+---
 --- @param params table<string, string>
---- 
+---
 --- @return string
 function stringify_params(params) end
 
@@ -25,15 +25,15 @@ function parse_json(raw) end
 
 --- @enum Kind
 Kind = {
-	General        = 'sear',
-	Images         = 'imgs',
-	Videos         = 'vids',
-	News           = 'news',
-	Maps           = 'maps',
-	Wiki           = 'wiki',
+	General = 'sear',
+	Images = 'imgs',
+	Videos = 'vids',
+	News = 'news',
+	Maps = 'maps',
+	Wiki = 'wiki',
 	QuestionAnswer = 'qans',
-	Documentation  = 'docs',
-	Papers         = 'pprs',
+	Documentation = 'docs',
+	Papers = 'pprs',
 }
 
 --- @class Query
@@ -52,7 +52,7 @@ Query = {}
 Result = {}
 
 --- @class Element
---- 
+---
 --- @field public inner_html string
 Element = {}
 
@@ -98,5 +98,3 @@ function Scraper.new(raw) end
 --- @param selector string
 --- @return [Element]
 function Scraper:select(selector) end
-
-

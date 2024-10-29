@@ -2,7 +2,6 @@
 name = "DuckDuckGo"
 description = "A privacy-respecting search engine"
 kinds = ["sear"]
-	
 	[duckduckgo.features]
 	safe_search = "multilevel"
 
@@ -11,22 +10,21 @@ name = "Wikipedia (English)"
 engine = "mediawiki"
 description = "The free encyclopedia"
 kinds = ["sear"]
-url = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json&limit=10&namespace=0&search={query}"
+	[wikipedia.extra]
+	url = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json&limit=10&namespace=0&search={query}"
 
 [google]
 name = "Google"
 description = "The most popular search engine"
 kinds = ["sear"]
-
 	[google.features]
 	safe_search = "yes"
 
 [wiby]
 engine = "json_engine"
-url = "https://wiby.me/json?q={query}&page={page}"
 name = "Wiby"
 description = "blah blah"
 kinds = ["sear"]
-
 	[wiby.extra]
+	url = "https://wiby.me/json?q={query}&page={page}"
 	capitalize_json = true

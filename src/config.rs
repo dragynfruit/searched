@@ -59,8 +59,6 @@ pub struct CfgProvider {
     ///
     /// Uses provider name if unset
     pub engine: Option<String>,
-    /// Formatting string for URL
-    pub url: Option<String>,
     /// Human readable name
     pub name: String,
     pub description: String,
