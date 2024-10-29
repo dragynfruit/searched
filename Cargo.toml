@@ -53,4 +53,4 @@ debug-assertions = false
 
 [workspace]
 members = ["searched-parser"]
-default-members = ["searched-parser"]
+default-members = ["searched-parser", ""]

@@ -25,8 +25,14 @@ kinds = ["sear"]
 engine = "json_engine"
 url = "https://wiby.me/json?q={query}&page={page}"
 name = "Wiby"
-description = "blah blah"
+description = "A search engine for finding old websites"
 kinds = ["sear"]
+extra = { result_key = "", url_key = "URL", title_key = "Title", snippet_key = "Snippet" }
 
-	[wiby.extra]
-	capitalize_json = true
+[crowdview]
+engine = "json_engine"
+url = "https://crowdview-next-js.onrender.com/api/search-v3?query={query}"
+name = "CrowdView"
+description = "A search engine for forum threads"
+kinds = ["sear"]
+extra = { results_key = "results", url_key = "link", title_key = "title", snippet_key = "snippet" }
