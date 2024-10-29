@@ -2,6 +2,33 @@ use std::{collections::HashMap, fs::File, io::Read, path::Path};
 
 use crate::Kind;
 
+macro_rules! gen_enum {
+    ( $(
+        $ident:ident $( ( $default:expr ) )? {
+            $(
+                $var:ident = $string:literal,
+            )*
+        }
+    )* ) => {
+        $(
+        #[derive(Deserialize, Serialize, Clone, Debug)]
+        pub enum $ident {
+            $(
+            #[serde(rename = $string)]
+            $var,
+            )*
+        }
+        $(
+        impl Default for $ident {
+            fn default() -> Self {
+                $default
+            }
+        }
+        )?
+        )*
+    };
+}
+
 #[derive(Deserialize, Serialize, Default, Clone, Debug)]
 pub struct Config {
     /// Address to listen on
@@ -37,4 +64,18 @@ pub struct CfgProvider {
     pub name: String,
     pub description: String,
     pub kinds: Vec<Kind>,
+    pub features: Option<CfgProviderFeatures>,
+}
+
+gen_enum! {
+    CfgSafeSearchSupport ( CfgSafeSearchSupport::No ) {
+        No = "no",
+        Yes = "yes",
+        MultiLevel = "multilevel",
+    }
+}
+
+#[derive(Deserialize, Serialize, Default, Clone, Debug)]
+pub struct CfgProviderFeatures {
+    pub safe_search: CfgSafeSearchSupport,
 }

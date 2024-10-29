@@ -1,10 +1,10 @@
 use std::{
-    cell::UnsafeCell,
     collections::{HashMap, VecDeque},
     error::Error,
     fs::{read_dir, File},
     io::Read,
     sync::Arc,
+    time::Duration,
 };
 
 use mlua::prelude::*;
@@ -80,27 +80,22 @@ impl LuaUserData for ClientWrapper {
 }
 
 struct Scraper {
-    inner: UnsafeCell<Html>,
+    inner: Html,
 }
-unsafe impl Sync for Scraper {}
-unsafe impl Send for Scraper {}
 impl LuaUserData for Scraper {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_function("new", |_, raw_html: String| {
             let html = Html::parse_document(&raw_html);
-            Ok(Self { inner: html.into() })
+            Ok(Self { inner: html })
         });
         methods.add_method("select", |lua, this, selector: String| {
             let sel = Selector::parse(&selector).unwrap();
             Ok(lua
-                .create_sequence_from(unsafe {
+                .create_sequence_from(
                     this.inner
-                        .get()
-                        .as_ref()
-                        .unwrap()
                         .select(&sel)
-                        .map(|x| ElementWrapper(x.inner_html(), x.value().clone()))
-                })
+                        .map(|x| ElementWrapper(x.inner_html(), x.value().clone())),
+                )
                 .unwrap())
         });
     }
@@ -222,62 +217,61 @@ impl PluginEngine {
             let query = rx.borrow_and_update().clone();
 
             if let Some(provider) = providers.0.get(&query.provider) {
+                let engine = provider.engine.clone().unwrap_or(query.provider.clone());
 
-            let engine = provider.engine.clone().unwrap_or(query.provider.clone());
-
-            // Get engine implementation
-            let eng_impl = lua
-                .globals()
-                .get::<LuaTable>("__searched_engines__")
-                .unwrap()
-                .get::<LuaFunction>(engine)
-                .unwrap();
-
-            // Build the URL
-            let url = if let Some(url_fmt) = &provider.url {
-                let query = query.clone();
-                let map = HashMap::from_iter([
-                    ("query", query.query),
-                    ("page", query.page.to_string()),
-                ]);
-
-                Some(searched_parser::Url::parse(url_fmt.as_bytes()).build(map))
-            } else {
-                None
-            };
-
-            let results = eng_impl
-                .call_async::<Vec<HashMap<String, String>>>((
-                    ClientWrapper(client.clone()),
-                    query,
-                    url,
-                ))
-                .await;
-
-            match results {
-                Ok(results) => {
-                    tx.send(
-                        results
-                            .into_iter()
-                            .map(|r| crate::Result {
-                                url: r.get("url").unwrap().to_string(),
-                                title: r.get("title").unwrap().to_string(),
-                                general: Some(crate::GeneralResult {
-                                    snippet: r
-                                        .get("snippet")
-                                        .map(|x| x.to_string())
-                                        .unwrap_or_default(),
-                                }),
-                                ..Default::default()
-                            })
-                            .collect(),
-                    )
+                // Get engine implementation
+                let eng_impl = lua
+                    .globals()
+                    .get::<LuaTable>("__searched_engines__")
+                    .unwrap()
+                    .get::<LuaFunction>(engine)
                     .unwrap();
+
+                // Build the URL
+                let url = if let Some(url_fmt) = &provider.url {
+                    let query = query.clone();
+                    let map = HashMap::from_iter([
+                        ("query", query.query),
+                        ("page", query.page.to_string()),
+                    ]);
+
+                    Some(searched_parser::Url::parse(url_fmt.as_bytes()).build(map))
+                } else {
+                    None
+                };
+
+                let results = eng_impl
+                    .call_async::<Vec<HashMap<String, String>>>((
+                        ClientWrapper(client.clone()),
+                        query,
+                        url,
+                    ))
+                    .await;
+
+                match results {
+                    Ok(results) => {
+                        tx.send(
+                            results
+                                .into_iter()
+                                .map(|r| crate::Result {
+                                    url: r.get("url").unwrap().to_string(),
+                                    title: r.get("title").unwrap().to_string(),
+                                    general: Some(crate::GeneralResult {
+                                        snippet: r
+                                            .get("snippet")
+                                            .map(|x| x.to_string())
+                                            .unwrap_or_default(),
+                                    }),
+                                    ..Default::default()
+                                })
+                                .collect(),
+                        )
+                        .unwrap();
+                    }
+                    Err(_err) => {
+                        tx.send(Vec::new()).unwrap();
+                    }
                 }
-                Err(_err) => {
-                    tx.send(Vec::new()).unwrap();
-                }
-            }
             }
         }
 
@@ -286,10 +280,20 @@ impl PluginEngine {
 
     /// Use the given provider to process the given query
     pub async fn search(&mut self, query: Query) -> Vec<crate::Result> {
+        // Clean the last set of results
         self.results_rx.mark_unchanged();
-        let _ = self.query_tx.send(query);
-        let _ = self.results_rx.changed().await;
-        self.results_rx.borrow_and_update().clone()
+
+        if self.query_tx.send(query).is_ok() {
+            if tokio::time::timeout(Duration::from_secs(3), self.results_rx.changed())
+                .await
+                .map(|ret| ret.is_ok())
+                .unwrap_or(false)
+            {
+                return self.results_rx.borrow_and_update().clone();
+            }
+        }
+
+        Vec::new()
     }
 }
 
