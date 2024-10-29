@@ -7,7 +7,7 @@
 --- Add a engine
 ---
 --- @param name string
---- @param callback fun(client: Client, query: Query, url: string|nil): [Result]
+--- @param callback fun(client: Client, query: Query, url: string|nil, options: table<string, string|number|boolean>): [Result]
 function add_engine(name, callback) end
 
 --- Stringify parameters

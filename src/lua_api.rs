@@ -4,9 +4,10 @@ use std::{
     fs::{read_dir, File},
     io::Read,
     sync::Arc,
-    time::Duration,
+    time::{Duration, Instant},
 };
 
+use reqwest::{header::{HeaderMap, HeaderValue}};
 use mlua::prelude::*;
 use reqwest::Client;
 use scraper::{node::Element, Html, Selector};
@@ -245,6 +246,7 @@ impl PluginEngine {
                         ClientWrapper(client.clone()),
                         query,
                         url,
+                        lua.to_value(&provider.clone().extra.unwrap_or(HashMap::new())),
                     ))
                     .await;
 
@@ -306,9 +308,35 @@ impl PluginEnginePool {
         let queue: Arc<Mutex<VecDeque<(crate::Query, oneshot::Sender<Vec<crate::Result>>)>>> =
             Arc::new(Mutex::const_new(VecDeque::new()));
 
-        let client = Client::new();
+        let mut headers = HeaderMap::new();
+        for (key, val) in [
+            (
+                "User-Agent",
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
+            ),
+            (
+                "Accept",
+                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
+            ),
+            ("Accept-Language", "en-US,en;q=0.5"),
+            ("Accept-Encoding", "gzip"),
+            ("DNT", "1"),
+            ("Connection", "keep-alive"),
+            ("Upgrade-Insecure-Requests", "1"),
+            ("Sec-Fetch-Dest", "document"),
+            ("Sec-Fetch-Mode", "navigate"),
+            ("Sec-Fetch-Site", "none"),
+            ("Sec-Fetch-User", "?1"),
+            ("Priority", "u=1"),
+            ("TE", "trailers"),
+        ] {
+            headers.append(key, HeaderValue::from_str(val).unwrap());
+        }
+        let client = Client::builder().default_headers(headers).build().unwrap();
 
-        for _ in 0..pool_size {
+        info!("starting plugin engine pool with {pool_size} worker threads...");
+
+        for i in 0..pool_size {
             let queue = queue.clone();
             let client = client.clone();
 
@@ -320,18 +348,31 @@ impl PluginEnginePool {
                 rt.block_on(async move {
                     LocalSet::new()
                         .run_until(async move {
+                            let target = format!("searched::worker{i}");
                             let mut eng = PluginEngine::new(client).await.unwrap();
+
+                            debug!(target: &target, "awaiting a query...");
+
                             loop {
                                 let query = queue.lock().await.pop_front();
 
                                 if let Some((query, res_tx)) = query {
+                                    debug!(target: &target, "processing query: {query:?}");
+
+                                    #[cfg(debug_assertions)]
+                                    let st = Instant::now();
+
                                     res_tx.send(eng.search(query).await).ok();
+
+                                    #[cfg(debug_assertions)]
+                                    debug!(target: &target, "done in {:?}! awaiting a query...", st.elapsed());
                                 }
                             }
                         })
                         .await;
                 });
             });
+            info!("started worker thread #{i}");
         }
 
         Self { queue }

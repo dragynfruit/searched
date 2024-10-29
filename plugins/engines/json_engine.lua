@@ -2,7 +2,8 @@
 -- -- Licensed MIT.
 -- -- (c) 2024 Dragynfruit
 
-add_engine("json_engine", function(client, _, url)
+add_engine("json_engine", function(client, _, url, opts)
+	print(opts['capitalize_json'])
 	if url ~= nil then
 		local res = client:get(url, {})
 		local data = parse_json(res)

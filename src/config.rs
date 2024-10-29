@@ -2,6 +2,7 @@ use std::{collections::HashMap, fs::File, io::Read, path::Path};
 
 use crate::Kind;
 
+#[macro_export]
 macro_rules! gen_enum {
     ( $(
         $ident:ident $( ( $default:expr ) )? {
@@ -11,7 +12,7 @@ macro_rules! gen_enum {
         }
     )* ) => {
         $(
-        #[derive(Deserialize, Serialize, Clone, Debug)]
+        #[derive(Deserialize, Serialize, PartialEq, Clone, Copy, Debug)]
         pub enum $ident {
             $(
             #[serde(rename = $string)]
@@ -65,6 +66,8 @@ pub struct CfgProvider {
     pub description: String,
     pub kinds: Vec<Kind>,
     pub features: Option<CfgProviderFeatures>,
+    /// Extra engine-specific options
+    pub extra: Option<HashMap<String, toml::Value>>,
 }
 
 gen_enum! {
@@ -77,5 +80,6 @@ gen_enum! {
 
 #[derive(Deserialize, Serialize, Default, Clone, Debug)]
 pub struct CfgProviderFeatures {
+    #[serde(default)]
     pub safe_search: CfgSafeSearchSupport,
 }
