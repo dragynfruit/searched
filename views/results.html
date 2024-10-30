@@ -82,7 +82,7 @@
 		transform-origin: center;
 	}
 
-	#ferris.hover {
+	#ferris.hover:hover {
 		transform: scale(1.1);
 		bottom: 0px;
 	}
@@ -178,27 +178,18 @@
 {% block body %}
 {{ super() }}
 
-<img id="ferris" src="/assets/logo.png" />
+<img id="ferris" src="/assets/logo.png" width="48" height="48" alt="Ferris" />
 
 <script>
 	const ferris = document.getElementById("ferris");
 
-	document.getElementById("ferris").addEventListener("click", function () {
+	ferris.addEventListener("click", function () {
 		this.classList.remove("hover");
 		this.classList.add("animate");
 		setTimeout(() => {
+			this.classList.add("hover");
 			this.classList.remove("animate");
 		}, 3000);
-	});
-
-	document.getElementById("ferris").addEventListener("mouseover", function () {
-		if (!this.classList.contains("animate")) {
-			this.classList.add("hover");
-		}
-	});
-
-	document.getElementById("ferris").addEventListener("mouseout", function () {
-		this.classList.remove("hover");
 	});
 </script>
 {% endblock body %}
