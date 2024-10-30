@@ -1,4 +1,4 @@
-use std::{process, sync::Arc};
+use std::{process, sync::Arc, time::Instant};
 
 use axum::{
     body::Body,
@@ -106,8 +106,11 @@ pub async fn results(
 
         let kind = params.k.unwrap_or_default();
 
+        #[cfg(debug_assertions)]
+        let sttm = Instant::now();
+
         let results = st
-            .pool
+            .eng
             .search(searched::Query {
                 provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
                 query: q.clone(),
@@ -116,6 +119,9 @@ pub async fn results(
                 ..Default::default()
             })
             .await;
+
+        #[cfg(debug_assertions)]
+        debug!("done in {:?}! awaiting a query...", sttm.elapsed());
 
         Html(
             (*TEMPLATES.read().await)

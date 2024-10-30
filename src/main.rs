@@ -19,7 +19,7 @@ use axum::{
 };
 use log::LevelFilter;
 //use reqwest::Client;
-use searched::{config::Config, lua_api::PluginEnginePool};
+use searched::{config::Config, lua_api::{PluginEngine, PluginEnginePool}};
 //use sled::Db;
 use tokio::net::TcpListener;
 
@@ -28,7 +28,8 @@ pub struct AppState {
     //client: Client,
     //db: Db,
     pool: PluginEnginePool,
-    config: Config,
+    //config: Config,
+    eng: PluginEngine,
 }
 
 // Need more worker threads if we do our own search index again:
@@ -59,10 +60,10 @@ async fn main() {
     ] {
         headers.append(key, HeaderValue::from_str(val).unwrap());
     }
-    //let client = reqwest::Client::builder()
-    //    .default_headers(headers)
-    //    .build()
-    //    .unwrap();
+    let client = reqwest::Client::builder()
+        .default_headers(headers)
+        .build()
+        .unwrap();
 
     env_logger::builder()
         .filter_level(LevelFilter::Info)
@@ -74,6 +75,7 @@ async fn main() {
     let pool = PluginEnginePool::new(4).await;
 
     let config = Config::load("plugins/providers.toml");
+    let eng = PluginEngine::new(client).await.unwrap();
 
     info!("initializing web");
     let r = Router::new()
@@ -82,7 +84,7 @@ async fn main() {
         .route("/settings", get(web::settings))
         .route("/assets/logo.png", get(web::logo))
         .route("/favicon.ico", get(web::icon))
-        .with_state(AppState { config, pool });
+        .with_state(AppState { pool, eng });
 
     tokio::spawn(async {
         axum::serve(

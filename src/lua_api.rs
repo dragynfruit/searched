@@ -143,23 +143,23 @@ impl LuaUserData for ClientWrapper {
 }
 
 /// Lua wrapper for [scraper::Html]
-struct Scraper(Html);
+struct Scraper(Arc<Mutex<Html>>);
 impl LuaUserData for Scraper {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_function("new", |_, raw_html: String| {
             let html = Html::parse_document(&raw_html);
-            Ok(Self(html))
+            Ok(Self(Arc::new(Mutex::new(html))))
         });
-        methods.add_method("select", |lua, this, selector: String| {
+        async fn select(lua: Lua, this: LuaUserDataRef<Scraper>, selector: String) -> LuaResult<LuaTable> {
             let sel = Selector::parse(&selector).unwrap();
-            Ok(lua
+            lua
                 .create_sequence_from(
-                    this.0
+                    this.0.lock().await
                         .select(&sel)
-                        .map(|x| ElementWrapper(x.inner_html(), x.value().clone())),
+                        .map(|x| ElementWrapper(x.inner_html().clone(), x.value().clone())),
                 )
-                .unwrap())
-        });
+        }
+        methods.add_async_method("select", select);
     }
 }
 
@@ -203,33 +203,14 @@ fn fend_eval(_: &Lua, input: String) -> LuaResult<String> {
 /// A single-threaded plugin engine
 #[derive(Clone)]
 pub struct PluginEngine {
-    query_tx: watch::Sender<crate::Query>,
-    results_rx: watch::Receiver<Vec<crate::Result>>,
+    lua: Lua,
+    client: Client,
+    providers: ProvidersConfig,
 }
 impl PluginEngine {
     /// Initialize a new engine for running plugins
     pub async fn new(client: Client) -> Result<Self, Box<dyn Error>> {
         let providers = ProvidersConfig::load("plugins/providers.toml");
-        let (query_tx, rx) = watch::channel(Default::default());
-        let (tx, results_rx) = watch::channel(Default::default());
-
-        spawn_local(async move {
-            Self::inner(client, providers, rx, tx).await.unwrap();
-        });
-
-        Ok(Self {
-            query_tx,
-            results_rx,
-        })
-    }
-
-    /// Actual Lua init and event loop
-    async fn inner(
-        client: Client,
-        providers: ProvidersConfig,
-        mut rx: watch::Receiver<crate::Query>,
-        tx: watch::Sender<Vec<crate::Result>>,
-    ) -> Result<(), Box<dyn Error>> {
         let lua = Lua::new();
 
         // Add Lua global variables we need
@@ -267,15 +248,20 @@ impl PluginEngine {
             }
         }
 
-        // Event loop
-        while let Ok(()) = rx.changed().await {
-            let query = rx.borrow_and_update().clone();
+        Ok(Self {
+            lua,
+            client,
+            providers,
+        })
+    }
 
-            if let Some(provider) = providers.0.get(&query.provider) {
+    /// Use the given provider to process the given query
+    pub async fn search(&self, query: Query) -> Vec<crate::Result> {
+        if let Some(provider) = self.providers.0.get(&query.provider) {
                 let engine = provider.engine.clone().unwrap_or(query.provider.clone());
 
                 // Get engine implementation
-                let eng_impl = lua
+                let eng_impl = self.lua
                     .globals()
                     .get::<LuaTable>("__searched_engines__")
                     .unwrap()
@@ -284,9 +270,9 @@ impl PluginEngine {
 
                 let results = eng_impl
                     .call_async::<Vec<HashMap<String, LuaValue>>>((
-                        ClientWrapper(client.clone()),
+                        ClientWrapper(self.client.clone()),
                         query,
-                        lua.to_value(&provider.clone().extra.unwrap_or_default()),
+                        self.lua.to_value(&provider.clone().extra.unwrap_or_default()),
                     ))
                     .await;
 
@@ -300,7 +286,6 @@ impl PluginEngine {
 
                 match results {
                     Ok(results) => {
-                        tx.send(
                             results
                                 .into_iter()
                                 .map(|r| crate::Result {
@@ -314,38 +299,16 @@ impl PluginEngine {
                                     }),
                                     ..Default::default()
                                 })
-                                .collect(),
-                        )
-                        .unwrap();
+                                .collect()
                     }
                     Err(err) => {
                         error!("failed to get results from engine: {:?}", err);
-                        tx.send(Vec::new()).unwrap();
+                        Vec::new()
                     }
                 }
+            } else {
+                Vec::new()
             }
-        }
-
-        Ok(())
-    }
-
-    /// Use the given provider to process the given query
-    pub async fn search(&mut self, query: Query) -> Vec<crate::Result> {
-        // Clean the last set of results
-        self.results_rx.mark_unchanged();
-
-        if self.query_tx.send(query).is_ok() {
-            if tokio::time::timeout(Duration::from_secs(3), self.results_rx.changed())
-                .await
-                .map(|ret| ret.is_ok())
-                .unwrap_or(false)
-            {
-                let results = self.results_rx.borrow_and_update().clone();
-                return results;
-            }
-        }
-
-        Vec::new()
     }
 }
 
@@ -390,14 +353,15 @@ impl PluginEnginePool {
             let queue = queue.clone();
             let client = client.clone();
 
-            std::thread::spawn(move || {
-                let rt = tokio::runtime::Builder::new_current_thread()
-                    .enable_all()
-                    .build()
-                    .unwrap();
-                rt.block_on(async move {
-                    LocalSet::new()
-                        .run_until(async move {
+            //std::thread::spawn(move || {
+            //    let rt = tokio::runtime::Builder::new_current_thread()
+            //        .enable_all()
+            //        .build()
+            //        .unwrap();
+            //    rt.block_on(async move {
+            //        LocalSet::new()
+            //            .run_until(async move {
+            tokio::spawn(async move {
                             let target = format!("searched::worker{i}");
                             let mut eng = PluginEngine::new(client).await.unwrap();
 
@@ -422,9 +386,9 @@ impl PluginEnginePool {
                                     debug!(target: &target, "done in {:?}! awaiting a query...", st.elapsed());
                                 }
                             }
-                        })
-                        .await;
-                });
+                        //})
+                        //.await;
+                //});
             });
             info!("started worker thread #{i}");
         }
