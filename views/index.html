@@ -4,6 +4,8 @@
 {% block head %}
 {{ super() }}
 
+<link rel="preload" href="assets/logo.png" as="image" />
+
 {{ search_bar::generate_autofocus() }}
 
 <style>
