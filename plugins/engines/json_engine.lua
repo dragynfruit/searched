@@ -10,7 +10,17 @@ local function get_key(data, key)
 
 	local value = data
 	for _, k in ipairs(keys) do
-		value = value[k]
+		if value[k] == nil then
+			local index = tonumber(k)
+			if index then
+				value = value[index]
+			else
+				value = nil
+			end
+		else
+			value = value[k]
+		end
+
 		if value == nil then
 			break
 		end

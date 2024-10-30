@@ -47,7 +47,7 @@ add_engine('google', function(client, query, opts)
 
     local url =
 		Url.from_template(
-			tostring('https://google.com/search?filter=0&asearch=arc&async=use_ac:true,_fmt:prog&start={start}&q={query}'),
+			tostring('https://google.com/search?filter=0&asearch=arc&oe=utf8&async=use_ac:true,_fmt:prog&start={start}&q={query}'),
 			{
 				query = query.query,
                 start = tostring(offset)
