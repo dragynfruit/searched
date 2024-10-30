@@ -156,7 +156,7 @@ pub async fn settings(State(_st): State<AppState>) -> impl IntoResponse {
 pub async fn logo() -> impl IntoResponse {
     Response::builder()
         .header(header::CONTENT_TYPE, "image/png")
-        .header(header::CACHE_CONTROL, "max-age=604800")
+        .header(header::CACHE_CONTROL, "max-age=31536000")
         .body(Body::from(include_bytes!("../assets/logo.png").to_vec()))
         .unwrap()
         .into_response()
@@ -165,7 +165,7 @@ pub async fn logo() -> impl IntoResponse {
 pub async fn icon() -> impl IntoResponse {
     Response::builder()
         .header(header::CONTENT_TYPE, "image/x-icon")
-        .header(header::CACHE_CONTROL, "max-age=604800")
+        .header(header::CACHE_CONTROL, "max-age=31536000")
         .body(Body::from(
             include_bytes!("../assets/searched.ico").to_vec(),
         ))
