@@ -27,7 +27,6 @@ description = "A search engine for finding old websites"
 kinds = ["sear"]
 	[wiby.extra]
 	url = "https://wiby.me/json?q={query}&page={page}"
-	result_key = ""
 	url_key = "URL"
 	title_key = "Title"
 	snippet_key = "Snippet"
@@ -43,3 +42,75 @@ kinds = ["sear"]
 	url_key = "link"
 	title_key = "title"
 	snippet_key = "snippet"
+
+[encyclosearch]
+engine = "json_engine"
+name = "EncycloSearch"
+description = "A search engine for encyclopedias"
+kinds = ["sear"]
+	[encyclosearch.extra]
+	url = "https://encyclosearch.org/encyclosphere/search?q={query}"
+	# https://encyclosearch.org/encyclosphere/search?q=hello&page=1&resultsPerPage=15
+	# we dont support pages starting at 0 yet
+	results_key = "Results"
+	url_key = "SourceURL"
+	title_key = "Title"
+	snippet_key = "Description"
+
+[mdn]
+engine = "json_engine"
+name = "MDN"
+description = "Mozilla Developer Network"
+kinds = ["sear"]
+	[mdn.extra]
+	url = "https://developer.mozilla.org/api/v1/search?q={query}&page=1"
+	# https://developer.mozilla.org/api/v1/search?q={query}&page={pageno}
+	# we dont support pages starting at 0 yet
+	results_key = "documents"
+	url_key = "mdn_url"
+	url_prefix = "https://developer.mozilla.org"
+	title_key = "title"
+	snippet_key = "summary"
+
+[mankier]
+engine = "json_engine"
+name = "Mankier"
+description = "A search engine for linux man pages"
+kinds = ["sear"]
+	[mankier.extra]
+	url = "https://www.mankier.com/api/v2/mans/?q={query}"
+	results_key = "results"
+	url_key = "url"
+	title_key = "name"
+	snippet_key = "description"
+
+# these are kind of broken because they can have multiple results under instances
+# vvvvvvvvvvvvvvvvvvvvvvvvvvv
+[openairedatasets]
+engine = "json_engine"
+name = "OpenAIRE Datasets"
+description = "A search engine for datasets"
+kinds = ["sear"]
+	[openairedatasets.extra]
+	url = "https://api.openaire.eu/search/datasets?format=json&page=1&size=10&title={query}"
+	# https://api.openaire.eu/search/datasets?format=json&page={page}&size=10&title={query}
+	# we dont support pages starting at 0 yet
+	results_key = "response/results/result"
+	url_key = "metadata/oaf:entity/oaf:result/children/instance/webresource/url/$"
+	title_key = "metadata/oaf:entity/oaf:result/title/$"
+	snippet_key = "metadata/oaf:entity/oaf:result/description/$"
+
+[openairepublications]
+engine = "json_engine"
+name = "OpenAIRE Publications"
+description = "A search engine for publications"
+kinds = ["sear"]
+	[openairepublications.extra]
+	url = "https://api.openaire.eu/search/publications?format=json&page=1&size=10&title={query}"
+	# https://api.openaire.eu/search/publications?format=json&page={page}&size=10&title={query}
+	# we dont support pages starting at 0 yet
+	results_key = "response/results/result"
+	url_key = "metadata/oaf:entity/oaf:result/children/instance/webresource/url/$"
+	title_key = "metadata/oaf:entity/oaf:result/title/$"
+	snippet_key = "metadata/oaf:entity/oaf:result/description/$"
+# ^^^^^^^^^^^^^^^^^^^^^^^
