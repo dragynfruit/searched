@@ -40,3 +40,46 @@
 
 -- 	-- return ret
 -- end)
+
+
+add_engine('google', function(client, query, opts)
+    local offset = (query.page - 1) * 10
+
+    local url =
+		Url.from_template(
+			tostring('https://google.com/search?filter=0&asearch=arc&async=use_ac:true,_fmt:prog&start={start}&q={query}'),
+			{
+				query = query.query,
+                start = tostring(offset)
+			}
+		):string()
+    
+    local res = client:get(url, {
+        ['Referer'] = 'https://google.com/',
+    })
+    local scr = Scraper.new(res)
+    assert(scr ~= nil)
+
+    -- if __VQDS[query.query] == nil then
+    -- 	__VQDS[query.query] = scr:select('input[name=vqd]')[1]:attr('value')
+    -- end
+
+    local links = scr:select('a[jsname=UWckNb]')
+    local titles = scr:select('a[jsname=UWckNb]>h3')
+    local snippets = scr:select('.VwiC3b')
+
+    assert(table.pack(links).n == table.pack(titles).n, 'titles broken')
+    assert(table.pack(links).n == table.pack(snippets).n, 'snippets broken')
+
+    local ret = {}
+
+    for i, _ in ipairs(links) do
+        ret[i] = {
+            url = links[i]:attr('href'),
+            title = titles[i].inner_html,
+            snippet = snippets[i].inner_html,
+        }
+    end
+
+    return ret
+end)
