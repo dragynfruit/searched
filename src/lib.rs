@@ -17,9 +17,12 @@ use once_cell::sync::Lazy;
 use serde::{Deserialize, Serialize};
 
 pub static PROVIDER_KINDS: Lazy<HashMap<String, Vec<Kind>>> = Lazy::new(|| {
-    HashMap::from_iter(ProvidersConfig::load("plugins/providers.toml").0.into_iter().map(|(k, v)| {
-        (k, v.kinds)
-    }))
+    HashMap::from_iter(
+        ProvidersConfig::load("plugins/providers.toml")
+            .0
+            .into_iter()
+            .map(|(k, v)| (k, v.kinds)),
+    )
 });
 
 gen_enum! {

@@ -32,7 +32,10 @@ impl Url {
                 pos += 1;
             } else {
                 if src[pos] == b'{' {
-                    assert!(!unclosed, "can't open another dynamic before closing the last one");
+                    assert!(
+                        !unclosed,
+                        "can't open another dynamic before closing the last one"
+                    );
                     elems.push(UrlElem::Static(st..pos));
                 } else {
                     assert!(unclosed, "can't close before opening a dynamic");

@@ -7,8 +7,8 @@ use std::{
     time::{Duration, Instant},
 };
 
-use reqwest::{header::{HeaderMap, HeaderValue}};
 use mlua::prelude::*;
+use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Client;
 use scraper::{node::Element, Html, Selector};
 use tokio::{
@@ -26,19 +26,31 @@ impl LuaUserData for Query {
     }
 }
 
+/// Lua wrapper for [url::Url]
 struct UrlWrapper(Url);
 impl LuaUserData for UrlWrapper {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_function("from_template", |_, (template, values): (String, LuaTable)| -> LuaResult<Self> {
-            let values = HashMap::from_iter(values.pairs::<String, String>().map(|x| x.unwrap()).map(|(k, v)| (k, v)));
-            Url::parse(&searched_parser::Url::parse(template.as_bytes()).build(values)).map(|x| UrlWrapper(x)).into_lua_err()
-        });
+        methods.add_function(
+            "from_template",
+            |_, (template, values): (String, LuaTable)| -> LuaResult<Self> {
+                let values = HashMap::from_iter(
+                    values
+                        .pairs::<String, String>()
+                        .map(|x| x.unwrap())
+                        .map(|(k, v)| (k, v)),
+                );
+                Url::parse(&searched_parser::Url::parse(template.as_bytes()).build(values))
+                    .map(|x| UrlWrapper(x))
+                    .into_lua_err()
+            },
+        );
         methods.add_method("string", |_, this, ()| -> LuaResult<String> {
             Ok(this.0.to_string())
         });
     }
 }
 
+/// Lua wrapper for [reqwest::Client]
 struct ClientWrapper(Client);
 impl ClientWrapper {
     async fn get(
@@ -94,20 +106,19 @@ impl LuaUserData for ClientWrapper {
     }
 }
 
-struct Scraper {
-    inner: Html,
-}
+/// Lua wrapper for [scraper::Html]
+struct Scraper(Html);
 impl LuaUserData for Scraper {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_function("new", |_, raw_html: String| {
             let html = Html::parse_document(&raw_html);
-            Ok(Self { inner: html })
+            Ok(Self(html))
         });
         methods.add_method("select", |lua, this, selector: String| {
             let sel = Selector::parse(&selector).unwrap();
             Ok(lua
                 .create_sequence_from(
-                    this.inner
+                    this.0
                         .select(&sel)
                         .map(|x| ElementWrapper(x.inner_html(), x.value().clone())),
                 )
@@ -116,6 +127,7 @@ impl LuaUserData for Scraper {
     }
 }
 
+/// Lua wrapper for [scraper::Element]
 #[derive(Clone)]
 struct ElementWrapper(String, Element);
 unsafe impl Send for ElementWrapper {}
@@ -128,6 +140,25 @@ impl LuaUserData for ElementWrapper {
             Ok(this.1.attr(&value).unwrap().to_string())
         });
     }
+}
+
+fn add_engine(lua: &Lua, (name, callback): (String, LuaFunction)) -> LuaResult<()> {
+    lua.globals()
+        .get::<LuaTable>("__searched_engines__")?
+        .set(name, callback.clone())?;
+
+    Ok(())
+}
+fn stringify_params(_: &Lua, params: LuaTable) -> LuaResult<String> {
+    Ok(params
+        .pairs::<String, String>()
+        .filter_map(|ent| ent.ok().map(|(k, v)| [k, v].join("&")))
+        .collect::<Vec<_>>()
+        .join("&"))
+}
+fn parse_json(lua: &Lua, raw: String) -> LuaResult<LuaValue> {
+    let json: serde_json::Value = serde_json::from_str(&raw).into_lua_err()?;
+    lua.to_value(&json)
 }
 
 /// A single-threaded plugin engine
@@ -162,11 +193,13 @@ impl PluginEngine {
     ) -> Result<(), Box<dyn Error>> {
         let lua = Lua::new();
 
-        // Add Lua interfaces
-
+        // Add Lua global variables we need
         lua.globals()
             .set("__searched_engines__", lua.create_table()?)?;
-        lua.globals().set("Url", lua.create_proxy::<UrlWrapper>()?)?;
+
+        // Add Lua interfaces
+        lua.globals()
+            .set("Url", lua.create_proxy::<UrlWrapper>()?)?;
         lua.globals().set("Query", lua.create_proxy::<Query>()?)?;
         lua.globals()
             .set("Client", lua.create_proxy::<ClientWrapper>()?)?;
@@ -174,48 +207,14 @@ impl PluginEngine {
             .set("Scraper", lua.create_proxy::<Scraper>()?)?;
         lua.globals()
             .set("Element", lua.create_proxy::<ElementWrapper>()?)?;
+
+        // Add standalone Lua functions
         lua.globals()
-            .set("client", lua.create_userdata(ClientWrapper(Client::new()))?)?;
-
-        lua.globals().set(
-            "add_engine",
-            lua.create_function(|lua, (name, callback): (String, LuaFunction)| {
-                lua.globals()
-                    .get::<LuaTable>("__searched_engines__")
-                    .unwrap()
-                    .set(name, callback.clone())
-                    .unwrap();
-
-                Ok(())
-            })?,
-        )?;
-
-        lua.globals().set(
-            "stringify_params",
-            lua.create_function(|_, params: LuaTable| {
-                let mut form_: HashMap<String, String> = HashMap::new();
-
-                for ent in params.pairs::<String, String>() {
-                    if let Ok((k, v)) = ent {
-                        form_.insert(k, v);
-                    }
-                }
-
-                Ok(form_
-                    .iter()
-                    .map(|(k, v)| format!("{}={}", k, v))
-                    .collect::<Vec<_>>()
-                    .join("&"))
-            })?,
-        )?;
-
-        lua.globals().set(
-            "parse_json",
-            lua.create_function(|lua, raw: String| {
-                let json: serde_json::Value = serde_json::from_str(&raw).unwrap();
-                Ok(lua.to_value(&json).unwrap())
-            })?,
-        )?;
+            .set("add_engine", lua.create_function(add_engine)?)?;
+        lua.globals()
+            .set("stringify_params", lua.create_function(stringify_params)?)?;
+        lua.globals()
+            .set("parse_json", lua.create_function(parse_json)?)?;
 
         // Load engines
         for path in read_dir("plugins/engines").unwrap() {

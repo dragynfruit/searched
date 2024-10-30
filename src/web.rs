@@ -123,7 +123,10 @@ pub async fn results(
                     "results.html",
                     &Context::from_serialize(SearchResults {
                         kind,
-                        kinds: PROVIDER_KINDS.get(&params.s.unwrap_or("duckduckgo".to_string())).unwrap().to_vec(),
+                        kinds: PROVIDER_KINDS
+                            .get(&params.s.unwrap_or("duckduckgo".to_string()))
+                            .unwrap()
+                            .to_vec(),
                         query: q,
                         results: results.to_vec(),
                         ..Default::default()
