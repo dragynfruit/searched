@@ -19,11 +19,17 @@ local function get_key(data, key)
 	return value
 end
 
-add_engine('json_engine', function(client, query, opts)
-	local url = Url.from_template(tostring(opts['url']), {
-		query = query.query,
-		page = tostring(query.page),
-	}):string()
+add_engine(
+	'json_engine',
+	function(client, query, opts)
+		local url =
+			Url.from_template(
+				tostring(opts.url),
+				{
+					query = query.query,
+					page = tostring(query.page)
+				}
+			):string()
 
 	local res = client:get(url, {})
 	local data = parse_json(res)

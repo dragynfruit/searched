@@ -1,44 +1,161 @@
-{% extends "base.html" %}
+{% import "components/search_bar.html" as search_bar %}
+{% import "components/result_view.html" as result_view %}
+{% extends "template.html" %}
 
 {% block title %}Settings | Searched{% endblock title %}
 
+{% block head %}
+{{ super() }}
+
+<link rel="preload" href="assets/logo.png" as="image" />
+
+<style>
+	#search-header {
+		padding: 10px;
+	}
+
+	#search-header a {
+		text-decoration: none;
+		color: #CDCDCD;
+	}
+
+	#search-header h3 {
+		margin: 0;
+		padding: 0;
+	}
+
+	#bar {
+		padding-left: 10px;
+		width: 100%;
+	}
+
+	#kinds a {
+		margin-right: 10px;
+	}
+
+	#kinds a#current {
+		color: #98db7c;
+		font-weight: bold;
+	}
+
+	@media screen and (max-width: 520px) {
+		#search-header h3 {
+			display: none;
+		}
+	}
+
+	@media screen and (max-width: 700px) {
+		#search-header .search-bar {
+			width: calc(100% - 25px);
+		}
+	}
+
+	@media screen and (min-width: 700px) {
+		#search-header .search-bar {
+			width: 500px;
+		}
+	}
+
+	#results {
+		height: 100%;
+		background: radial-gradient(circle at 100% 0%, rgba(152, 219, 124, 0.15), transparent 50%), radial-gradient(circle at 0% 100%, rgba(255, 71, 85, 0.15), transparent 50%);
+	}
+
+	#no-results {
+		width: 100%;
+		height: 100%;
+	}
+
+	#no-results td {
+		text-align: center;
+		vertical-align: middle;
+	}
+
+	#ferris {
+		display: block;
+		position: fixed;
+		right: 0px;
+		bottom: -30px;
+		z-index: 1000;
+		transition: all 0.3s;
+		cursor: pointer;
+		transform-origin: center;
+	}
+
+	#ferris.hover {
+		transform: scale(1.1);
+		bottom: 0px;
+	}
+
+	#ferris.animate {
+		animation: backflip 3s;
+	}
+
+	@keyframes backflip {
+		0% {
+			transform: translateY(0px) rotateZ(0deg);
+			animation-timing-function: ease-in;
+		}
+
+		10% {
+			transform: translateY(50px) rotateZ(0deg);
+			animation-timing-function: ease-out;
+		}
+
+		50% {
+			transform: translateY(-200px) rotateZ(180deg);
+			animation-timing-function: ease-in-out;
+		}
+
+		90% {
+			transform: translateY(50px) rotateZ(360deg);
+			animation-timing-function: ease-in;
+		}
+
+		100% {
+			transform: translateY(0px) rotateZ(360deg);
+			animation-timing-function: ease-out;
+		}
+	}
+</style>
+
+{{ search_bar::generate_style() }}
+{{ result_view::generate_style() }}
+{% endblock head %}
+
+{% block header %}
+{% set kind_ids = ["sear", "imgs", "vids", "news", "maps", "docs", "pprs"] %}
+{% set kind_names = ["General", "Images", "Videos", "News", "Maps", "Docs", "Papers"] %}
+
+<td colspan="3">
+	<table id="search-header">
+		<tr>
+			<td>
+				<a href="/">
+					<img src="assets/logo.png" width="48" height="48" />
+				</a>
+			</td>
+			<td>
+				<a href="/">
+					<h3>Searched</h3>
+				</a>
+			</td>
+			<td id="bar">
+				{{ search_bar::generate_content() }}
+			</td>
+		</tr>
+	</table>
+</td>
+{% endblock header %}
+
 {% block content %}
-<table class="search-header">
-	<tr>
-		<td width="36pt">
-			<a href="/">
-				<img src="assets/logo.png" />
-			</a>
-		</td>
-		<td width="36pt">
-			<h3 style="margin-left:-8pt"><a href="/">Searched</a></h3>
-		</td>
-	</tr>
-</table>
-
-<form class="results">
-	<div>
-		<h3>Theme</h3>
-		<p>Select color theme</p>
-		<select name="theme">
-			<option value="dark">Dark</option>
-			<option value="light">Light</option>
-		</select>
-	</div>
-	<div>
-		<h3>Open in new tab</h3>
-		<p>Always open search results in a new tab</p>
-		<input type="checkbox" name="new_tab" />
-	</div>
-	<div>
-		<h3>Use privacy frontends</h3>
-		<p>Use privacy-respecting alternate frontends where possible</p>
-		<input type="checkbox" name="privacy_frontends" />
-	</div>
-	<div>
-		<input type="submit" value="Save" />
-	</div>
+<div id="results">
+	<table id="no-results">
+		<tr>
+			<td>
+				<h1>No results found</h1>
+			</td>
+		</tr>
+	</table>
 </div>
-
 {% endblock content %}
-

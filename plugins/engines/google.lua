@@ -1,6 +1,6 @@
--- -- Google scraper for Searched
--- -- Licensed MIT.
--- -- (c) 2024 Dragynfruit
+-- Google scraper for Searched
+-- Licensed MIT.
+-- (c) 2024 Dragynfruit
 
 -- __VQDS = {}
 

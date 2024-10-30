@@ -8,11 +8,16 @@ kinds = ["sear"]
 
 [wikipedia]
 name = "Wikipedia (English)"
-engine = "mediawiki"
+engine = "json_engine"
 description = "The free encyclopedia"
 kinds = ["sear"]
 	[wikipedia.extra]
-	url = "https://en.wikipedia.org/w/api.php?action=opensearch&format=json&limit=10&namespace=0&search={query}"
+	url = "https://en.wikipedia.org/w/rest.php/v1/search/title?q={query}&limit=10"
+	results_key = "pages"
+	url_key = "key"
+	url_prefix = "https://en.wikipedia.org/wiki/"
+	title_key = "title"
+	snippet_key = "description"
 
 [google]
 name = "Google"
@@ -52,10 +57,11 @@ engine = "json_engine"
 name = "EncycloSearch"
 description = "A search engine for encyclopedias"
 kinds = ["sear"]
+	[encyclosearch.features]
+	pagination = "1"
+
 	[encyclosearch.extra]
-	url = "https://encyclosearch.org/encyclosphere/search?q={query}"
-	# https://encyclosearch.org/encyclosphere/search?q=hello&page=1&resultsPerPage=15
-	# we dont support pages starting at 0 yet
+	url = "https://encyclosearch.org/encyclosphere/search?q={query}&page={page}&resultsPerPage=15"
 	results_key = "Results"
 	url_key = "SourceURL"
 	title_key = "Title"
@@ -66,10 +72,11 @@ engine = "json_engine"
 name = "MDN"
 description = "Mozilla Developer Network"
 kinds = ["sear"]
+	[mdn.features]
+	pagination = "1"
+
 	[mdn.extra]
-	url = "https://developer.mozilla.org/api/v1/search?q={query}&page=1"
-	# https://developer.mozilla.org/api/v1/search?q={query}&page={pageno}
-	# we dont support pages starting at 0 yet
+	url = "https://developer.mozilla.org/api/v1/search?q={query}&page={page}"
 	results_key = "documents"
 	url_key = "mdn_url"
 	url_prefix = "https://developer.mozilla.org"
@@ -95,10 +102,11 @@ engine = "json_engine"
 name = "OpenAIRE Datasets"
 description = "A search engine for datasets"
 kinds = ["sear"]
+	[openaire_data.features]
+	pagination = "1"
+
 	[openaire_data.extra]
-	url = "https://api.openaire.eu/search/datasets?format=json&page=1&size=10&title={query}"
-	# https://api.openaire.eu/search/datasets?format=json&page={page}&size=10&title={query}
-	# we dont support pages starting at 0 yet
+	url = "https://api.openaire.eu/search/datasets?format=json&page={page}&size=10&title={query}"
 	results_key = "response/results/result"
 	url_key = "metadata/oaf:entity/oaf:result/children/instance/webresource/url/$"
 	title_key = "metadata/oaf:entity/oaf:result/title/$"
@@ -109,12 +117,28 @@ engine = "json_engine"
 name = "OpenAIRE Publications"
 description = "A search engine for publications"
 kinds = ["sear"]
+	[openaire_pubs.features]
+	pagination = "1"
+
 	[openaire_pubs.extra]
-	url = "https://api.openaire.eu/search/publications?format=json&page=1&size=10&title={query}"
-	# https://api.openaire.eu/search/publications?format=json&page={page}&size=10&title={query}
-	# we dont support pages starting at 0 yet
+	url = "https://api.openaire.eu/search/publications?format=json&page={page}&size=10&title={query}"
 	results_key = "response/results/result"
 	url_key = "metadata/oaf:entity/oaf:result/children/instance/webresource/url/$"
 	title_key = "metadata/oaf:entity/oaf:result/title/$"
 	snippet_key = "metadata/oaf:entity/oaf:result/description/$"
 # ^^^^^^^^^^^^^^^^^^^^^^^
+
+[packagist]
+engine = "json_engine"
+name = "Packagist"
+description = "A search engine for PHP packages"
+kinds = ["sear"]
+	[packagist.features]
+	pagination = "1"
+
+	[packagist.extra]
+	url = "https://packagist.org/search.json?q={query}&page={page}"
+	results_key = "results"
+	url_key = "url"
+	title_key = "name"
+	snippet_key = "description"

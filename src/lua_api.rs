@@ -283,12 +283,20 @@ impl PluginEngine {
                     .unwrap();
 
                 let results = eng_impl
-                    .call_async::<Vec<HashMap<String, String>>>((
+                    .call_async::<Vec<HashMap<String, LuaValue>>>((
                         ClientWrapper(client.clone()),
                         query,
                         lua.to_value(&provider.clone().extra.unwrap_or_default()),
                     ))
                     .await;
+
+                fn read_to_string(data: &LuaValue) -> String {
+                    if let LuaValue::String(s) = data {
+                        s.to_str().unwrap().to_string()
+                    } else {
+                        String::new()
+                    }
+                }
 
                 match results {
                     Ok(results) => {
@@ -296,12 +304,12 @@ impl PluginEngine {
                             results
                                 .into_iter()
                                 .map(|r| crate::Result {
-                                    url: r.get("url").unwrap().to_string(),
-                                    title: r.get("title").unwrap().to_string(),
+                                    url : read_to_string(r.get("url").unwrap()),
+                                    title : read_to_string(r.get("title").unwrap()),
                                     general: Some(crate::GeneralResult {
                                         snippet: r
                                             .get("snippet")
-                                            .map(|x| x.to_string())
+                                            .map(|x| read_to_string(x))
                                             .unwrap_or_default(),
                                     }),
                                     ..Default::default()
@@ -310,7 +318,8 @@ impl PluginEngine {
                         )
                         .unwrap();
                     }
-                    Err(_err) => {
+                    Err(err) => {
+                        error!("failed to get results from engine: {:?}", err);
                         tx.send(Vec::new()).unwrap();
                     }
                 }
@@ -331,7 +340,8 @@ impl PluginEngine {
                 .map(|ret| ret.is_ok())
                 .unwrap_or(false)
             {
-                return self.results_rx.borrow_and_update().clone();
+                let results = self.results_rx.borrow_and_update().clone();
+                return results;
             }
         }
 
@@ -402,7 +412,11 @@ impl PluginEnginePool {
                                     #[cfg(debug_assertions)]
                                     let st = Instant::now();
 
-                                    res_tx.send(eng.search(query).await).ok();
+                                    let result = res_tx.send(eng.search(query).await);
+
+                                    if result.is_err() {
+                                        error!(target: &target, "failed to send results back to the main thread!");
+                                    }
 
                                     #[cfg(debug_assertions)]
                                     debug!(target: &target, "done in {:?}! awaiting a query...", st.elapsed());
