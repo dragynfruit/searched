@@ -7,6 +7,21 @@
 --- @class Url
 Url = {}
 
+--- Parse a Url from a string
+---
+--- @param input string
+---
+--- @return Url
+function Url.parse(input) end
+
+--- Parse a Url from a string and query parameters
+---
+--- @param input string
+--- @param query_params table<string, string>
+---
+--- @return Url
+function Url.parse_with_params(input, query_params) end
+
 --- Build a Url from a template string
 ---
 --- @param template string

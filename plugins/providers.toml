@@ -3,6 +3,7 @@ name = "DuckDuckGo"
 description = "A privacy-respecting search engine"
 kinds = ["sear"]
 	[duckduckgo.features]
+	pagination = "1"
 	safe_search = "multilevel"
 
 [wikipedia]
@@ -25,6 +26,9 @@ engine = "json_engine"
 name = "Wiby"
 description = "A search engine for finding old websites"
 kinds = ["sear"]
+	[wiby.features]
+	pagination = "1"
+
 	[wiby.extra]
 	url = "https://wiby.me/json?q={query}&page={page}"
 	url_key = "URL"
@@ -86,12 +90,12 @@ kinds = ["sear"]
 
 # these are kind of broken because they can have multiple results under instances
 # vvvvvvvvvvvvvvvvvvvvvvvvvvv
-[openairedatasets]
+[openaire_data]
 engine = "json_engine"
 name = "OpenAIRE Datasets"
 description = "A search engine for datasets"
 kinds = ["sear"]
-	[openairedatasets.extra]
+	[openaire_data.extra]
 	url = "https://api.openaire.eu/search/datasets?format=json&page=1&size=10&title={query}"
 	# https://api.openaire.eu/search/datasets?format=json&page={page}&size=10&title={query}
 	# we dont support pages starting at 0 yet
@@ -100,12 +104,12 @@ kinds = ["sear"]
 	title_key = "metadata/oaf:entity/oaf:result/title/$"
 	snippet_key = "metadata/oaf:entity/oaf:result/description/$"
 
-[openairepublications]
+[openaire_pubs]
 engine = "json_engine"
 name = "OpenAIRE Publications"
 description = "A search engine for publications"
 kinds = ["sear"]
-	[openairepublications.extra]
+	[openaire_pubs.extra]
 	url = "https://api.openaire.eu/search/publications?format=json&page=1&size=10&title={query}"
 	# https://api.openaire.eu/search/publications?format=json&page={page}&size=10&title={query}
 	# we dont support pages starting at 0 yet

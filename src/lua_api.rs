@@ -74,6 +74,8 @@ impl LuaUserData for UrlWrapper {
             "from_template",
             Self::from_template,
         );
+        methods.add_function("parse", Self::parse);
+        methods.add_function("parse_with_params", Self::parse_with_params);
         methods.add_method("domain", Self::domain);
         methods.add_method("authority", Self::authority);
         methods.add_method("path", Self::path);

@@ -74,10 +74,17 @@ gen_enum! {
         Yes = "yes",
         MultiLevel = "multilevel",
     }
+    CfgPaginationSupport ( CfgPaginationSupport::No ) {
+        No = "no",
+        StartAt0 = "0",
+        StartAt1 = "1",
+    }
 }
 
 #[derive(Deserialize, Serialize, Default, Clone, Debug)]
 pub struct CfgProviderFeatures {
     #[serde(default)]
     pub safe_search: CfgSafeSearchSupport,
+    #[serde(default)]
+    pub pagination: CfgPaginationSupport,
 }
