@@ -7,3 +7,4 @@
 require('.search')
 require('.ranking')
 require('.url')
+require('.util')

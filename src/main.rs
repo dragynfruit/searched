@@ -12,8 +12,6 @@ extern crate searched;
 
 mod web;
 
-use std::time::Instant;
-
 use axum::{
     http::{HeaderMap, HeaderValue},
     routing::get,

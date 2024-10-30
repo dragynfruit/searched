@@ -90,4 +90,7 @@ pub struct ForumResult {
     pub tags: Option<Vec<String>>,
 }
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
-pub struct ImageResult {}
+pub struct ImageResult {
+    pub preview_url: String,
+    pub full_size_url: String,
+}

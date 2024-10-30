@@ -39,6 +39,7 @@ serde_json = "1.0.132"
 toml = { version = "0.8.19", default-features = false, features = ["parse"] }
 fastrand = "2.1.1"
 searched-parser = { version = "0.1.0", path = "searched-parser" }
+fend-core = "1.5.3"
 
 [profile.dev.package.'*']
 opt-level = 3

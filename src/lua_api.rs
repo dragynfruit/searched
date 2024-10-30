@@ -7,6 +7,7 @@ use std::{
     time::{Duration, Instant},
 };
 
+use fend_core::Context;
 use mlua::prelude::*;
 use reqwest::header::{HeaderMap, HeaderValue};
 use reqwest::Client;
@@ -28,12 +29,15 @@ impl LuaUserData for Query {
 
 /// Lua wrapper for [url::Url]
 struct UrlWrapper(Url);
-impl LuaUserData for UrlWrapper {
-    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_function(
-            "from_template",
-            |_, (template, values): (String, LuaTable)| -> LuaResult<Self> {
-                let values = HashMap::from_iter(
+impl UrlWrapper {
+    fn parse(_: &Lua, url: String) -> LuaResult<Self> {
+        Url::parse(&url).map(|x| UrlWrapper(x)).into_lua_err()
+    }
+    fn parse_with_params(_: &Lua, (url, params): (String, LuaTable)) -> LuaResult<Self> {
+        Url::parse_with_params(&url, params.pairs::<String, String>().map(|x| x.unwrap()).collect::<Vec<(String, String)>>()).map(|x| UrlWrapper(x)).into_lua_err()
+    }
+    fn from_template(_: &Lua, (template, values): (String, LuaTable)) -> LuaResult<Self> {
+        let values = HashMap::from_iter(
                     values
                         .pairs::<String, String>()
                         .map(|x| x.unwrap())
@@ -42,8 +46,38 @@ impl LuaUserData for UrlWrapper {
                 Url::parse(&searched_parser::Url::parse(template.as_bytes()).build(values))
                     .map(|x| UrlWrapper(x))
                     .into_lua_err()
-            },
+    }
+    fn domain(lua: &Lua, this: &Self, _: ()) -> LuaResult<LuaValue> {
+        Ok(if let Some(domain) = this.0.domain() {
+            domain.to_string().into_lua(lua)?
+        } else {
+            LuaValue::Nil
+        })
+    }
+    fn authority(_: &Lua, this: &Self, _: ()) -> LuaResult<String> {
+        Ok(this.0.authority().to_string())
+    }
+    fn path(_: &Lua, this: &Self, _: ()) -> LuaResult<String> {
+        Ok(this.0.path().to_string())
+    }
+    fn path_segments(lua: &Lua, this: &Self, _: ()) -> LuaResult<LuaValue> {
+        Ok(if let Some(path_segments) = this.0.path_segments() {
+            path_segments.collect::<Vec<&str>>().into_lua(lua)?
+        } else {
+            LuaValue::Nil
+        })
+    }
+}
+impl LuaUserData for UrlWrapper {
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        methods.add_function(
+            "from_template",
+            Self::from_template,
         );
+        methods.add_method("domain", Self::domain);
+        methods.add_method("authority", Self::authority);
+        methods.add_method("path", Self::path);
+        methods.add_method("path_segments", Self::path_segments);
         methods.add_method("string", |_, this, ()| -> LuaResult<String> {
             Ok(this.0.to_string())
         });
@@ -160,6 +194,9 @@ fn parse_json(lua: &Lua, raw: String) -> LuaResult<LuaValue> {
     let json: serde_json::Value = serde_json::from_str(&raw).into_lua_err()?;
     lua.to_value(&json)
 }
+fn fend_eval(_: &Lua, input: String) -> LuaResult<String> {
+    Ok(fend_core::evaluate(&input, &mut Context::new()).unwrap().get_main_result().to_string())
+}
 
 /// A single-threaded plugin engine
 #[derive(Clone)]
@@ -215,6 +252,8 @@ impl PluginEngine {
             .set("stringify_params", lua.create_function(stringify_params)?)?;
         lua.globals()
             .set("parse_json", lua.create_function(parse_json)?)?;
+        lua.globals()
+            .set("fend_eval", lua.create_function(fend_eval)?)?;
 
         // Load engines
         for path in read_dir("plugins/engines").unwrap() {

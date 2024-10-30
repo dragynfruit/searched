@@ -15,6 +15,18 @@ Url = {}
 --- @return Url
 function Url.from_template(template, values) end
 
+--- @return string|nil
+function Url:domain() end
+
+--- @return string
+function Url:authority() end
+
+--- @return string
+function Url:path() end
+
+--- @return [string]|nil
+function Url:path_segments() end
+
 --- Get the Url as a string
 ---
 --- @return string
