@@ -95,31 +95,39 @@ pub struct SearchResults {
 
 pub async fn ranked_results(
     engine: PluginEngine,
-    provider_cfg: ProvidersConfig,
+    ProvidersConfig(provider_cfg): ProvidersConfig,
     query: searched::Query,
 ) -> Vec<searched::Result> {
     let mut set = JoinSet::new();
-    for provider in provider_cfg.0.keys() {
+    for provider in provider_cfg.keys().cloned() {
+        // Clone the query so we can switch the provider
+        // and safely pass between threads
         let mut query = query.clone();
-        query.provider = provider.clone();
+        query.provider = provider;
 
         let engine = engine.clone();
+
         set.spawn(async move { engine.search(query).await });
     }
+
     let mut results = set.join_all().await.concat();
+
+    let ranking_tm = Instant::now();
+
     results.sort_by_key(|x| x.url.clone());
 
-    let mut dedup = results.clone();
-    dedup.dedup_by_key(|x| x.url.clone());
-    let scores = dedup
+    let scores = results
         .iter()
-        .map(|x| results.iter().filter(|y| y.url == x.url).count())
-        .collect::<Vec<usize>>();
+        .map(|x| results.iter().filter(|y| y.url == x.url).count());
 
-    let mut dedup_scores = dedup.iter().zip(scores.iter()).collect::<Vec<_>>();
-    dedup_scores.sort_by(|a, b| b.1.cmp(a.1));
+    let mut scored = results.iter().zip(scores).collect::<Vec<_>>();
+    scored.dedup_by_key(|x| x.0.url.clone());
+    scored.sort_by(|a, b| b.1.cmp(&a.1));
 
-    dedup_scores.iter().map(|x| x.0.clone()).collect()
+    let ret = scored.iter().map(|x| x.0.clone()).collect();
+    debug!("ranking: {:?}", ranking_tm.elapsed());
+
+    ret
 }
 
 #[axum_macros::debug_handler]

@@ -281,7 +281,7 @@ impl PluginEngine {
             ProvidersConfig::load("plugins/providers.toml")
         };
         #[cfg(not(feature = "hot_reload"))]
-        let providers = self.providers;
+        let providers = &self.providers;
 
         if let Some(provider) = providers.0.get(&query.provider) {
             let engine = provider.engine.clone().unwrap_or(query.provider.clone());
