@@ -3,6 +3,10 @@
 -- -- (c) 2024 Dragynfruit
 
 local function get_key(data, key)
+	if key == nil then
+		return data
+	end
+
 	local keys = {}
 	for k in string.gmatch(key, '([^/]+)') do
 		table.insert(keys, k)
@@ -29,7 +33,7 @@ local function get_key(data, key)
 	return value
 end
 
-add_engine('json_engine', function(client, query, opts)
+add_engine('json', function(client, query, opts)
 	local url = Url.from_template(tostring(opts.url), {
 		query = query.query,
 		page = tostring(query.page),

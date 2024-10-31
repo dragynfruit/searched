@@ -80,7 +80,7 @@ pub struct Result {
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct GeneralResult {
-    pub snippet: String,
+    pub snippet: Option<String>,
 }
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
 pub struct ForumResult {
