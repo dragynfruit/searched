@@ -8,7 +8,7 @@ kinds = ["sear"]
 
 [wikipedia]
 name = "Wikipedia (English)"
-engine = "json_engine"
+engine = "json"
 description = "The free encyclopedia"
 kinds = ["sear"]
 	[wikipedia.extra]
@@ -27,7 +27,7 @@ kinds = ["sear"]
 	safe_search = "yes"
 
 [wiby]
-engine = "json_engine"
+engine = "json"
 name = "Wiby"
 description = "A search engine for finding old websites"
 kinds = ["sear"]
@@ -41,7 +41,7 @@ kinds = ["sear"]
 	snippet_key = "Snippet"
 
 [crowdview]
-engine = "json_engine"
+engine = "json"
 name = "CrowdView"
 description = "A search engine for forum threads"
 kinds = ["sear"]
@@ -53,7 +53,7 @@ kinds = ["sear"]
 	snippet_key = "snippet"
 
 [encyclosearch]
-engine = "json_engine"
+engine = "json"
 name = "EncycloSearch"
 description = "A search engine for encyclopedias"
 kinds = ["sear"]
@@ -61,14 +61,14 @@ kinds = ["sear"]
 	pagination = "1"
 
 	[encyclosearch.extra]
-	url = "https://encyclosearch.org/encyclosphere/search?q={query}&page={page}&resultsPerPage=15"
+	url = "https://encyclosearch.org/encyclosphere/search?resultsPerPage=15&q={query}&page={page}"
 	results_key = "Results"
 	url_key = "SourceURL"
 	title_key = "Title"
 	snippet_key = "Description"
 
 [mdn]
-engine = "json_engine"
+engine = "json"
 name = "MDN"
 description = "Mozilla Developer Network"
 kinds = ["sear"]
@@ -84,7 +84,7 @@ kinds = ["sear"]
 	snippet_key = "summary"
 
 [mankier]
-engine = "json_engine"
+engine = "json"
 name = "Mankier"
 description = "A search engine for linux man pages"
 kinds = ["sear"]
@@ -98,7 +98,7 @@ kinds = ["sear"]
 # these are kind of broken because they can have multiple results under instances
 # vvvvvvvvvvvvvvvvvvvvvvvvvvv
 [openaire_data]
-engine = "json_engine"
+engine = "json"
 name = "OpenAIRE Datasets"
 description = "A search engine for datasets"
 kinds = ["sear"]
@@ -113,7 +113,7 @@ kinds = ["sear"]
 	snippet_key = "metadata/oaf:entity/oaf:result/description/$"
 
 [openaire_pubs]
-engine = "json_engine"
+engine = "json"
 name = "OpenAIRE Publications"
 description = "A search engine for publications"
 kinds = ["sear"]
@@ -129,7 +129,7 @@ kinds = ["sear"]
 # ^^^^^^^^^^^^^^^^^^^^^^^
 
 [packagist]
-engine = "json_engine"
+engine = "json"
 name = "Packagist"
 description = "A search engine for PHP packages"
 kinds = ["sear"]
@@ -144,7 +144,6 @@ kinds = ["sear"]
 	snippet_key = "description"
 
 [qwant]
-engine = "json_engine"
 name = "Qwant"
 description = "A privacy-respecting search engine"
 kinds = ["sear"]
@@ -152,9 +151,9 @@ kinds = ["sear"]
 	pagination = "1"
 	safe_search = "multilevel"
 
-	[qwant.extra]
-	url = "https://api.qwant.com/v3/search/web?locale=en_us&count=10&p={page}&q={query}"
-	results_key = "data/result/items/mainline/2/items"
-	url_key = "url"
-	title_key = "title"
-	snippet_key = "desc"
+	# [qwant.extra]
+	# url = "https://api.qwant.com/v3/search/web?locale=en_us&count=10&p={page}&q={query}"
+	# results_key = "data/result/items/mainline/2/items"
+	# url_key = "url"
+	# title_key = "title"
+	# snippet_key = "desc"

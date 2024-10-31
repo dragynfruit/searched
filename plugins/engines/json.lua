@@ -29,7 +29,7 @@ local function get_key(data, key)
 	return value
 end
 
-add_engine('json_engine', function(client, query, opts)
+add_engine('json', function(client, query, opts)
 	local url = Url.from_template(tostring(opts.url), {
 		query = query.query,
 		page = tostring(query.page),
