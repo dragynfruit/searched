@@ -136,9 +136,6 @@ pub async fn results(
     State(st): State<AppState>,
 ) -> impl IntoResponse {
     if let Some(q) = params.q {
-        if q.eq_ignore_ascii_case("rust") {
-            Redirect::to("https://rust-lang.org").into_response()
-        } else {
         #[cfg(debug_assertions)]
         (*TEMPLATES.write().await).full_reload().unwrap();
 
@@ -186,7 +183,6 @@ pub async fn results(
         .into_response()
     } else {
         return Redirect::to("/").into_response();
-    }
     }
 }
 
