@@ -3,8 +3,7 @@
 local Services = {}
 
 --- @param url Url
-function Services.reddit(url)
-end
+function Services.reddit(url) end
 
 Services['reddit'](Url.parse(''))
 
