@@ -2,6 +2,12 @@
 -- -- Licensed MIT.
 -- -- (c) 2024 Dragynfruit
 
+--- More advanced way to get nested keys based on / separator
+--- 
+--- @param data table
+--- @param key string
+--- 
+--- @return any
 local function get_key(data, key)
 	if key == nil then
 		return data

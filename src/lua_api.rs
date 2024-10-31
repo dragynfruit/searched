@@ -56,6 +56,14 @@ impl UrlWrapper {
             .map(|x| UrlWrapper(x))
             .into_lua_err()
     }
+    fn params(lua: &Lua, this: &Self, _: ()) -> LuaResult<LuaValue> {
+        Ok(this
+            .0
+            .query_pairs()
+            .map(|(k, v)| (k.to_string(), v.to_string()))
+            .collect::<HashMap<String, String>>()
+            .into_lua(lua)?)
+    }
     fn domain(lua: &Lua, this: &Self, _: ()) -> LuaResult<LuaValue> {
         Ok(if let Some(domain) = this.0.domain() {
             domain.to_string().into_lua(lua)?
@@ -82,6 +90,7 @@ impl LuaUserData for UrlWrapper {
         methods.add_function("from_template", Self::from_template);
         methods.add_function("parse", Self::parse);
         methods.add_function("parse_with_params", Self::parse_with_params);
+        methods.add_method("params", Self::params);
         methods.add_method("domain", Self::domain);
         methods.add_method("authority", Self::authority);
         methods.add_method("path", Self::path);

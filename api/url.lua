@@ -30,6 +30,9 @@ function Url.parse_with_params(input, query_params) end
 --- @return Url
 function Url.from_template(template, values) end
 
+--- @return table<string, string>
+function Url:params() end
+
 --- @return string|nil
 function Url:domain() end
 
