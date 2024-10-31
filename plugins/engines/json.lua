@@ -3,6 +3,10 @@
 -- -- (c) 2024 Dragynfruit
 
 local function get_key(data, key)
+	if key == nil then
+		return data
+	end
+
 	local keys = {}
 	for k in string.gmatch(key, '([^/]+)') do
 		table.insert(keys, k)

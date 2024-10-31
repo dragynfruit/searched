@@ -1,3 +1,4 @@
+use core::error;
 use std::{
     collections::{HashMap, VecDeque},
     error::Error,
@@ -272,6 +273,7 @@ impl PluginEngine {
     pub async fn search(&self, query: Query) -> Vec<crate::Result> {
         if let Some(provider) = self.providers.0.get(&query.provider) {
             let engine = provider.engine.clone().unwrap_or(query.provider.clone());
+            let target = format!("searched::engine::{engine}");
 
             // Get engine implementation
             let eng_impl = self
@@ -285,7 +287,7 @@ impl PluginEngine {
             let results = eng_impl
                 .call_async::<Vec<LuaTable>>((
                     ClientWrapper(self.client.clone()),
-                    query,
+                    query.clone(),
                     self.lua
                         .to_value(&provider.clone().extra.unwrap_or_default()),
                 ))
@@ -297,7 +299,8 @@ impl PluginEngine {
                     .map(|r| self.lua.from_value(LuaValue::Table(r)).unwrap())
                     .collect(),
                 Err(err) => {
-                    error!("failed to get results from engine: {:?}", err);
+                    // error!("failed to get results from engine: {:?}", err);
+                    error!(target: &target, "failed to get results from provider {}: {}", query.provider, err);
                     Vec::new()
                 }
             }

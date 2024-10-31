@@ -150,10 +150,3 @@ kinds = ["sear"]
 	[qwant.features]
 	pagination = "1"
 	safe_search = "multilevel"
-
-	# [qwant.extra]
-	# url = "https://api.qwant.com/v3/search/web?locale=en_us&count=10&p={page}&q={query}"
-	# results_key = "data/result/items/mainline/2/items"
-	# url_key = "url"
-	# title_key = "title"
-	# snippet_key = "desc"
