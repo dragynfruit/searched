@@ -2,7 +2,7 @@
 {% import "components/result_view.html" as result_view %}
 {% extends "template.html" %}
 
-{% block title %}{{ query }} | Searched{% endblock title %}
+{% block title %}{{ query.query }} | Searched{% endblock title %}
 
 {% block head %}
 {{ super() }}
@@ -141,13 +141,13 @@
 				</a>
 			</td>
 			<td id="bar">
-				{{ search_bar::generate_content(value=query) }}
+				{{ search_bar::generate_content(value=query.query) }}
 			</td>
 		</tr>
 		<tr>
 			<td colspan="3" id="kinds">
 				{% for i in range(end=kind_ids | length) %}
-				<a href="?q={{ query }}&k={{ kind_ids[i] }}" id="{% if kind == kind_ids[i] %}current{% endif %}">{{
+				<a href="?q={{ query.query }}&k={{ kind_ids[i] }}" id="{% if kind == kind_ids[i] %}current{% endif %}">{{
 					kind_names[i] }}</a>
 				{% endfor %}
 			</td>

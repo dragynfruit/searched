@@ -57,15 +57,15 @@ impl FromLua for Kind {
 
 #[derive(Debug, Default, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Query {
-    #[serde(rename = "pr")]
+    #[serde(rename(deserialize = "pr"))]
     pub provider: String,
-    #[serde(rename = "q")]
+    #[serde(rename(deserialize = "q"))]
     pub query: String,
-    #[serde(rename = "k")]
+    #[serde(rename(deserialize  = "k"))]
     pub kind: Kind,
-    #[serde(rename = "p")]
+    #[serde(rename(deserialize  = "p"))]
     pub page: usize,
-    #[serde(rename = "s", default)]
+    #[serde(rename(deserialize  = "s"), default)]
     pub safe: SafeSearch,
 }
 

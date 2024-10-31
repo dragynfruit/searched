@@ -34,18 +34,26 @@ impl UrlWrapper {
         Url::parse(&url).map(|x| UrlWrapper(x)).into_lua_err()
     }
     fn parse_with_params(_: &Lua, (url, params): (String, LuaTable)) -> LuaResult<Self> {
-        Url::parse_with_params(&url, params.pairs::<String, String>().map(|x| x.unwrap()).collect::<Vec<(String, String)>>()).map(|x| UrlWrapper(x)).into_lua_err()
+        Url::parse_with_params(
+            &url,
+            params
+                .pairs::<String, String>()
+                .map(|x| x.unwrap())
+                .collect::<Vec<(String, String)>>(),
+        )
+        .map(|x| UrlWrapper(x))
+        .into_lua_err()
     }
     fn from_template(_: &Lua, (template, values): (String, LuaTable)) -> LuaResult<Self> {
         let values = HashMap::from_iter(
-                    values
-                        .pairs::<String, String>()
-                        .map(|x| x.unwrap())
-                        .map(|(k, v)| (k, v)),
-                );
-                Url::parse(&searched_parser::Url::parse(template.as_bytes()).build(values))
-                    .map(|x| UrlWrapper(x))
-                    .into_lua_err()
+            values
+                .pairs::<String, String>()
+                .map(|x| x.unwrap())
+                .map(|(k, v)| (k, v)),
+        );
+        Url::parse(&searched_parser::Url::parse(template.as_bytes()).build(values))
+            .map(|x| UrlWrapper(x))
+            .into_lua_err()
     }
     fn domain(lua: &Lua, this: &Self, _: ()) -> LuaResult<LuaValue> {
         Ok(if let Some(domain) = this.0.domain() {
@@ -70,10 +78,7 @@ impl UrlWrapper {
 }
 impl LuaUserData for UrlWrapper {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_function(
-            "from_template",
-            Self::from_template,
-        );
+        methods.add_function("from_template", Self::from_template);
         methods.add_function("parse", Self::parse);
         methods.add_function("parse_with_params", Self::parse_with_params);
         methods.add_method("domain", Self::domain);
@@ -150,14 +155,19 @@ impl LuaUserData for Scraper {
             let html = Html::parse_document(&raw_html);
             Ok(Self(Arc::new(Mutex::new(html))))
         });
-        async fn select(lua: Lua, this: LuaUserDataRef<Scraper>, selector: String) -> LuaResult<LuaTable> {
+        async fn select(
+            lua: Lua,
+            this: LuaUserDataRef<Scraper>,
+            selector: String,
+        ) -> LuaResult<LuaTable> {
             let sel = Selector::parse(&selector).unwrap();
-            lua
-                .create_sequence_from(
-                    this.0.lock().await
-                        .select(&sel)
-                        .map(|x| ElementWrapper(x.inner_html().clone(), x.value().clone())),
-                )
+            lua.create_sequence_from(
+                this.0
+                    .lock()
+                    .await
+                    .select(&sel)
+                    .map(|x| ElementWrapper(x.inner_html().clone(), x.value().clone())),
+            )
         }
         methods.add_async_method("select", select);
     }
@@ -197,7 +207,10 @@ fn parse_json(lua: &Lua, raw: String) -> LuaResult<LuaValue> {
     lua.to_value(&json)
 }
 fn fend_eval(_: &Lua, input: String) -> LuaResult<String> {
-    Ok(fend_core::evaluate(&input, &mut Context::new()).unwrap().get_main_result().to_string())
+    Ok(fend_core::evaluate(&input, &mut Context::new())
+        .unwrap()
+        .get_main_result()
+        .to_string())
 }
 
 /// A single-threaded plugin engine
@@ -258,57 +271,57 @@ impl PluginEngine {
     /// Use the given provider to process the given query
     pub async fn search(&self, query: Query) -> Vec<crate::Result> {
         if let Some(provider) = self.providers.0.get(&query.provider) {
-                let engine = provider.engine.clone().unwrap_or(query.provider.clone());
+            let engine = provider.engine.clone().unwrap_or(query.provider.clone());
 
-                // Get engine implementation
-                let eng_impl = self.lua
-                    .globals()
-                    .get::<LuaTable>("__searched_engines__")
-                    .unwrap()
-                    .get::<LuaFunction>(engine)
-                    .unwrap();
+            // Get engine implementation
+            let eng_impl = self
+                .lua
+                .globals()
+                .get::<LuaTable>("__searched_engines__")
+                .unwrap()
+                .get::<LuaFunction>(engine)
+                .unwrap();
 
-                let results = eng_impl
-                    .call_async::<Vec<HashMap<String, LuaValue>>>((
-                        ClientWrapper(self.client.clone()),
-                        query,
-                        self.lua.to_value(&provider.clone().extra.unwrap_or_default()),
-                    ))
-                    .await;
+            let results = eng_impl
+                .call_async::<Vec<HashMap<String, LuaValue>>>((
+                    ClientWrapper(self.client.clone()),
+                    query,
+                    self.lua
+                        .to_value(&provider.clone().extra.unwrap_or_default()),
+                ))
+                .await;
 
-                fn read_to_string(data: &LuaValue) -> String {
-                    if let LuaValue::String(s) = data {
-                        s.to_str().unwrap().to_string()
-                    } else {
-                        String::new()
-                    }
+            fn read_to_string(data: &LuaValue) -> String {
+                if let LuaValue::String(s) = data {
+                    s.to_str().unwrap().to_string()
+                } else {
+                    String::new()
                 }
-
-                match results {
-                    Ok(results) => {
-                            results
-                                .into_iter()
-                                .map(|r| crate::Result {
-                                    url : read_to_string(r.get("url").unwrap()),
-                                    title : read_to_string(r.get("title").unwrap()),
-                                    general: Some(crate::GeneralResult {
-                                        snippet: r
-                                            .get("snippet")
-                                            .map(|x| read_to_string(x))
-                                            .unwrap_or_default(),
-                                    }),
-                                    ..Default::default()
-                                })
-                                .collect()
-                    }
-                    Err(err) => {
-                        error!("failed to get results from engine: {:?}", err);
-                        Vec::new()
-                    }
-                }
-            } else {
-                Vec::new()
             }
+
+            match results {
+                Ok(results) => results
+                    .into_iter()
+                    .map(|r| crate::Result {
+                        url: read_to_string(r.get("url").unwrap()),
+                        title: read_to_string(r.get("title").unwrap()),
+                        general: Some(crate::GeneralResult {
+                            snippet: r
+                                .get("snippet")
+                                .map(|x| read_to_string(x))
+                                .unwrap_or_default(),
+                        }),
+                        ..Default::default()
+                    })
+                    .collect(),
+                Err(err) => {
+                    error!("failed to get results from engine: {:?}", err);
+                    Vec::new()
+                }
+            }
+        } else {
+            Vec::new()
+        }
     }
 }
 
@@ -362,32 +375,32 @@ impl PluginEnginePool {
             //        LocalSet::new()
             //            .run_until(async move {
             tokio::spawn(async move {
-                            let target = format!("searched::worker{i}");
-                            let mut eng = PluginEngine::new(client).await.unwrap();
+                let target = format!("searched::worker{i}");
+                let mut eng = PluginEngine::new(client).await.unwrap();
 
-                            debug!(target: &target, "awaiting a query...");
+                debug!(target: &target, "awaiting a query...");
 
-                            loop {
-                                let query = queue.lock().await.pop_front();
+                loop {
+                    let query = queue.lock().await.pop_front();
 
-                                if let Some((query, res_tx)) = query {
-                                    debug!(target: &target, "processing query: {query:?}");
+                    if let Some((query, res_tx)) = query {
+                        debug!(target: &target, "processing query: {query:?}");
 
-                                    #[cfg(debug_assertions)]
-                                    let st = Instant::now();
+                        #[cfg(debug_assertions)]
+                        let st = Instant::now();
 
-                                    let result = res_tx.send(eng.search(query).await);
+                        let result = res_tx.send(eng.search(query).await);
 
-                                    if result.is_err() {
-                                        error!(target: &target, "failed to send results back to the main thread!");
-                                    }
+                        if result.is_err() {
+                            error!(target: &target, "failed to send results back to the main thread!");
+                        }
 
-                                    #[cfg(debug_assertions)]
-                                    debug!(target: &target, "done in {:?}! awaiting a query...", st.elapsed());
-                                }
-                            }
-                        //})
-                        //.await;
+                        #[cfg(debug_assertions)]
+                        debug!(target: &target, "done in {:?}! awaiting a query...", st.elapsed());
+                    }
+                }
+                //})
+                //.await;
                 //});
             });
             info!("started worker thread #{i}");

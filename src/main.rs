@@ -19,7 +19,10 @@ use axum::{
 };
 use log::LevelFilter;
 //use reqwest::Client;
-use searched::{config::Config, lua_api::{PluginEngine, PluginEnginePool}};
+use searched::{
+    config::Config,
+    lua_api::{PluginEngine, PluginEnginePool},
+};
 //use sled::Db;
 use tokio::net::TcpListener;
 

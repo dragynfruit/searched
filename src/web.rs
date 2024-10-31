@@ -85,7 +85,7 @@ pub struct SearchResult {
 #[derive(Serialize, Default)]
 pub struct SearchResults {
     kinds: Vec<Kind>,
-    query: String,
+    query: searched::Query,
     count: usize,
     page: usize,
     kind: Kind,
@@ -93,23 +93,28 @@ pub struct SearchResults {
     search_time: u128,
 }
 
-pub async fn ranked_results(engine: PluginEngine, provider_cfg: ProvidersConfig, query: searched::Query) -> Vec<searched::Result> {
+pub async fn ranked_results(
+    engine: PluginEngine,
+    provider_cfg: ProvidersConfig,
+    query: searched::Query,
+) -> Vec<searched::Result> {
     let mut set = JoinSet::new();
     for provider in provider_cfg.0.keys() {
         let mut query = query.clone();
         query.provider = provider.clone();
 
         let engine = engine.clone();
-        set.spawn(async move {
-            engine.search(query).await
-        });
+        set.spawn(async move { engine.search(query).await });
     }
     let mut results = set.join_all().await.concat();
     results.sort_by_key(|x| x.url.clone());
 
     let mut dedup = results.clone();
     dedup.dedup_by_key(|x| x.url.clone());
-    let scores = dedup.iter().map(|x| results.iter().filter(|y| y.url == x.url).count()).collect::<Vec<usize>>();
+    let scores = dedup
+        .iter()
+        .map(|x| results.iter().filter(|y| y.url == x.url).count())
+        .collect::<Vec<usize>>();
 
     let mut dedup_scores = dedup.iter().zip(scores.iter()).collect::<Vec<_>>();
     dedup_scores.sort_by(|a, b| b.1.cmp(a.1));
@@ -129,27 +134,21 @@ pub async fn results(
         let kind = params.k.unwrap_or_default();
 
         let query = searched::Query {
-                provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
-                query: q.clone(),
-                kind: kind.clone(),
-                page: params.p.unwrap_or(1),
-                ..Default::default()
-            };
+            provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
+            query: q.clone(),
+            kind: kind.clone(),
+            page: params.p.unwrap_or(1),
+            ..Default::default()
+        };
 
         let search_st = Instant::now();
 
-        let results = ranked_results(st.eng, ProvidersConfig::load("plugins/providers.toml"), query).await;
-
-        //let results = st
-        //    .eng
-        //    .search(searched::Query {
-        //        provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
-        //        query: q.clone(),
-        //        kind: kind.clone(),
-        //        page: params.p.unwrap_or(1),
-        //        ..Default::default()
-        //    })
-        //    .await;
+        let results = ranked_results(
+            st.eng,
+            ProvidersConfig::load("plugins/providers.toml"),
+            query.clone(),
+        )
+        .await;
 
         let search_tm = search_st.elapsed();
         debug!("results took {search_tm:?}");
@@ -160,11 +159,7 @@ pub async fn results(
                     "results.html",
                     &Context::from_serialize(SearchResults {
                         kind,
-                        kinds: PROVIDER_KINDS
-                            .get(&params.s.unwrap_or("duckduckgo".to_string()))
-                            .unwrap()
-                            .to_vec(),
-                        query: q,
+                        query: query,
                         results: results.to_vec(),
                         search_time: search_tm.as_millis(),
                         ..Default::default()
