@@ -1,50 +1,50 @@
 {% macro generate_style() %}
 <style>
-	.search-bar {
-		margin: 0 auto;
-	}
     .search-input {
-        background-color: #363636;
-        border-radius: 5px;
-        height: 40px;
-		width: 100%;
-		position: relative;
+        position: relative;
+        display: block;
+        width: 100%;
     }
+
     .search-input input[type="search"] {
-        color: #DADADA;
-        border: transparent;
-        outline: transparent;
-        background-color: transparent;
-        font-size: 16px;
-        padding: 8px 12px;
-        height: 100%;
-        width: calc(100% - 45px);
-        border-radius: 5px 0 0 5px;
-        appearance: none;
-		line-height: 24px;
-    }
-    .search-input input[type="search"]::placeholder {
-        color: #DADADA;
-        opacity: 0.7;
-    }
-    .search-input button[type="submit"] {
-        background-color: transparent;
+        width: calc(100% - 60px);
+        padding: 10px 16px;
         border: none;
+        border-radius: 5px;
+        background-color: #363636;
+        color: white;
+        font-size: 16px;
         outline: none;
-        color: #DADADA;
-        cursor: pointer;
-        height: 100%;
-        padding: 0 12px;
-        font-size: 20px;
-        transition: all 0.3s ease;
-        border-radius: 0 5px 5px 0;
-        width: 45px;
-        position: absolute;
-        top: 0;
-        right: 0;
-		line-height: 40px;
+        vertical-align: middle;
     }
-    .search-input button[type="submit"]:hover {
+
+    .search-input input[type="search"]::placeholder {
+        color: #999;
+    }
+
+    /* Remove the search input's default clear button in webkit browsers */
+    .search-input input[type="search"]::-webkit-search-decoration,
+    .search-input input[type="search"]::-webkit-search-cancel-button,
+    .search-input input[type="search"]::-webkit-search-results-button,
+    .search-input input[type="search"]::-webkit-search-results-decoration {
+        -webkit-appearance: none;
+    }
+
+    .search-input button {
+        width: 50px;
+        padding: 10px 0;
+        border: none;
+        border-radius: 5px;
+        background-color: #363636;
+        color: white;
+        font-size: 16px;
+        cursor: pointer;
+        transition: all 0.2s ease;
+        margin-left: 4px;
+        vertical-align: middle;
+    }
+
+    .search-input button:hover {
         background-color: #ff4755;
         color: white;
     }
@@ -53,19 +53,19 @@
 
 {% macro generate_content(value="", autofocus=false) %}
 <form method="get" action="/search" class="search-bar">
-	<input type="text" name="s" value="duckduckgo" hidden />
-	<div class="search-input">
-		<input type="search" id="search" name="q" placeholder="Search..." autocomplete="off" value="{{ value }}" {% if
-			autofocus %}autofocus{% endif %} required />
-		<button type="submit"><b>&#x2315;&#xFE0E;</b></button>
-	</div>
+    <input type="text" name="s" value="duckduckgo" hidden />
+    <div class="search-input">
+        <input type="search" id="search" name="q" placeholder="Search..." autocomplete="off" value="{{ value }}" {% if
+            autofocus %}autofocus{% endif %} required />
+        <button type="submit"><b>&#x2315;&#xFE0E;</b></button>
+    </div>
 </form>
 {% endmacro %}
 
 {% macro generate_autofocus() %}
 <script>
-	document.addEventListener('keydown', function () {
-		document.getElementById('search').focus();
-	});
+    document.addEventListener('keydown', function () {
+        document.getElementById('search').focus();
+    });
 </script>
 {% endmacro %}
