@@ -10,24 +10,24 @@ add_engine('qwant', function(client, query, opts)
 
 	local res = client:get(url, {})
 	local data = parse_json(res)
-    local mainline = data.data.result.items.mainline
+	local mainline = data.data.result.items.mainline
 
 	local results = {}
-    local i = 1
-    for _, item in ipairs(mainline) do
-        if item.type == 'web' then
-            for _, result in ipairs(item.items) do
-                results[i] = {
-                    title = result.title,
-                    url = result.url,
-                    general = {
-                        snippet = result.desc,
-                    },
-                }
-                i = i + 1
-            end
-        end
-    end
+	local i = 1
+	for _, item in ipairs(mainline) do
+		if item.type == 'web' then
+			for _, result in ipairs(item.items) do
+				results[i] = {
+					title = result.title,
+					url = result.url,
+					general = {
+						snippet = result.desc,
+					},
+				}
+				i = i + 1
+			end
+		end
+	end
 
 	return results
 end)
