@@ -1,58 +1,64 @@
 {% macro generate_style() %}
 <style>
 	.search-bar {
-		display: inline-block;
-		background-color: #363636;
-		border-radius: 5px;
-		height: 40px;
+		margin: 0 auto;
 	}
-
-	.search-bar input[type=search] {
-		color: #DADADA;
-		border: 0px;
-		outline: transparent;
-		background-color: transparent;
-		font-size: 16pt;
-		padding: 8px 3px;
-		margin: 0px;
-		padding-left: 9px;
-		height: 100%;
-		width: calc(100% - 50px);
-		border-top-left-radius: 5px;
-		border-bottom-left-radius: 5px;
-	}
-
-	.search-bar button[type=submit] {
-		background-color: transparent;
-		border: 0px;
-		outline: transparent;
-		color: #DADADA;
-		cursor: pointer;
-		height: 100%;
-		padding: 5px;
-		margin: 0px;
-		padding-right: 9px;
-		font-size: 16pt;
-		transition: all 0.3s;
-		border-top-right-radius: 5px;
-		border-bottom-right-radius: 5px;
-		width: 45px;
-	}
-
-	.search-bar button[type=submit]:hover {
-		background-color: #ff4755;
-		color: white;
-	}
+    .search-input {
+        background-color: #363636;
+        border-radius: 5px;
+        height: 40px;
+		width: 100%;
+		position: relative;
+    }
+    .search-input input[type="search"] {
+        color: #DADADA;
+        border: transparent;
+        outline: transparent;
+        background-color: transparent;
+        font-size: 16px;
+        padding: 8px 12px;
+        height: 100%;
+        width: calc(100% - 45px);
+        border-radius: 5px 0 0 5px;
+        appearance: none;
+		line-height: 24px;
+    }
+    .search-input input[type="search"]::placeholder {
+        color: #DADADA;
+        opacity: 0.7;
+    }
+    .search-input button[type="submit"] {
+        background-color: transparent;
+        border: none;
+        outline: none;
+        color: #DADADA;
+        cursor: pointer;
+        height: 100%;
+        padding: 0 12px;
+        font-size: 20px;
+        transition: all 0.3s ease;
+        border-radius: 0 5px 5px 0;
+        width: 45px;
+        position: absolute;
+        top: 0;
+        right: 0;
+		line-height: 40px;
+    }
+    .search-input button[type="submit"]:hover {
+        background-color: #ff4755;
+        color: white;
+    }
 </style>
 {% endmacro generate_style %}
 
 {% macro generate_content(value="", autofocus=false) %}
-<form method="get" action="/search">
-    <input type="text" name="s" value="duckduckgo" hidden />
-    <div class="search-bar">
-        <input type="search" id="search" name="q" placeholder="Search..." autocomplete="off" value="{{ value }}" {% if autofocus %}autofocus{% endif %} />
-        <button type="submit"><b>&#x2315;&#xFE0E;</b></button>
-    </div>
+<form method="get" action="/search" class="search-bar">
+	<input type="text" name="s" value="duckduckgo" hidden />
+	<div class="search-input">
+		<input type="search" id="search" name="q" placeholder="Search..." autocomplete="off" value="{{ value }}" {% if
+			autofocus %}autofocus{% endif %} required />
+		<button type="submit"><b>&#x2315;&#xFE0E;</b></button>
+	</div>
 </form>
 {% endmacro %}
 
