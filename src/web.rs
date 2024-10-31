@@ -7,9 +7,9 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
 };
 use once_cell::sync::Lazy;
-use searched::{Kind, PROVIDER_KINDS};
+use searched::{config::ProvidersConfig, lua_api::PluginEngine, Kind, PROVIDER_KINDS};
 use tera::{Context, Tera};
-use tokio::sync::RwLock;
+use tokio::{sync::RwLock, task::JoinSet};
 
 use crate::AppState;
 
@@ -35,7 +35,7 @@ const MOTD: &'static [&'static str] = &[
     "Check out <a href=\"https://github.com/dragynfruit/pasted\">pasted</a>!",
     "Drink water",
     "The cake is a lie",
-    "<a onclick=\"alert('Hello, world!')\" href=\"#\">Click me!</a>",
+    "<a onclick=\"alert('Python bad')\" href=\"#\">Click me!</a>",
     "We <3 <a href=\"https://archive.org\">IA</a>",
     "<i>\"If it is on the Internet then it must be true.\"</i><br>&mdash; Abraham Lincoln",
 ];
@@ -46,7 +46,7 @@ struct SearchCtx {
 }
 
 pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
-    if let Some(_q) = params.q {
+    if params.q.is_some() {
         return Redirect::to("/search").into_response();
     }
 
@@ -90,9 +90,31 @@ pub struct SearchResults {
     page: usize,
     kind: Kind,
     results: Vec<searched::Result>,
-    parse_time: f32,
-    search_time: f32,
-    gather_time: f32,
+    search_time: u128,
+}
+
+pub async fn ranked_results(engine: PluginEngine, provider_cfg: ProvidersConfig, query: searched::Query) -> Vec<searched::Result> {
+    let mut set = JoinSet::new();
+    for provider in provider_cfg.0.keys() {
+        let mut query = query.clone();
+        query.provider = provider.clone();
+
+        let engine = engine.clone();
+        set.spawn(async move {
+            engine.search(query).await
+        });
+    }
+    let mut results = set.join_all().await.concat();
+    results.sort_by_key(|x| x.url.clone());
+
+    let mut dedup = results.clone();
+    dedup.dedup_by_key(|x| x.url.clone());
+    let scores = dedup.iter().map(|x| results.iter().filter(|y| y.url == x.url).count()).collect::<Vec<usize>>();
+
+    let mut dedup_scores = dedup.iter().zip(scores.iter()).collect::<Vec<_>>();
+    dedup_scores.sort_by(|a, b| b.1.cmp(a.1));
+
+    dedup_scores.iter().map(|x| x.0.clone()).collect()
 }
 
 #[axum_macros::debug_handler]
@@ -106,22 +128,31 @@ pub async fn results(
 
         let kind = params.k.unwrap_or_default();
 
-        #[cfg(debug_assertions)]
-        let sttm = Instant::now();
-
-        let results = st
-            .eng
-            .search(searched::Query {
+        let query = searched::Query {
                 provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
                 query: q.clone(),
                 kind: kind.clone(),
                 page: params.p.unwrap_or(1),
                 ..Default::default()
-            })
-            .await;
+            };
 
-        #[cfg(debug_assertions)]
-        debug!("done in {:?}! awaiting a query...", sttm.elapsed());
+        let search_st = Instant::now();
+
+        let results = ranked_results(st.eng, ProvidersConfig::load("plugins/providers.toml"), query).await;
+
+        //let results = st
+        //    .eng
+        //    .search(searched::Query {
+        //        provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
+        //        query: q.clone(),
+        //        kind: kind.clone(),
+        //        page: params.p.unwrap_or(1),
+        //        ..Default::default()
+        //    })
+        //    .await;
+
+        let search_tm = search_st.elapsed();
+        debug!("results took {search_tm:?}");
 
         Html(
             (*TEMPLATES.read().await)
@@ -135,6 +166,7 @@ pub async fn results(
                             .to_vec(),
                         query: q,
                         results: results.to_vec(),
+                        search_time: search_tm.as_millis(),
                         ..Default::default()
                     })
                     .unwrap(),
