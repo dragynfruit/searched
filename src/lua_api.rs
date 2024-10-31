@@ -219,12 +219,17 @@ fn fend_eval(_: &Lua, input: String) -> LuaResult<String> {
 pub struct PluginEngine {
     lua: Lua,
     client: Client,
+    #[cfg(not(feature = "hot_reload"))]
     providers: ProvidersConfig,
 }
 impl PluginEngine {
     /// Initialize a new engine for running plugins
     pub async fn new(client: Client) -> Result<Self, Box<dyn Error>> {
+        #[cfg(not(feature = "hot_reload"))]
         let providers = ProvidersConfig::load("plugins/providers.toml");
+
+        debug!("initializing plugin engine...");
+
         let lua = Lua::new();
 
         // Add Lua global variables we need
@@ -252,12 +257,17 @@ impl PluginEngine {
         lua.globals()
             .set("fend_eval", lua.create_function(fend_eval)?)?;
 
+        debug!("Initialized plugin engine! loading engines...");
+
         // Load engines
         Self::load_engines(&lua).await;
+
+        debug!("loaded engines!");
 
         Ok(Self {
             lua,
             client,
+            #[cfg(not(feature = "hot_reload"))]
             providers,
         })
     }
@@ -265,26 +275,36 @@ impl PluginEngine {
     pub async fn load_engines(lua: &Lua) {
         for path in read_dir("plugins/engines").unwrap() {
             if let Ok(path) = path {
+                // Do war crime level code
+                let name = path.path().file_stem().expect("bad file path").to_str().expect("filename should be utf-8").to_string();
+
+                debug!("loading {name}...");
+                let load_st = Instant::now();
+
+                // Read the source code into buf
                 let mut buf = String::new();
                 let mut f = File::open(path.path()).unwrap();
                 f.read_to_string(&mut buf).unwrap();
+
                 lua.load(&buf).exec_async().await.unwrap();
+
+                debug!("loaded {name} in {:?}!", load_st.elapsed());
             }
         }
     }
 
-    /// Use the given provider to process the given query
+    /// Process the given query
     pub async fn search(&self, query: Query) -> Vec<crate::Result> {
         #[cfg(feature = "hot_reload")]
-        let providers = {
-            Self::load_engines(&self.lua).await;
-            ProvidersConfig::load("plugins/providers.toml")
-        };
+        Self::load_engines(&self.lua).await;
+
+        #[cfg(feature = "hot_reload")]
+        let providers = ProvidersConfig::load("plugins/providers.toml");
         #[cfg(not(feature = "hot_reload"))]
         let providers = &self.providers;
 
         if let Some(provider) = providers.0.get(&query.provider) {
-            let engine = provider.engine.clone().unwrap_or(query.provider.clone());
+            let engine = provider.engine.clone().unwrap_or_else(|| query.provider.clone());
             let target = format!("searched::engine::{engine}");
 
             // Get engine implementation
@@ -296,6 +316,7 @@ impl PluginEngine {
                 .get::<LuaFunction>(engine)
                 .unwrap();
 
+            // Run engine for query
             let results = eng_impl
                 .call_async::<Vec<LuaTable>>((
                     ClientWrapper(self.client.clone()),
@@ -306,108 +327,19 @@ impl PluginEngine {
                 .await;
 
             match results {
-                Ok(results) => results
-                    .into_iter()
-                    .map(|r| self.lua.from_value(LuaValue::Table(r)).unwrap())
-                    .collect(),
+                Ok(results) => {
+                    return results
+                        .into_iter()
+                        .map(|r| self.lua.from_value(LuaValue::Table(r)).unwrap())
+                        .collect();
+                }
                 Err(err) => {
-                    // error!("failed to get results from engine: {:?}", err);
                     error!(target: &target, "failed to get results from provider {}: {}", query.provider, err);
-                    Vec::new()
                 }
             }
-        } else {
-            Vec::new()
         }
+
+        Vec::new()
     }
 }
 
-#[derive(Clone)]
-pub struct PluginEnginePool {
-    queue: Arc<Mutex<VecDeque<(crate::Query, oneshot::Sender<Vec<crate::Result>>)>>>,
-}
-impl PluginEnginePool {
-    pub async fn new(pool_size: usize) -> Self {
-        let queue: Arc<Mutex<VecDeque<(crate::Query, oneshot::Sender<Vec<crate::Result>>)>>> =
-            Arc::new(Mutex::const_new(VecDeque::new()));
-
-        let mut headers = HeaderMap::new();
-        for (key, val) in [
-            (
-                "User-Agent",
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:129.0) Gecko/20100101 Firefox/129.0",
-            ),
-            (
-                "Accept",
-                "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,*/*;q=0.8",
-            ),
-            ("Accept-Language", "en-US,en;q=0.5"),
-            ("Accept-Encoding", "gzip"),
-            ("DNT", "1"),
-            ("Connection", "keep-alive"),
-            ("Upgrade-Insecure-Requests", "1"),
-            ("Sec-Fetch-Dest", "document"),
-            ("Sec-Fetch-Mode", "navigate"),
-            ("Sec-Fetch-Site", "none"),
-            ("Sec-Fetch-User", "?1"),
-            ("Priority", "u=1"),
-            ("TE", "trailers"),
-        ] {
-            headers.append(key, HeaderValue::from_str(val).unwrap());
-        }
-        let client = Client::builder().default_headers(headers).build().unwrap();
-
-        info!("starting plugin engine pool with {pool_size} worker threads...");
-
-        for i in 0..pool_size {
-            let queue = queue.clone();
-            let client = client.clone();
-
-            //std::thread::spawn(move || {
-            //    let rt = tokio::runtime::Builder::new_current_thread()
-            //        .enable_all()
-            //        .build()
-            //        .unwrap();
-            //    rt.block_on(async move {
-            //        LocalSet::new()
-            //            .run_until(async move {
-            tokio::spawn(async move {
-                let target = format!("searched::worker{i}");
-                let mut eng = PluginEngine::new(client).await.unwrap();
-
-                debug!(target: &target, "awaiting a query...");
-
-                loop {
-                    let query = queue.lock().await.pop_front();
-
-                    if let Some((query, res_tx)) = query {
-                        debug!(target: &target, "processing query: {query:?}");
-
-                        #[cfg(debug_assertions)]
-                        let st = Instant::now();
-
-                        let result = res_tx.send(eng.search(query).await);
-
-                        if result.is_err() {
-                            error!(target: &target, "failed to send results back to the main thread!");
-                        }
-
-                        #[cfg(debug_assertions)]
-                        debug!(target: &target, "done in {:?}! awaiting a query...", st.elapsed());
-                    }
-                }
-                //})
-                //.await;
-                //});
-            });
-            info!("started worker thread #{i}");
-        }
-
-        Self { queue }
-    }
-    pub async fn search(&self, query: Query) -> Vec<crate::Result> {
-        let (res_tx, rx) = oneshot::channel::<Vec<crate::Result>>();
-        self.queue.lock().await.push_back((query, res_tx));
-        rx.await.unwrap_or_default()
-    }
-}

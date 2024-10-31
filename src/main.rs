@@ -21,7 +21,7 @@ use log::LevelFilter;
 //use reqwest::Client;
 use searched::{
     config::Config,
-    lua_api::{PluginEngine, PluginEnginePool},
+    lua_api::PluginEngine,
 };
 //use sled::Db;
 use tokio::net::TcpListener;
@@ -30,7 +30,6 @@ use tokio::net::TcpListener;
 pub struct AppState {
     //client: Client,
     //db: Db,
-    pool: PluginEnginePool,
     //config: Config,
     eng: PluginEngine,
 }
@@ -75,9 +74,6 @@ async fn main() {
 
     info!("Starting up...");
 
-    let pool = PluginEnginePool::new(4).await;
-
-    let config = Config::load("plugins/providers.toml");
     let eng = PluginEngine::new(client).await.unwrap();
 
     info!("initializing web");
@@ -87,7 +83,7 @@ async fn main() {
         .route("/settings", get(web::settings))
         .route("/assets/logo.png", get(web::logo))
         .route("/favicon.ico", get(web::icon))
-        .with_state(AppState { pool, eng });
+        .with_state(AppState { eng });
 
     tokio::spawn(async {
         axum::serve(
