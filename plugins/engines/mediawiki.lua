@@ -5,13 +5,9 @@
 add_engine('mediawiki', function(client, query, opts)
 	--assert(type(opts['url']) == 'string', '"url" extra must be set to a string')
 
-	local url =
-		Url.from_template(
-			tostring(opts.url),
-			{
-				query = query.query,
-			}
-		):string()
+	local url = Url.from_template(tostring(opts.url), {
+		query = query.query,
+	}):string()
 
 	local res = client:get(url, {})
 	local data = parse_json(res)

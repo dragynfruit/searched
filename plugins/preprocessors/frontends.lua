@@ -6,7 +6,7 @@ function Services.reddit()
 	-- a
 end
 
-Services['youtube.com'] = function ()
+Services['youtube.com'] = function()
 	-- replace with invidious
 end
 Services['www.youtube.com'] = Services['youtube.com']
