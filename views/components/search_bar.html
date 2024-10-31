@@ -7,6 +7,7 @@
     }
 
     .search-input input[type="search"] {
+        height: 40px;
         width: calc(100% - 60px);
         padding: 10px 16px;
         border: none;
@@ -22,7 +23,6 @@
         color: #999;
     }
 
-    /* Remove the search input's default clear button in webkit browsers */
     .search-input input[type="search"]::-webkit-search-decoration,
     .search-input input[type="search"]::-webkit-search-cancel-button,
     .search-input input[type="search"]::-webkit-search-results-button,
@@ -32,6 +32,7 @@
 
     .search-input button {
         width: 50px;
+        height: 40px;
         padding: 10px 0;
         border: none;
         border-radius: 5px;
@@ -42,6 +43,9 @@
         transition: all 0.2s ease;
         margin-left: 4px;
         vertical-align: middle;
+        /* horizontal align content */
+        display: inline-block;
+        text-align: center;
     }
 
     .search-input button:hover {
