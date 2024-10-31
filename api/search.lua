@@ -43,14 +43,6 @@ Kind = {
 --- @field public page number
 Query = {}
 
---- @class Result
---- A search result
----
---- @field public url string
---- @field public title string
---- @field public snippet? string
-Result = {}
-
 --- @class Element
 ---
 --- @field public inner_html string

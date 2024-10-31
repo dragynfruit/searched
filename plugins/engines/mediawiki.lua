@@ -19,7 +19,9 @@ add_engine('mediawiki', function(client, query, opts)
 				results[i] = {
 					title = data[2][i],
 					url = data[4][i],
-					snippet = data[3][i],
+					general = {
+						snippet = data[3][i],
+					},
 				}
 			end
 		end

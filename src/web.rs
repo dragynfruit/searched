@@ -143,12 +143,16 @@ pub async fn results(
 
         let search_st = Instant::now();
 
-        let results = ranked_results(
-            st.eng,
-            ProvidersConfig::load("plugins/providers.toml"),
-            query.clone(),
-        )
-        .await;
+        let results = if query.provider == String::from("all") {
+            ranked_results(
+                st.eng,
+                ProvidersConfig::load("plugins/providers.toml"),
+                query.clone(),
+            )
+            .await
+        } else {
+            st.eng.search(query.clone()).await
+        };
 
         let search_tm = search_st.elapsed();
         debug!("results took {search_tm:?}");

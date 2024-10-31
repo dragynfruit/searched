@@ -17,7 +17,9 @@ add_engine('stackoverflow', function(client, query, opts)
 		results[i] = {
 			url = item['link'],
 			title = item['title'],
-			snippet = table.concat(item['tags'], ' '),
+			general = {
+				snippet = table.concat(item['tags'], ' '),
+			},
 		}
 	end
 

@@ -283,7 +283,7 @@ impl PluginEngine {
                 .unwrap();
 
             let results = eng_impl
-                .call_async::<Vec<HashMap<String, LuaValue>>>((
+                .call_async::<Vec<LuaTable>>((
                     ClientWrapper(self.client.clone()),
                     query,
                     self.lua
@@ -291,28 +291,10 @@ impl PluginEngine {
                 ))
                 .await;
 
-            fn read_to_string(data: &LuaValue) -> String {
-                if let LuaValue::String(s) = data {
-                    s.to_str().unwrap().to_string()
-                } else {
-                    String::new()
-                }
-            }
-
             match results {
                 Ok(results) => results
                     .into_iter()
-                    .map(|r| crate::Result {
-                        url: read_to_string(r.get("url").unwrap()),
-                        title: read_to_string(r.get("title").unwrap()),
-                        general: Some(crate::GeneralResult {
-                            snippet: r
-                                .get("snippet")
-                                .map(|x| read_to_string(x))
-                                .unwrap_or_default(),
-                        }),
-                        ..Default::default()
-                    })
+                    .map(|r| self.lua.from_value(LuaValue::Table(r)).unwrap())
                     .collect(),
                 Err(err) => {
                     error!("failed to get results from engine: {:?}", err);

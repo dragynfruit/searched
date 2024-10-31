@@ -61,11 +61,11 @@ pub struct Query {
     pub provider: String,
     #[serde(rename(deserialize = "q"))]
     pub query: String,
-    #[serde(rename(deserialize  = "k"))]
+    #[serde(rename(deserialize = "k"))]
     pub kind: Kind,
-    #[serde(rename(deserialize  = "p"))]
+    #[serde(rename(deserialize = "p"))]
     pub page: usize,
-    #[serde(rename(deserialize  = "s"), default)]
+    #[serde(rename(deserialize = "s"), default)]
     pub safe: SafeSearch,
 }
 

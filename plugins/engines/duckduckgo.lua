@@ -51,7 +51,9 @@ add_engine('duckduckgo', function(client, query, _)
 		ret[i] = {
 			url = url,
 			title = title,
-			snippet = snippet,
+			general = {
+				snippet = snippet,
+			},
 		}
 	end
 

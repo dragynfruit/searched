@@ -56,7 +56,9 @@ add_engine('json_engine', function(client, query, opts)
 				results[i] = {
 					title = get_key(result, opts.title_key),
 					url = result_url,
-					snippet = get_key(result, opts.snippet_key),
+					general = {
+						snippet = get_key(result, opts.snippet_key),
+					},
 				}
 			end
 		end
