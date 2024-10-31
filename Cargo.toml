@@ -4,7 +4,8 @@ version = "0.1.0"
 edition = "2021"
 
 [features]
-default = ["__lua54"]
+default = ["__lua54", "hot_reload"]
+hot_reload = []
 prod = ["__luau-jit", "mlua/vendored"]
 __lua54 = ["mlua/lua54"]
 __luau-jit = ["mlua/luau-jit"]

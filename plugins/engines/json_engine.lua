@@ -42,6 +42,7 @@ add_engine('json_engine', function(client, query, opts)
 		data = get_key(data, opts.results_key)
 	end
 
+	--- @type [Result]
 	local results = {}
 	for i = 1, #data do
 		if data[i] ~= nil then

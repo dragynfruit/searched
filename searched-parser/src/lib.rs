@@ -48,6 +48,9 @@ impl Url {
                 pos = st;
             }
         }
+        if len > 0 && src[pos-1] != b'}' {
+            elems.push(UrlElem::Static(st..pos));
+        }
 
         Self {
             src: src.to_vec(),

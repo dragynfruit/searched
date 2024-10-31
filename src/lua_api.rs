@@ -252,14 +252,7 @@ impl PluginEngine {
             .set("fend_eval", lua.create_function(fend_eval)?)?;
 
         // Load engines
-        for path in read_dir("plugins/engines").unwrap() {
-            if let Ok(path) = path {
-                let mut buf = String::new();
-                let mut f = File::open(path.path()).unwrap();
-                f.read_to_string(&mut buf).unwrap();
-                lua.load(&buf).exec_async().await.unwrap();
-            }
-        }
+        Self::load_engines(&lua).await;
 
         Ok(Self {
             lua,
@@ -268,9 +261,28 @@ impl PluginEngine {
         })
     }
 
+    pub async fn load_engines(lua: &Lua) {
+        for path in read_dir("plugins/engines").unwrap() {
+            if let Ok(path) = path {
+                let mut buf = String::new();
+                let mut f = File::open(path.path()).unwrap();
+                f.read_to_string(&mut buf).unwrap();
+                lua.load(&buf).exec_async().await.unwrap();
+            }
+        }
+    }
+
     /// Use the given provider to process the given query
     pub async fn search(&self, query: Query) -> Vec<crate::Result> {
-        if let Some(provider) = self.providers.0.get(&query.provider) {
+        #[cfg(feature = "hot_reload")]
+        let providers = {
+            Self::load_engines(&self.lua).await;
+            ProvidersConfig::load("plugins/providers.toml")
+        };
+        #[cfg(not(feature = "hot_reload"))]
+        let providers = self.providers;
+
+        if let Some(provider) = providers.0.get(&query.provider) {
             let engine = provider.engine.clone().unwrap_or(query.provider.clone());
 
             // Get engine implementation

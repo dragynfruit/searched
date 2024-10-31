@@ -41,6 +41,7 @@ add_engine('duckduckgo', function(client, query, _)
 
 	assert(table.pack(links).n == table.pack(snippets).n, 'snippets bronken')
 
+	--- @type [Result]
 	local ret = {}
 
 	for i, link in ipairs(links) do

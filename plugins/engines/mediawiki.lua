@@ -12,6 +12,7 @@ add_engine('mediawiki', function(client, query, opts)
 	local res = client:get(url, {})
 	local data = parse_json(res)
 
+	--- @type [Result]
 	local results = {}
 	if data[2] ~= nil then
 		for i, _ in ipairs(data[2]) do

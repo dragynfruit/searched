@@ -12,6 +12,7 @@ add_engine('stackoverflow', function(client, query, opts)
 	print(res)
 	local data = parse_json(res)
 
+	--- @type [Result]
 	local results = {}
 	for i, item in ipairs(data) do
 		results[i] = {
