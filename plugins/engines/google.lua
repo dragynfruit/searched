@@ -3,12 +3,9 @@
 -- (c) 2024 Dragynfruit
 
 add_engine('google', function(client, query, _)
-	local offset = (query.page - 1) * 10
+	local offset = query.page * 10
 
 	local url = Url.parse_with_params(
-		--tostring(
-		--	'https://google.com/search?filter=0&asearch=arc&oe=utf8&async=use_ac:true,_fmt:prog&start={start}&q={query}'
-		--),
 		'https://google.com/search',
 		{
 			filter = '0',

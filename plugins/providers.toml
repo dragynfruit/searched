@@ -25,6 +25,7 @@ description = "The most popular search engine"
 kinds = ["sear"]
 	[google.features]
 	safe_search = "yes"
+	pagination = "0"
 
 [wiby]
 engine = "json"
@@ -149,4 +150,12 @@ description = "A privacy-respecting search engine"
 kinds = ["sear"]
 	[qwant.features]
 	pagination = "1"
+	safe_search = "multilevel"
+
+[yahoo]
+name = "Yahoo"
+description = "A search engine"
+kinds = ["sear"]
+	[yahoo.features]
+	pagination = "0"
 	safe_search = "multilevel"
