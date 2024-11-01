@@ -36,7 +36,7 @@ kinds = ["sear"]
 	pagination = "1"
 
 	[wiby.extra]
-	url = "https://wiby.me/json?q={query}&page={page}"
+	url = "https://wiby.me/json?q={query}&p={page}"
 	url_key = "URL"
 	title_key = "Title"
 	snippet_key = "Snippet"
@@ -157,5 +157,5 @@ name = "Yahoo"
 description = "A search engine"
 kinds = ["sear"]
 	[yahoo.features]
-	pagination = "0"
+	pagination = "1"
 	safe_search = "multilevel"

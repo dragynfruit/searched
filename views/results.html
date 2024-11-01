@@ -33,7 +33,7 @@
 		margin-right: 10px;
 	}
 
-	#kinds a#current {
+	#kinds a#current-category {
 		color: #98db7c;
 		font-weight: bold;
 	}
@@ -77,8 +77,19 @@
 		vertical-align: middle;
 	}
 
-	#bottom {
-		padding: 10px;
+	.page-button {
+		padding: 5px 10px;
+		margin-right: 5px;
+		border-radius: 5px;
+		background-color: #363636;
+		color: #CDCDCD;
+		text-decoration: none;
+		transition: all 0.3s;
+	}
+
+	.page-button#current-page {
+		background-color: #98db7c;
+		color: #363636;
 	}
 
 	#ferris {
@@ -157,7 +168,8 @@
 		<tr>
 			<td colspan="3" id="kinds">
 				{% for i in range(end=kind_ids | length) %}
-				<a href="?q={{ query.query }}&k={{ kind_ids[i] }}" id="{% if kind == kind_ids[i] %}current{% endif %}">{{
+				<a href="?q={{ query.query }}&p={{ query.page }}&k={{ kind_ids[i] }}"
+					id="{% if kind == kind_ids[i] %}current-category{% endif %}">{{
 					kind_names[i] }}</a>
 				{% endfor %}
 			</td>
@@ -173,6 +185,29 @@
 	{{ result_view::generate_content(result=result) }}
 	{% endfor %}
 	<div id="bottom">
+		<!-- {% set page_start = query.page - 5 %}
+		{% set page_end = query.page + 5 %}
+		{% if page_start < 0 %}
+			{% set diff = 0 - page_start %}
+			{% set page_start = 0 %}
+			{% set page_end = page_end + diff %}
+		{% endif %} -->
+		<!-- query.page first page is 1 -->
+		{% set page_start = query.page - 5 %}
+		{% set page_end = query.page + 5 %}
+		{% if page_start < 1 %}
+			{% set page_end = page_end + (1 - page_start) %}
+			{% set page_start = 1 %}
+		{% endif %}
+
+		{% if query.page > 1 %}
+			<a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page - 1 }}" class="page-button">&#x276E;&#xFE0E;</a>
+		{% endif %}
+		{% for i in range(start=page_start, end=page_end) %}
+			<a href="?q={{ query.query }}&k={{ kind }}&p={{ i }}" class="page-button" id="{% if i == query.page %}current-page{% endif %}">{{ i }}</a>
+		{% endfor %}
+		<a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page + 1 }}" class="page-button">&#x276F;&#xFE0E;</a>
+
 		<p>Found {{ results | length }} results in {{ search_time }} ms</p>
 	</div>
 	{% else %}
