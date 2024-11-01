@@ -7,7 +7,7 @@ extern crate serde;
 extern crate searched_parser;
 
 pub mod config;
-pub mod lua_api;
+pub mod lua_support;
 
 use std::collections::HashMap;
 

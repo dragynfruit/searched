@@ -7,7 +7,7 @@ use axum::{
     response::{Html, IntoResponse, Redirect, Response},
 };
 use once_cell::sync::Lazy;
-use searched::{config::ProvidersConfig, lua_api::PluginEngine, Kind, PROVIDER_KINDS};
+use searched::{config::ProvidersConfig, lua_support::PluginEngine, Kind, PROVIDER_KINDS};
 use tera::{Context, Tera};
 use tokio::{sync::RwLock, task::JoinSet};
 
@@ -38,6 +38,9 @@ const MOTD: &'static [&'static str] = &[
     "<a onclick=\"alert('Python bad')\" href=\"#\">Click me!</a>",
     "We <3 <a href=\"https://archive.org\">IA</a>",
     "<i>\"If it is on the Internet then it must be true.\"</i><br>&mdash; Abraham Lincoln",
+    "<i>\"skibidi sigma ohio rizzler\"</i><br>&mdash; Drake",
+    "<i>\"ok I'll do it tmrw\"</i><br>&mdash; Lincoln",
+    "<i>\"Never gonna let you down\"</i><br>&mdash; Rick Astley",
 ];
 
 #[derive(Serialize)]
@@ -50,7 +53,7 @@ pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
         return Redirect::to("/search").into_response();
     }
 
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "hot_reload")]
     (*TEMPLATES.write().await).full_reload().unwrap();
 
     Html(
@@ -75,16 +78,9 @@ pub struct SearchParams {
     p: Option<usize>,
 }
 
-#[derive(Serialize)]
-pub struct SearchResult {
-    url: String,
-    title: String,
-    body_preview: String,
-}
-
 #[derive(Serialize, Default)]
 pub struct SearchResults {
-    kinds: Vec<Kind>,
+    providers: ProvidersConfig,
     query: searched::Query,
     count: usize,
     page: usize,
@@ -136,7 +132,10 @@ pub async fn results(
     State(st): State<AppState>,
 ) -> impl IntoResponse {
     if let Some(q) = params.q {
-        #[cfg(debug_assertions)]
+        if q == "rust" {
+            return Redirect::to("https://rust-lang.org").into_response();
+        }
+        #[cfg(feature = "hot_reload")]
         (*TEMPLATES.write().await).full_reload().unwrap();
 
         let kind = params.k.unwrap_or_default();
@@ -151,10 +150,12 @@ pub async fn results(
 
         let search_st = Instant::now();
 
+        let providers = ProvidersConfig::load("plugins/providers.toml");
+
         let results = if query.provider == String::from("all") {
             ranked_results(
                 st.eng,
-                ProvidersConfig::load("plugins/providers.toml"),
+                providers.clone(),
                 query.clone(),
             )
             .await
@@ -174,6 +175,7 @@ pub async fn results(
                         query: query,
                         results: results.to_vec(),
                         search_time: search_tm.as_millis(),
+                        providers,
                         ..Default::default()
                     })
                     .unwrap(),
@@ -187,7 +189,7 @@ pub async fn results(
 }
 
 pub async fn settings(State(_st): State<AppState>) -> impl IntoResponse {
-    #[cfg(debug_assertions)]
+    #[cfg(feature = "hot_reload")]
     (*TEMPLATES.write().await).full_reload().unwrap();
 
     Html(
