@@ -41,6 +41,7 @@ toml = { version = "0.8.19", default-features = false, features = ["parse"] }
 fastrand = "2.1.1"
 searched-parser = { version = "0.1.0", path = "searched-parser" }
 fend-core = "1.5.3"
+axum-extra = { version = "0.9.4", default-features = false, features = ["cookie"] }
 
 [profile.dev.package.'*']
 opt-level = 3

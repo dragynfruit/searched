@@ -182,7 +182,7 @@
 <div id="results">
 	{% if results %}
 	{% for result in results %}
-	{{ result_view::generate_content(result=result, icon=false) }}
+	{{ result_view::generate_content(result=result, favicon=settings.favicons) }}
 	{% endfor %}
 	<div id="bottom">
 		{% set page_start = query.page - 5 %}

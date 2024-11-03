@@ -7,9 +7,7 @@ use fend_core::Context;
 use mlua::prelude::*;
 use reqwest::Client;
 use scraper::{node::Element, Html, Selector};
-use tokio::{
-    sync::Mutex,
-};
+use tokio::sync::Mutex;
 use url::Url;
 
 use crate::Query;
@@ -38,17 +36,17 @@ impl UrlWrapper {
         .map(|x| UrlWrapper(x))
         .into_lua_err()
     }
-    fn from_template(_: &Lua, (template, values): (String, LuaTable)) -> LuaResult<Self> {
-        let values = HashMap::from_iter(
-            values
-                .pairs::<String, String>()
-                .map(|x| x.unwrap())
-                .map(|(k, v)| (k, v)),
-        );
-        Url::parse(&searched_parser::Url::parse(template.as_bytes()).build(values))
-            .map(|x| UrlWrapper(x))
-            .into_lua_err()
-    }
+    // fn from_template(_: &Lua, (template, values): (String, LuaTable)) -> LuaResult<Self> {
+    //     let values = HashMap::from_iter(
+    //         values
+    //             .pairs::<String, String>()
+    //             .map(|x| x.unwrap())
+    //             .map(|(k, v)| (k, v)),
+    //     );
+    //     Url::parse(&searched_parser::Url::parse(template.as_bytes()).build(values))
+    //         .map(|x| UrlWrapper(x))
+    //         .into_lua_err()
+    // }
     fn params(lua: &Lua, this: &Self, _: ()) -> LuaResult<LuaValue> {
         Ok(this
             .0
@@ -80,7 +78,7 @@ impl UrlWrapper {
 }
 impl LuaUserData for UrlWrapper {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_function("from_template", Self::from_template);
+        // methods.add_function("from_template", Self::from_template);
         methods.add_function("parse", Self::parse);
         methods.add_function("parse_with_params", Self::parse_with_params);
         methods.add_method("params", Self::params);

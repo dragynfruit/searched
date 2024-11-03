@@ -11,11 +11,10 @@ extern crate serde;
 extern crate searched;
 
 mod web;
+mod settings;
 
 use axum::{
-    http::{HeaderMap, HeaderValue},
-    routing::get,
-    Router,
+    http::{HeaderMap, HeaderValue}, middleware, routing::{get, post}, Router
 };
 use log::LevelFilter;
 //use reqwest::Client;
@@ -77,9 +76,11 @@ async fn main() {
     let r = Router::new()
         .route("/", get(web::search))
         .route("/search", get(web::results))
+        .route("/settings/update", get(settings::update_settings))
         .route("/settings", get(web::settings))
         .route("/assets/logo.png", get(web::logo))
         .route("/favicon.ico", get(web::icon))
+        .layer(middleware::from_fn(settings::settings_middleware))
         .with_state(AppState { eng });
 
     tokio::spawn(async {

@@ -2,16 +2,16 @@ use std::{process, sync::Arc, time::Instant};
 
 use axum::{
     body::Body,
-    extract::{Query, State},
+    extract::{Extension, Query, State},
     http::header,
-    response::{Html, IntoResponse, Redirect, Response},
+    response::{Html, IntoResponse, Redirect, Response}, Form,
 };
 use once_cell::sync::Lazy;
 use searched::{config::ProvidersConfig, lua_support::PluginEngine, Kind, PROVIDER_KINDS};
 use tera::{Context, Tera};
 use tokio::{sync::RwLock, task::JoinSet};
 
-use crate::AppState;
+use crate::{settings::{self, Settings}, AppState};
 
 pub static TEMPLATES: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
@@ -87,6 +87,7 @@ pub struct SearchResults {
     kind: Kind,
     results: Vec<searched::Result>,
     search_time: u128,
+    settings: settings::Settings,
 }
 
 pub async fn ranked_results(
@@ -130,6 +131,7 @@ pub async fn ranked_results(
 pub async fn results(
     Query(params): Query<SearchParams>,
     State(st): State<AppState>,
+    Extension(settings): Extension<Settings>,
 ) -> impl IntoResponse {
     if let Some(q) = params.q {
         if q == "rust" {
@@ -176,6 +178,7 @@ pub async fn results(
                         results: results.to_vec(),
                         search_time: search_tm.as_millis(),
                         providers,
+                        settings,
                         ..Default::default()
                     })
                     .unwrap(),
@@ -188,13 +191,16 @@ pub async fn results(
     }
 }
 
-pub async fn settings(State(_st): State<AppState>) -> impl IntoResponse {
+pub async fn settings(State(_st): State<AppState>, Extension(settings): Extension<Settings>) -> impl IntoResponse {
     #[cfg(feature = "hot_reload")]
     (*TEMPLATES.write().await).full_reload().unwrap();
 
+    let mut context = Context::new();
+    context.insert("settings", &settings);
+
     Html(
         (*TEMPLATES.read().await)
-            .render("settings.html", &Context::new())
+            .render("settings.html", &context)
             .unwrap(),
     )
     .into_response()

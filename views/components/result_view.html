@@ -41,7 +41,7 @@
 </style>
 {% endmacro generate_style %}
 
-{% macro generate_content(result, icon=false) %}
+{% macro generate_content(result, favicon=false) %}
 <table class="result">
     <tr>
         <td>
@@ -54,7 +54,7 @@
             {% set_global current_path = domain %}
 
             <span class="list" aria-hidden="true">
-                {% if icon %}
+                {% if favicon %}
                     <img src="https://www.google.com/s2/favicons?sz=32&domain={{ protocol_domain }}" width="16" height="16" alt="{{ domain }} Favicon" />
                 {% endif %}
                 <a href="{{ protocol_domain }}" class="domain">{{ protocol_domain }}</a>

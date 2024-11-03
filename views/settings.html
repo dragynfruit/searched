@@ -20,6 +20,11 @@
 		padding: 0;
 	}
 
+	#settings-header a {
+		text-decoration: none;
+		color: #CDCDCD;
+	}
+
 	@media screen and (max-width: 520px) {
 		#settings-header h3 {
 			display: none;
@@ -32,22 +37,34 @@
 {% endblock head %}
 
 {% block left_header %}
-<div id="settings-header">
-	<img src="assets/logo.png" width="48" height="48" alt="Logo" />
-	<h3>Searched Settings</h3>
-</div>
+<table id="settings-header">
+	<tr>
+		<td>
+			<a href="/"><img src="assets/logo.png" width="48" height="48" alt="Logo" /></a>
+		</td>
+		<td>
+			<a href="/"><h3>Searched Settings</h3></a>
+		</td>
+	</tr>
+</table>
 {% endblock left_header %}
 
 {% block right_header %}{% endblock right_header %}
 
 {% block content %}
-<div id="results">
-	<table id="no-results">
-		<tr>
-			<td>
-				<h1>No results found</h1>
-			</td>
-		</tr>
-	</table>
-</div>
+<form action="/settings/update">
+	<!-- checkbox -->
+	<label for="favicons">Favicons</label>
+	<input type="checkbox" id="favicons" name="favicons" {% if settings.favicons %}checked{% endif %} value="true">
+	<br>
+	<!-- theme -->
+	<label for="theme">Theme</label>
+	<select id="theme" name="theme">
+		<option value="light" {% if settings.theme == "light" %}selected{% endif %}>Light</option>
+		<option value="dark" {% if settings.theme == "dark" %}selected{% endif %}>Dark</option>
+	</select>
+	<br>
+	<!-- submit -->
+	<input type="submit" value="Save">
+</form>
 {% endblock content %}
