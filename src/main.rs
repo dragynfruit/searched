@@ -14,7 +14,7 @@ mod web;
 mod settings;
 
 use axum::{
-    http::{HeaderMap, HeaderValue}, middleware, routing::{get, post}, Router
+    http::{HeaderMap, HeaderValue}, middleware, routing::get, Router
 };
 use log::LevelFilter;
 //use reqwest::Client;

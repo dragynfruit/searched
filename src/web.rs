@@ -4,7 +4,7 @@ use axum::{
     body::Body,
     extract::{Extension, Query, State},
     http::header,
-    response::{Html, IntoResponse, Redirect, Response}, Form,
+    response::{Html, IntoResponse, Redirect, Response},
 };
 use once_cell::sync::Lazy;
 use searched::{config::ProvidersConfig, lua_support::PluginEngine, Kind, PROVIDER_KINDS};
