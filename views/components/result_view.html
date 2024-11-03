@@ -1,7 +1,7 @@
 {% macro generate_style() %}
 <style>
     .list {
-        font-size: 10pt;
+        font-size: 12pt;
     }
 
     .list a {
@@ -41,7 +41,7 @@
 </style>
 {% endmacro generate_style %}
 
-{% macro generate_content(result) %}
+{% macro generate_content(result, icon=false) %}
 <table class="result">
     <tr>
         <td>
@@ -49,11 +49,15 @@
             {% set protocol = split_protocol[0] %}
             {% set url = split_protocol[1] %}
             {% set split_path = url | split(pat="/") %}
-            {% set domain = protocol ~ "://" ~ split_path[0] %}
+            {% set domain = split_path[0] %}
+            {% set protocol_domain = protocol ~ "://" ~ domain %}
             {% set_global current_path = domain %}
 
             <span class="list" aria-hidden="true">
-                <a href="{{ domain }}" class="domain">{{ domain }}</a>
+                {% if icon %}
+                    <img src="https://www.google.com/s2/favicons?sz=32&domain={{ protocol_domain }}" width="16" height="16" alt="{{ domain }} Favicon" />
+                {% endif %}
+                <a href="{{ protocol_domain }}" class="domain">{{ protocol_domain }}</a>
                 &#x276F;
                 {% for i in range(start=1, end=split_path | length) %}
                 {% set path = split_path[i] %}

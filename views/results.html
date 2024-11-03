@@ -180,24 +180,21 @@
 
 {% block content %}
 <div id="results">
-	{%- if results -%}
-		{%- for result in results -%}
-			{{ result_view::generate_content(result=result) }}
-		{%- endfor -%}
-		<div id="bottom">
-			{% set page_start = query.page - 5 %}
-			{% set page_end = query.page + 5 %}
-			{% if page_start < 1 -%}
-				{%- set page_end=page_end + (1 - page_start) -%}
-				{%- set page_start=1 -%}
-			{%- endif -%}
-			{%- if query.page > 1 -%}
-				<a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page - 1 }}" class="page-button">&#x276E;&#xFE0E;</a>
-			{%- endif -%}
-			{%- for i in range(start=page_start, end=page_end) -%}
-				<a href="?q={{ query.query }}&k={{ kind }}&p={{ i }}" class="page-button"
-					id="{% if i == query.page %}current-page{% endif %}">{{ i }}</a>
-			{%- endfor -%}
+	{% if results %}
+	{% for result in results %}
+	{{ result_view::generate_content(result=result, icon=false) }}
+	{% endfor %}
+	<div id="bottom">
+		{% set page_start = query.page - 5 %}
+		{% set page_end = query.page + 5 %}
+		{% if page_start < 1 %} {% set page_end=page_end + (1 - page_start) %} {% set page_start=1 %} {% endif %} {% if
+			query.page> 1 %}
+			<a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page - 1 }}" class="page-button">&#x276E;&#xFE0E;</a>
+			{% endif %}
+			{% for i in range(start=page_start, end=page_end) %}
+			<a href="?q={{ query.query }}&k={{ kind }}&p={{ i }}" class="page-button"
+				id="{% if i == query.page %}current-page{% endif %}">{{ i }}</a>
+			{% endfor %}
 			<a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page + 1 }}" class="page-button">&#x276F;&#xFE0E;</a>
 
 			<p>Found {{ results | length }} results in {{ search_time }} ms</p>
