@@ -5,9 +5,11 @@ extern crate reqwest;
 extern crate tera;
 extern crate serde;
 extern crate searched;
+extern crate sled;
 
 mod web;
 mod settings;
+mod favicon;
 
 use axum::{
     http::{HeaderMap, HeaderValue}, middleware
@@ -15,10 +17,13 @@ use axum::{
 use log::{info, LevelFilter};
 use searched::lua_support::PluginEngine;
 use tokio::net::TcpListener;
+use reqwest::Client;
 
 #[derive(Clone)]
 pub struct AppState {
     eng: PluginEngine,
+    client: Client,
+    db: sled::Db,
 }
 
 #[tokio::main]
@@ -52,6 +57,8 @@ async fn main() {
         .build()
         .unwrap();
 
+    let db = sled::open("data/db").unwrap();
+
     env_logger::builder()
         .filter_level(LevelFilter::Info)
         .parse_default_env()
@@ -59,11 +66,11 @@ async fn main() {
 
     info!("Starting up...");
 
-    let eng = PluginEngine::new(client).await.unwrap();
+    let eng = PluginEngine::new(client.clone()).await.unwrap();
 
     info!("initializing web");
     let app = web::router()
-        .with_state(AppState { eng })
+        .with_state(AppState { eng, client: client.clone(), db })
         .layer(middleware::from_fn(settings::settings_middleware));
 
     tokio::spawn(async {

@@ -17,7 +17,7 @@ pub struct Settings {
 impl Default for Settings {
     fn default() -> Self {
         Self {
-            favicons: false,
+            favicons: true,
             theme: "auto".to_string(),
         }
     }

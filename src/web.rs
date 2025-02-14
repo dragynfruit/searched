@@ -139,5 +139,6 @@ pub fn router() -> Router<AppState> {
         .route("/search", get(search_results))
         .route("/settings", get(settings_page))
         .route("/settings/update", get(update_settings))
+        .route("/favicon", get(crate::favicon::favicon))
         .layer(middleware::from_fn(settings_middleware))
 }
