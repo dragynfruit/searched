@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-
 use axum::{
     body::Body,
     extract::{Query, Request},
@@ -7,9 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use axum_extra::extract::CookieJar;
-
-// THIS NEEDS TO BE CLEANED UP ASAP. ALSO THEME DOESN'T WORK FOR GOD KNOWS WHAT REASON ashuioafshpoafsuhaliouhoufdgsjl;hnbadf;ilohmkla
-// aspoihdjoaih98yh089y30ha;dpoijas';pioj
+use serde::{Deserialize, Serialize};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -21,53 +18,56 @@ impl Default for Settings {
     fn default() -> Self {
         Self {
             favicons: false,
-            theme: "dark".to_string(),
+            theme: "auto".to_string(),
         }
     }
 }
 
 impl Settings {
-    pub fn new() -> Self {
-        Self::default()
+    pub fn new() -> SettingsBuilder {
+        SettingsBuilder::default()
     }
 
-    pub fn to_string(&self) -> String {
-        self.clone().into()
+    pub fn to_cookies(&self) -> Vec<String> {
+        vec![
+            format!("favicons={}; Path=/; Max-Age=31536000; SameSite=Strict; Secure", self.favicons),
+            format!("theme={}; Path=/; Max-Age=31536000; SameSite=Strict; Secure", self.theme),
+        ]
     }
 }
 
-// convert jar into settings struct
+#[derive(Default)]
+pub struct SettingsBuilder {
+    favicons: Option<bool>,
+    theme: Option<String>,
+}
+
+impl SettingsBuilder {
+    pub fn favicons(mut self, favicons: bool) -> Self {
+        self.favicons = Some(favicons);
+        self
+    }
+
+    pub fn theme<S: Into<String>>(mut self, theme: S) -> Self {
+        self.theme = Some(theme.into());
+        self
+    }
+
+    pub fn build(self) -> Settings {
+        let defaults = Settings::default();
+        Settings {
+            favicons: self.favicons.unwrap_or(defaults.favicons),
+            theme: self.theme.unwrap_or(defaults.theme),
+        }
+    }
+}
+
 impl From<CookieJar> for Settings {
     fn from(jar: CookieJar) -> Self {
-        let defaults = Settings::default();
-
-        let favicons = jar
-            .get_string("favicons")
-            .map(|c| c == "true")
-            .unwrap_or(defaults.favicons);
-        let theme = jar.get_string("theme").unwrap_or(defaults.theme);
-
-        Self { favicons, theme }
-    }
-}
-
-// convert settings into a cookie string that never expires
-impl From<Settings> for String {
-    fn from(settings: Settings) -> Self {
-        format!(
-            "favicons={}; theme={}; Max-Age=31536000; SameSite=Strict; Path=/",
-            settings.favicons, settings.theme
-        )
-    }
-}
-
-trait BetterCookieJar {
-    fn get_string(&self, key: &str) -> Option<String>;
-}
-
-impl BetterCookieJar for CookieJar {
-    fn get_string(&self, key: &str) -> Option<String> {
-        self.get(key).map(|c| c.value().to_string())
+        Settings::new()
+            .favicons(jar.get("favicons").map(|c| c.value() == "true").unwrap_or_default())
+            .theme(jar.get("theme").map(|c| c.value().to_string()).unwrap_or_default())
+            .build()
     }
 }
 
@@ -77,16 +77,20 @@ pub async fn settings_middleware(jar: CookieJar, mut request: Request, next: Nex
     next.run(request).await
 }
 
-pub async fn update_settings(Query(settings): Query<HashMap<String, String>>) -> impl IntoResponse {
-    let settings = Settings {
-        favicons: settings.get("favicons").map(|c| c == "true").unwrap_or(false),
-        theme: settings.get("theme").unwrap_or(&"dark".to_string()).to_string(),
-    };
+pub async fn update_settings(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+    let settings = Settings::new()
+        .favicons(params.get("favicons").map(|v| v == "true").unwrap_or_default())
+        .theme(params.get("theme").map(|t| t.to_string()).unwrap_or_default())
+        .build();
 
-    Response::builder()
+    let mut response = Response::builder()
         .status(302)
-        .header("Location", "/")
-        .header("Set-Cookie", settings.to_string())
-        .body(Body::empty())
-        .unwrap()
+        .header("Location", "/settings");
+
+    // Add each cookie as a separate header
+    for cookie in settings.to_cookies() {
+        response = response.header("Set-Cookie", cookie);
+    }
+
+    response.body(Body::empty()).unwrap()
 }

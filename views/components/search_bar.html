@@ -10,17 +10,17 @@
         height: 40px;
         width: calc(100% - 60px);
         padding: 10px 16px;
-        border: none;
+        border: 1px solid var(--border-color);
         border-radius: 5px;
-        background-color: #363636;
-        color: white;
+        background-color: var(--bg-input);
+        color: var(--text-primary);
         font-size: 16px;
         outline: none;
         vertical-align: middle;
     }
 
     .search-input input[type="search"]::placeholder {
-        color: #999;
+        color: var(--text-muted);
     }
 
     .search-input input[type="search"]::-webkit-search-decoration,
@@ -34,10 +34,10 @@
         width: 50px;
         height: 40px;
         padding: 10px 0;
-        border: none;
+        border: 1px solid var(--border-color);
         border-radius: 5px;
-        background-color: #363636;
-        color: white;
+        background-color: var(--bg-input);
+        color: var(--text-primary);
         font-size: 16px;
         cursor: pointer;
         transition: all 0.2s ease;
@@ -48,8 +48,9 @@
     }
 
     .search-input button:hover {
-        background-color: #ff4755;
-        color: white;
+        background-color: var(--accent-secondary);
+        color: var(--bg-primary);
+        border-color: var(--accent-secondary);
     }
 </style>
 {% endmacro generate_style %}

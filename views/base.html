@@ -1,31 +1,91 @@
 <!DOCTYPE html>
-<html lang="en">
-	<head>
-		{% block head %}
-		<meta charset="UTF-8">
-		<meta name="viewport" content="width=device-width, initial-scale=1.0">
-		<link rel="shortcut icon" type="image/png" href="/assets/logo.png">
+<html lang="en" data-theme="{{ settings.theme }}">
+    <head>
+        {% block head %}
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="shortcut icon" type="image/png" href="/assets/logo.png">
 
-		<title>{% block title %}Searched{% endblock title %}</title>
-		{% endblock head %}
+        <title>{% block title %}Searched{% endblock title %}</title>
+        {% endblock head %}
 
-		<style>
-			html,
-			body {
-				height: 100%;
-				margin: 0;
-				padding: 0;
-				background-color: #121212;
-				color: #CDCDCD;
-				font-family: sans-serif;
-			}
-		
-			.icon {
-				font-size: 24pt;
-			}
-		</style>
-	</head>
-	<body>
-		{% block body %}{% endblock body %}
-	</body>
+        <style>
+            @media (prefers-color-scheme: dark) {
+                :root[data-theme="auto"] {
+                    --bg-primary: #121212;
+                    --bg-secondary: #1a1a1a;
+                    --bg-tertiary: #242424;
+                    --bg-input: #363636;
+                    --text-primary: #CDCDCD;
+                    --text-secondary: #a0a0a0;
+                    --text-muted: #999999;
+                    --accent-primary: #98db7c;
+                    --accent-secondary: #ff4755;
+                    --border-color: #363636;
+                }
+            }
+
+            @media (prefers-color-scheme: light) {
+                :root[data-theme="auto"] {
+                    --bg-primary: #ffffff;
+                    --bg-secondary: #f5f5f5;
+                    --bg-tertiary: #e5e5e5;
+                    --bg-input: #ffffff;
+                    --text-primary: #121212;
+                    --text-secondary: #666666;
+                    --text-muted: #888888;
+                    --accent-primary: #4a8f2c;
+                    --accent-secondary: #d32f2f;
+                    --border-color: #dddddd;
+                }
+            }
+
+            :root[data-theme="dark"] {
+                --bg-primary: #121212;
+                --bg-secondary: #1a1a1a;
+                --bg-tertiary: #242424;
+                --bg-input: #363636;
+                --text-primary: #CDCDCD;
+                --text-secondary: #a0a0a0;
+                --text-muted: #999999;
+                --accent-primary: #98db7c;
+                --accent-secondary: #ff4755;
+                --border-color: #363636;
+            }
+
+            :root[data-theme="light"] {
+                --bg-primary: #ffffff;
+                --bg-secondary: #f5f5f5;
+                --bg-tertiary: #e5e5e5;
+                --bg-input: #ffffff;
+                --text-primary: #121212;
+                --text-secondary: #666666;
+                --text-muted: #888888;
+                --accent-primary: #4a8f2c;
+                --accent-secondary: #d32f2f;
+                --border-color: #dddddd;
+            }
+
+            html,
+            body {
+                height: 100%;
+                margin: 0;
+                padding: 0;
+                background-color: var(--bg-primary);
+                color: var(--text-primary);
+                font-family: sans-serif;
+            }
+        
+            .icon {
+                font-size: 24pt;
+            }
+
+            a {
+                color: var(--text-primary);
+            }
+        </style>
+    </head>
+    <body>
+        {% block body %}{% endblock body %}
+    </body>
 </html>

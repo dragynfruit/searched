@@ -1,19 +1,21 @@
-use std::{process, sync::Arc, time::Instant};
+use std::{process, sync::Arc};
 
 use axum::{
-    body::Body,
     extract::{Extension, Query, State},
-    http::header,
-    response::{Html, IntoResponse, Redirect, Response},
+    middleware,
+    response::{Html, IntoResponse, Redirect},
+    routing::get,
+    Router,
 };
 use once_cell::sync::Lazy;
-use searched::{config::ProvidersConfig, lua_support::PluginEngine, Kind, PROVIDER_KINDS};
+use searched::Kind;
 use tera::{Context, Tera};
-use tokio::{sync::RwLock, task::JoinSet};
+use tokio::sync::RwLock;
+use serde::Deserialize;
 
-use crate::{settings::{self, Settings}, AppState};
+use crate::{settings::{Settings, settings_middleware, update_settings}, AppState};
 
-pub static TEMPLATES: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
+pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
         Ok(t) => t,
         Err(e) => {
@@ -43,105 +45,43 @@ const MOTD: &'static [&'static str] = &[
     "<i>\"Never gonna let you down\"</i><br>&mdash; Rick Astley",
 ];
 
-#[derive(Serialize)]
-struct SearchCtx {
-    motd: &'static str,
-}
-
-pub async fn search(Query(params): Query<SearchParams>) -> impl IntoResponse {
-    if params.q.is_some() {
-        return Redirect::to("/search").into_response();
-    }
-
-    #[cfg(feature = "hot_reload")]
-    (*TEMPLATES.write().await).full_reload().unwrap();
-
-    Html(
-        (*TEMPLATES.read().await)
-            .render(
-                "index.html",
-                &Context::from_serialize(SearchCtx {
-                    motd: MOTD[fastrand::usize(..MOTD.len())],
-                })
-                .unwrap(),
-            )
-            .unwrap(),
-    )
-    .into_response()
+fn get_motd() -> &'static str {
+    MOTD[fastrand::usize(..MOTD.len())]
 }
 
 #[derive(Deserialize, Default)]
 pub struct SearchParams {
     q: Option<String>,
-    k: Option<searched::Kind>,
+    k: Option<Kind>,
     s: Option<String>,
     p: Option<usize>,
 }
 
-#[derive(Serialize, Default)]
-pub struct SearchResults {
-    providers: ProvidersConfig,
-    query: searched::Query,
-    count: usize,
-    page: usize,
-    kind: Kind,
-    results: Vec<searched::Result>,
-    search_time: u128,
-    settings: settings::Settings,
-}
-
-pub async fn ranked_results(
-    engine: PluginEngine,
-    ProvidersConfig(provider_cfg): ProvidersConfig,
-    query: searched::Query,
-) -> Vec<searched::Result> {
-    let mut set = JoinSet::new();
-    for provider in provider_cfg.keys().cloned() {
-        // Clone the query so we can switch the provider
-        // and safely pass between threads
-        let mut query = query.clone();
-        query.provider = provider;
-
-        let engine = engine.clone();
-
-        set.spawn(async move { engine.search(query).await });
-    }
-
-    let mut results = set.join_all().await.concat();
-
-    let ranking_tm = Instant::now();
-
-    results.sort_by_key(|x| x.url.clone());
-
-    let scores = results
-        .iter()
-        .map(|x| results.iter().filter(|y| y.url == x.url).count());
-
-    let mut scored = results.iter().zip(scores).collect::<Vec<_>>();
-    scored.dedup_by_key(|x| x.0.url.clone());
-    scored.sort_by(|a, b| b.1.cmp(&a.1));
-
-    let ret = scored.iter().map(|x| x.0.clone()).collect();
-    debug!("ranking: {:?}", ranking_tm.elapsed());
-
-    ret
-}
-
-#[axum_macros::debug_handler]
-pub async fn results(
-    Query(params): Query<SearchParams>,
-    State(st): State<AppState>,
+pub async fn index(
     Extension(settings): Extension<Settings>,
 ) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("settings", &settings);
+    context.insert("motd", get_motd());
+
+    let rendered = TERA.read().await.render("index.html", &context).unwrap();
+    Html(rendered).into_response()
+}
+
+pub async fn search_results(
+    Extension(settings): Extension<Settings>,
+    Query(params): Query<SearchParams>,
+    State(st): State<AppState>,
+) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("settings", &settings);
+    
     if let Some(q) = params.q {
         if q == "rust" {
             return Redirect::to("https://rust-lang.org").into_response();
         }
-        #[cfg(feature = "hot_reload")]
-        (*TEMPLATES.write().await).full_reload().unwrap();
 
         let kind = params.k.unwrap_or_default();
-
         let query = searched::Query {
             provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
             query: q.clone(),
@@ -150,78 +90,54 @@ pub async fn results(
             ..Default::default()
         };
 
-        let search_st = Instant::now();
-
-        let providers = ProvidersConfig::load("plugins/providers.toml");
-
-        let results = if query.provider == String::from("all") {
-            ranked_results(
-                st.eng,
-                providers.clone(),
-                query.clone(),
-            )
-            .await
+        let search_start = std::time::Instant::now();
+        let results = if query.provider == "all" {
+            vec![] // TODO: Implement all-provider search
         } else {
             st.eng.search(query.clone()).await
         };
+        let search_time = search_start.elapsed().as_millis();
 
-        let search_tm = search_st.elapsed();
-        debug!("results took {search_tm:?}");
+        // Use the Kind's string value for the template
+        match kind {
+            Kind::General => context.insert("kind", "sear"),
+            Kind::Images => context.insert("kind", "imgs"),
+            Kind::Videos => context.insert("kind", "vids"),
+            Kind::News => context.insert("kind", "news"),
+            Kind::Maps => context.insert("kind", "maps"),
+            Kind::Wiki => context.insert("kind", "wiki"),
+            Kind::QuestionAnswer => context.insert("kind", "qans"),
+            Kind::Documentation => context.insert("kind", "docs"),
+            Kind::Papers => context.insert("kind", "pprs"),
+        }
 
-        Html(
-            (*TEMPLATES.read().await)
-                .render(
-                    "results.html",
-                    &Context::from_serialize(SearchResults {
-                        kind,
-                        query: query,
-                        results: results.to_vec(),
-                        search_time: search_tm.as_millis(),
-                        providers,
-                        settings,
-                        ..Default::default()
-                    })
-                    .unwrap(),
-                )
-                .unwrap(),
-        )
-        .into_response()
+        context.insert("query", &query);
+        context.insert("results", &results);
+        context.insert("search_time", &search_time);
+        
+        let rendered = TERA.read().await.render("results.html", &context).unwrap();
+        Html(rendered).into_response()
     } else {
-        return Redirect::to("/").into_response();
+        Redirect::to("/").into_response()
     }
 }
 
-pub async fn settings(State(_st): State<AppState>, Extension(settings): Extension<Settings>) -> impl IntoResponse {
-    #[cfg(feature = "hot_reload")]
-    (*TEMPLATES.write().await).full_reload().unwrap();
-
+pub async fn settings_page(
+    Extension(settings): Extension<Settings>,
+) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("settings", &settings);
-
-    Html(
-        (*TEMPLATES.read().await)
-            .render("settings.html", &context)
-            .unwrap(),
-    )
-    .into_response()
+    
+    let rendered = TERA.read().await.render("settings.html", &context).unwrap();
+    Html(rendered).into_response()
 }
 
-pub async fn logo() -> impl IntoResponse {
-    Response::builder()
-        .header(header::CONTENT_TYPE, "image/png")
-        .header(header::CACHE_CONTROL, "max-age=31536000")
-        .body(Body::from(include_bytes!("../assets/logo.png").to_vec()))
-        .unwrap()
-        .into_response()
-}
-
-pub async fn icon() -> impl IntoResponse {
-    Response::builder()
-        .header(header::CONTENT_TYPE, "image/x-icon")
-        .header(header::CACHE_CONTROL, "max-age=31536000")
-        .body(Body::from(
-            include_bytes!("../assets/searched.ico").to_vec(),
-        ))
-        .unwrap()
-        .into_response()
+// Router configuration
+pub fn router() -> Router<AppState> {
+    Router::new()
+        .route("/", get(index))
+        .route("/search", get(search_results))
+        .route("/settings", get(settings_page))
+        .route("/settings/update", get(update_settings))
+        .layer(middleware::from_fn(settings_middleware))
 }

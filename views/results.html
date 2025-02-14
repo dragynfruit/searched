@@ -16,7 +16,7 @@
 
 	#search-header a {
 		text-decoration: none;
-		color: #CDCDCD;
+		color: var(--text-primary);
 	}
 
 	#search-header h3 {
@@ -31,10 +31,11 @@
 
 	#kinds a {
 		margin-right: 10px;
+		color: var(--text-secondary);
 	}
 
 	#kinds a#current-category {
-		color: #98db7c;
+		color: var(--accent-primary);
 		font-weight: bold;
 	}
 
@@ -81,15 +82,15 @@
 		padding: 5px 10px;
 		margin-right: 5px;
 		border-radius: 5px;
-		background-color: #363636;
-		color: #CDCDCD;
+		background-color: var(--bg-input);
+		color: var(--text-primary);
 		text-decoration: none;
 		transition: all 0.3s;
 	}
 
 	.page-button#current-page {
-		background-color: #98db7c;
-		color: #363636;
+		background-color: var(--accent-primary);
+		color: var(--bg-primary);
 	}
 
 	#ferris {
@@ -145,8 +146,8 @@
 {% endblock head %}
 
 {% block header %}
-{% set kind_ids = ["sear", "imgs", "vids", "news", "maps", "docs", "pprs"] %}
-{% set kind_names = ["General", "Images", "Videos", "News", "Maps", "Docs", "Papers"] %}
+{% set kind_ids = ["sear", "imgs", "vids", "news", "maps", "wiki", "qans", "docs", "pprs"] %}
+{% set kind_names = ["General", "Images", "Videos", "News", "Maps", "Wiki", "Q&A", "Docs", "Papers"] %}
 
 <td colspan="3">
 	<table id="search-header">

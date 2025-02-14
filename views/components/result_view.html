@@ -6,7 +6,7 @@
 
     .list a {
         text-decoration: none;
-        color: #a0a0a0;
+        color: var(--link-color);
     }
 
     .list a:hover {
@@ -14,17 +14,17 @@
     }
 
     a.domain {
-        color: #ff4755;
+        color: var(--link-accent);
     }
 
     .title {
         font-size: 14pt;
         text-decoration: none;
-        color: #CDCDCD;
+        color: var(--link-primary);
     }
 
     .title:visited {
-        color: #a0a0a0;
+        color: var(--link-visited);
     }
 
     .title:hover {
@@ -36,7 +36,7 @@
         max-width: 800px;
         padding: 0;
         margin: 0;
-        color: #bbbbbb;
+        color: var(--text-primary);
     }
 </style>
 {% endmacro generate_style %}

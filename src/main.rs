@@ -1,37 +1,26 @@
-#[macro_use]
 extern crate log;
 extern crate axum;
 extern crate env_logger;
 extern crate reqwest;
-//extern crate tantivy;
 extern crate tera;
-#[macro_use]
 extern crate serde;
-//extern crate lru;
 extern crate searched;
 
 mod web;
 mod settings;
 
 use axum::{
-    http::{HeaderMap, HeaderValue}, middleware, routing::get, Router
+    http::{HeaderMap, HeaderValue}, middleware
 };
-use log::LevelFilter;
-//use reqwest::Client;
+use log::{info, LevelFilter};
 use searched::lua_support::PluginEngine;
-//use sled::Db;
 use tokio::net::TcpListener;
 
 #[derive(Clone)]
 pub struct AppState {
-    //client: Client,
-    //db: Db,
-    //config: Config,
     eng: PluginEngine,
 }
 
-// Need more worker threads if we do our own search index again:
-//   #[tokio::main(worker_threads = 12)]
 #[tokio::main]
 async fn main() {
     let mut headers = HeaderMap::new();
@@ -73,20 +62,14 @@ async fn main() {
     let eng = PluginEngine::new(client).await.unwrap();
 
     info!("initializing web");
-    let r = Router::new()
-        .route("/", get(web::search))
-        .route("/search", get(web::results))
-        .route("/settings/update", get(settings::update_settings))
-        .route("/settings", get(web::settings))
-        .route("/assets/logo.png", get(web::logo))
-        .route("/favicon.ico", get(web::icon))
-        .layer(middleware::from_fn(settings::settings_middleware))
-        .with_state(AppState { eng });
+    let app = web::router()
+        .with_state(AppState { eng })
+        .layer(middleware::from_fn(settings::settings_middleware));
 
     tokio::spawn(async {
         axum::serve(
             TcpListener::bind("0.0.0.0:6969").await.unwrap(),
-            r.into_make_service(),
+            app.into_make_service(),
         )
         .await
         .unwrap();
