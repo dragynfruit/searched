@@ -1,4 +1,4 @@
-use std::{process, sync::Arc};
+use std::{process, sync::Arc, path::PathBuf};
 
 use axum::{
     extract::{Extension, Query, State},
@@ -12,6 +12,7 @@ use searched::Kind;
 use tera::{Context, Tera};
 use tokio::sync::RwLock;
 use serde::Deserialize;
+use tower_http::services::ServeDir;
 
 use crate::{settings::{Settings, settings_middleware, update_settings}, AppState};
 
@@ -140,5 +141,8 @@ pub fn router() -> Router<AppState> {
         .route("/settings", get(settings_page))
         .route("/settings/update", get(update_settings))
         .route("/favicon", get(crate::favicon::favicon))
+        .fallback_service(
+            ServeDir::new(PathBuf::from("static"))
+        )
         .layer(middleware::from_fn(settings_middleware))
 }
