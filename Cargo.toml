@@ -44,6 +44,7 @@ searched-parser = { version = "0.1.0", path = "searched-parser" }
 fend-core = "1.5.5"
 axum-extra = { version = "0.10.0", default-features = false, features = ["cookie"] }
 image = { version = "0.25.5", features = ["ico", "png"], default-features = false }
+chrono = { version = "0.4.39", default-features = false, features = ["now", "std"] }
 
 [profile.dev.package.'*']
 opt-level = 3
