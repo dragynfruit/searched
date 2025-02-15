@@ -1,12 +1,14 @@
 use std::collections::HashMap;
 use axum::{
     body::Body,
-    extract::{Query, Request},
+    extract::{Query, Request, Json, Extension},
+    http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
 };
 use axum_extra::extract::CookieJar;
 use serde::{Deserialize, Serialize};
+use base64::{engine::general_purpose, Engine as _};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -32,13 +34,11 @@ impl Settings {
         SettingsBuilder::default()
     }
 
-    pub fn to_cookies(&self) -> Vec<String> {
-        vec![
-            format!("favicons={}; Path=/; Max-Age=31536000; SameSite=Strict; Secure", self.favicons),
-            format!("theme={}; Path=/; Max-Age=31536000; SameSite=Strict; Secure", self.theme),
-            format!("show_query_title={}; Path=/; Max-Age=31536000; SameSite=Strict; Secure", self.show_query_title),
-            format!("compact_view={}; Path=/; Max-Age=31536000; SameSite=Strict; Secure", self.compact_view),
-        ]
+    pub fn to_cookies(&self) -> String {
+        // Serialize settings to JSON and base64-encode to make it cookie-safe.
+        let json = serde_json::to_string(self).unwrap();
+        let encoded = general_purpose::STANDARD.encode(json);
+        format!("settings={}; Path=/; Max-Age=31536000; SameSite=Strict; Secure", encoded)
     }
 }
 
@@ -84,22 +84,14 @@ impl SettingsBuilder {
 
 impl From<CookieJar> for Settings {
     fn from(jar: CookieJar) -> Self {
-        let defaults = Settings::default();
-        Settings::new()
-            .favicons(jar.get("favicons")
-                .map(|c| c.value() == "true")
-                .unwrap_or(defaults.favicons))
-            .theme(jar.get("theme")
-                .map(|c| c.value().to_string())
-                .filter(|s| !s.is_empty())
-                .unwrap_or(defaults.theme))
-            .show_query_title(jar.get("show_query_title")
-                .map(|c| c.value() == "true")
-                .unwrap_or(defaults.show_query_title))
-            .compact_view(jar.get("compact_view")
-                .map(|c| c.value() == "true")
-                .unwrap_or(defaults.compact_view))
-            .build()
+        if let Some(cookie) = jar.get("settings") {
+            if let Ok(decoded) = general_purpose::STANDARD.decode(cookie.value()) {
+                if let Ok(settings) = serde_json::from_slice::<Settings>(&decoded) {
+                    return settings;
+                }
+            }
+        }
+        Settings::default()
     }
 }
 
@@ -121,14 +113,28 @@ pub async fn update_settings(Query(params): Query<HashMap<String, String>>) -> i
         .compact_view(params.get("compact_view").map(|v| v == "true").unwrap_or(defaults.compact_view))
         .build();
 
-    let mut response = Response::builder()
+    let cookie = settings.to_cookies();
+    Response::builder()
         .status(302)
-        .header("Location", "/settings");
+        .header("Location", "/settings")
+        .header("Set-Cookie", cookie)
+        .body(Body::empty())
+        .unwrap()
+}
 
-    // Add each cookie as a separate header
-    for cookie in settings.to_cookies() {
-        response = response.header("Set-Cookie", cookie);
-    }
+// New endpoint: Export settings as JSON.
+pub async fn export_settings(Extension(settings): Extension<Settings>) -> impl IntoResponse {
+    // Return settings as JSON.
+    Json(settings)
+}
 
-    response.body(Body::empty()).unwrap()
+// New endpoint: Import settings from JSON payload.
+pub async fn import_settings(Json(new_settings): Json<Settings>) -> impl IntoResponse {
+    let cookie = new_settings.to_cookies();
+    Response::builder()
+        .status(StatusCode::FOUND)
+        .header("Location", "/settings")
+        .header("Set-Cookie", cookie)
+        .body(Body::empty())
+        .unwrap()
 }

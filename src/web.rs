@@ -4,7 +4,7 @@ use axum::{
     extract::{Extension, Query, State},
     middleware,
     response::{Html, IntoResponse, Redirect},
-    routing::get,
+    routing::{get, post},
     Router,
 };
 use once_cell::sync::Lazy;
@@ -14,7 +14,7 @@ use tokio::sync::RwLock;
 use serde::Deserialize;
 use tower_http::services::ServeDir;
 
-use crate::{settings::{Settings, settings_middleware, update_settings}, AppState};
+use crate::{settings::{Settings, settings_middleware, update_settings, export_settings, import_settings}, AppState};
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
@@ -140,6 +140,8 @@ pub fn router() -> Router<AppState> {
         .route("/search", get(search_results))
         .route("/settings", get(settings_page))
         .route("/settings/update", get(update_settings))
+        .route("/settings/export", get(export_settings))
+        .route("/settings/import", post(import_settings))
         .route("/favicon", get(crate::favicon::favicon))
         .fallback_service(
             ServeDir::new(PathBuf::from("static"))

@@ -98,6 +98,25 @@
         transform: translateY(-1px);
     }
 
+    /* New styles for export and import buttons */
+    button#export-settings,
+    button#import-settings {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+        border: none;
+        padding: 10px 20px;
+        border-radius: 8px;
+        cursor: pointer;
+        font-size: 16px;
+        margin: 5px;
+        transition: background-color 0.2s ease, transform 0.2s ease;
+    }
+    button#export-settings:hover,
+    button#import-settings:hover {
+        background-color: var(--accent-secondary, #f0f0f0);
+        transform: scale(1.05);
+    }
+
     @media screen and (max-width: 520px) {
         #settings-header h3 {
             display: none;
@@ -167,7 +186,51 @@
             </div>
         </div>
 
-        <input type="submit" value="Save Changes">
+        <div style="margin-top:20px; display: flex; justify-content: space-between; gap: 4%;">
+            <button type="button" id="export-settings" style="width:48%;">Export Settings</button>
+            <button type="button" id="import-settings" style="width:48%;">Import Settings</button>
+        </div>
+        <input type="file" id="import-file" accept=".json" style="display:none;" />
+        <input type="submit" value="Save Changes" style="margin-top:20px;">
     </form>
 </div>
+
+<script>
+document.getElementById("export-settings").addEventListener("click", async function() {
+    const res = await fetch('/settings/export');
+    const json = await res.json();
+    const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "settings.json";
+    document.body.appendChild(a);
+    a.click();
+    a.remove();
+    URL.revokeObjectURL(url);
+});
+
+document.getElementById("import-settings").addEventListener("click", function(){
+    document.getElementById("import-file").click();
+});
+
+document.getElementById("import-file").addEventListener("change", async function(e){
+    const file = e.target.files[0];
+    if (!file) return;
+    const text = await file.text();
+    try {
+        const settings = JSON.parse(text);
+        const res = await fetch('/settings/import', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(settings)
+        });
+        if(res.redirected) {
+            window.location.href = res.url;
+        }
+    } catch(err) {
+        alert("Invalid settings file.");
+    }
+});
+</script>
 {% endblock content %}
