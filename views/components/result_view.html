@@ -38,10 +38,32 @@
         margin: 0;
         color: var(--text-primary);
     }
+
+    .compact-view .result {
+        margin-bottom: 5px;
+    }
+
+    .compact-view .list {
+        font-size: 11pt;
+    }
+
+    .compact-view .title {
+        font-size: 12pt;
+    }
+
+    .compact-view .snippet {
+        font-size: 11pt;
+        display: inline;
+        margin-left: 10px;
+    }
+
+    .compact-view .result td {
+        padding: 2px 0;
+    }
 </style>
 {% endmacro generate_style %}
 
-{% macro generate_content(result, favicon=false) %}
+{% macro generate_content(result, favicon=false, compact=false) %}
 <table class="result">
     <tr>
         <td>
@@ -58,6 +80,7 @@
                     <img src="/favicon?domain={{ protocol_domain }}" width="16" height="16" alt="{{ domain }} Favicon" />
                 {% endif %}
                 <a href="{{ protocol_domain }}" class="domain">{{ protocol_domain }}</a>
+                {% if not compact %}
                 &#x276F;
                 {% for i in range(start=1, end=split_path | length) %}
                 {% set path = split_path[i] %}
@@ -71,15 +94,21 @@
                 &#x276F;
                 {% endif %}
                 {% endfor %}
+                {% endif %}
             </span>
         </td>
     </tr>
     <tr>
         <td>
             <a href="{{ result.url }}" class="title" aria-label="{{ result.title | safe }}"><b>{{ result.title | safe }}</b></a>
+            {% if result.general and compact %}
+            <p class="snippet">
+                {{ result.general.snippet | safe }}
+            </p>
+            {% endif %}
         </td>
     </tr>
-    {% if result.general %}
+    {% if result.general and not compact %}
     <tr>
         <td>
             <p class="snippet">
@@ -88,6 +117,8 @@
         </td>
     </tr>
     {% endif %}
+    {% if not compact %}
     <tr></tr>
+    {% endif %}
 </table>
 {% endmacro %}

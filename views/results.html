@@ -2,7 +2,7 @@
 {% import "components/result_view.html" as result_view %}
 {% extends "template.html" %}
 
-{% block title %}{{ query.query }} | Searched{% endblock title %}
+{% block title %}{% if settings.show_query_title %}{{ query.query }} | {% endif %}Searched{% endblock title %}
 
 {% block head %}
 {{ super() }}
@@ -180,10 +180,10 @@
 {% endblock header %}
 
 {% block content %}
-<div id="results">
+<div id="results" class="{% if settings.compact_view %}compact-view{% endif %}">
 	{% if results %}
 	{% for result in results %}
-	{{ result_view::generate_content(result=result, favicon=settings.favicons) }}
+	{{ result_view::generate_content(result=result, favicon=settings.favicons, compact=settings.compact_view) }}
 	{% endfor %}
 	<div id="bottom">
 		{% set page_start = query.page - 5 %}

@@ -143,6 +143,14 @@
                 <input type="checkbox" id="favicons" name="favicons" {% if settings.favicons %}checked{% endif %} value="true">
             </div>
             <div class="settings-group">
+                <label for="show_query_title">Show search query in title</label>
+                <input type="checkbox" id="show_query_title" name="show_query_title" {% if settings.show_query_title %}checked{% endif %} value="true">
+            </div>
+            <div class="settings-group">
+                <label for="compact_view">Use compact view</label>
+                <input type="checkbox" id="compact_view" name="compact_view" {% if settings.compact_view %}checked{% endif %} value="true">
+            </div>
+            <div class="settings-group">
                 <label for="theme">Theme</label>
                 <select id="theme" name="theme">
                     <option value="auto" {% if settings.theme == "auto" or not settings.theme %}selected{% endif %}>System</option>
