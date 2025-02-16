@@ -43,6 +43,30 @@ impl Settings {
         // Removed the Secure flag for local testing.
         format!("settings={}; Path=/; Max-Age=31536000; SameSite=Strict", encoded)
     }
+
+    pub fn merge_from_json(json_value: serde_json::Value) -> Self {
+        let defaults = Settings::default();
+        
+        // Try to get each field, fall back to default if missing or wrong type
+        Settings {
+            favicons: json_value.get("favicons")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(defaults.favicons),
+            theme: json_value.get("theme")
+                .and_then(|v| v.as_str())
+                .map(String::from)
+                .unwrap_or(defaults.theme),
+            show_query_title: json_value.get("show_query_title")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(defaults.show_query_title),
+            compact_view: json_value.get("compact_view")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(defaults.compact_view),
+            no_js: json_value.get("no_js")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(defaults.no_js),
+        }
+    }
 }
 
 #[derive(Default)]
@@ -162,7 +186,8 @@ pub async fn export_settings(
 }
 
 // New endpoint: Import settings from JSON payload.
-pub async fn import_settings(Json(new_settings): Json<Settings>) -> impl IntoResponse {
+pub async fn import_settings(Json(json_value): Json<serde_json::Value>) -> impl IntoResponse {
+    let new_settings = Settings::merge_from_json(json_value);
     let cookie = new_settings.to_cookies();
     Response::builder()
         .status(StatusCode::FOUND)
@@ -179,7 +204,8 @@ pub async fn import_settings_form(
     while let Some(field) = multipart.next_field().await.unwrap() {
         if field.name() == Some("settings_file") {
             let data = field.bytes().await.unwrap();
-            if let Ok(new_settings) = serde_json::from_slice::<Settings>(&data) {
+            if let Ok(json_value) = serde_json::from_slice::<serde_json::Value>(&data) {
+                let new_settings = Settings::merge_from_json(json_value);
                 let cookie = new_settings.to_cookies();
                 return Response::builder()
                     .status(StatusCode::FOUND)
