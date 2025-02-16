@@ -1,4 +1,4 @@
-use std::{process, sync::Arc, path::PathBuf};
+use std::{path::PathBuf, process, sync::Arc};
 
 use axum::{
     extract::{Extension, Query, State},
@@ -9,12 +9,18 @@ use axum::{
 };
 use once_cell::sync::Lazy;
 use searched::Kind;
+use serde::Deserialize;
 use tera::{Context, Tera};
 use tokio::sync::RwLock;
-use serde::Deserialize;
 use tower_http::services::ServeDir;
 
-use crate::{settings::{Settings, settings_middleware, update_settings, export_settings, import_settings, import_settings_form}, AppState};
+use crate::{
+    settings::{
+        export_settings, import_settings, import_settings_form, settings_middleware,
+        update_settings, Settings,
+    },
+    AppState,
+};
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
@@ -58,9 +64,7 @@ pub struct SearchParams {
     p: Option<usize>,
 }
 
-pub async fn index(
-    Extension(settings): Extension<Settings>,
-) -> impl IntoResponse {
+pub async fn index(Extension(settings): Extension<Settings>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("settings", &settings);
     context.insert("motd", get_motd());
@@ -76,7 +80,7 @@ pub async fn search_results(
 ) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("settings", &settings);
-    
+
     if let Some(q) = params.q {
         if q == "rust" {
             return Redirect::to("https://rust-lang.org").into_response();
@@ -92,11 +96,19 @@ pub async fn search_results(
         };
 
         let search_start = std::time::Instant::now();
-        let results = if query.provider == "all" {
+        let mut results = if query.provider == "all" {
             vec![] // TODO: Implement all-provider search
         } else {
             st.eng.search(query.clone()).await
         };
+
+        // Clean tracking from URLs if enabled
+        if settings.remove_tracking {
+            for result in &mut results {
+                result.url = crate::url_cleaner::clean_url(&result.url);
+            }
+        }
+
         let search_time = search_start.elapsed().as_millis();
 
         // Use the Kind's string value for the template
@@ -115,7 +127,7 @@ pub async fn search_results(
         context.insert("query", &query);
         context.insert("results", &results);
         context.insert("search_time", &search_time);
-        
+
         let rendered = TERA.read().await.render("results.html", &context).unwrap();
         Html(rendered).into_response()
     } else {
@@ -123,12 +135,10 @@ pub async fn search_results(
     }
 }
 
-pub async fn settings_page(
-    Extension(settings): Extension<Settings>,
-) -> impl IntoResponse {
+pub async fn settings_page(Extension(settings): Extension<Settings>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("settings", &settings);
-    
+
     let rendered = TERA.read().await.render("settings.html", &context).unwrap();
     Html(rendered).into_response()
 }
@@ -152,8 +162,6 @@ pub fn router() -> Router<AppState> {
         .route("/settings/import_form", post(import_settings_form))
         .route("/about", get(about_page))
         .route("/favicon", get(crate::favicon::favicon))
-        .fallback_service(
-            ServeDir::new(PathBuf::from("static"))
-        )
+        .fallback_service(ServeDir::new(PathBuf::from("static")))
         .layer(middleware::from_fn(settings_middleware))
 }

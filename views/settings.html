@@ -165,6 +165,22 @@
             padding: 15px;
         }
     }
+
+    .cookie-disclaimer {
+        margin-top: 30px;
+        padding: 20px;
+        background-color: var(--bg-tertiary);
+        border-radius: 8px;
+        font-size: 14px;
+        color: var(--text-secondary);
+        line-height: 1.5;
+    }
+
+    .cookie-disclaimer h3 {
+        color: var(--text-primary);
+        font-size: 16px;
+        margin: 0 0 10px 0;
+    }
 </style>
 
 {% endblock head %}
@@ -185,19 +201,9 @@
                 <input type="checkbox" id="favicons" name="favicons" {% if settings.favicons %}checked{% endif %} value="true">
             </div>
             <div class="settings-group">
-                <label for="show_query_title">Show search query in title</label>
-                <input type="hidden" name="show_query_title" value="false">
-                <input type="checkbox" id="show_query_title" name="show_query_title" {% if settings.show_query_title %}checked{% endif %} value="true">
-            </div>
-            <div class="settings-group">
                 <label for="compact_view">Use compact view</label>
                 <input type="hidden" name="compact_view" value="false">
                 <input type="checkbox" id="compact_view" name="compact_view" {% if settings.compact_view %}checked{% endif %} value="true">
-            </div>
-            <div class="settings-group">
-                <label for="no_js">Disable JavaScript</label>
-                <input type="hidden" name="no_js" value="false">
-                <input type="checkbox" id="no_js" name="no_js" {% if settings.no_js %}checked{% endif %} value="true">
             </div>
             <div class="settings-group">
                 <label for="theme">Theme</label>
@@ -206,6 +212,25 @@
                     <option value="dark" {% if settings.theme == "dark" %}selected{% endif %}>Dark</option>
                     <option value="light" {% if settings.theme == "light" %}selected{% endif %}>Light</option>
                 </select>
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2>Privacy</h2>
+            <div class="settings-group">
+                <label for="show_query_title">Show search query in title</label>
+                <input type="hidden" name="show_query_title" value="false">
+                <input type="checkbox" id="show_query_title" name="show_query_title" {% if settings.show_query_title %}checked{% endif %} value="true">
+            </div>
+            <div class="settings-group">
+                <label for="no_js">Disable JavaScript</label>
+                <input type="hidden" name="no_js" value="false">
+                <input type="checkbox" id="no_js" name="no_js" {% if settings.no_js %}checked{% endif %} value="true">
+            </div>
+            <div class="settings-group">
+                <label for="remove_tracking">Remove Tracking</label>
+                <input type="hidden" name="remove_tracking" value="false">
+                <input type="checkbox" id="remove_tracking" name="remove_tracking" {% if settings.remove_tracking %}checked{% endif %} value="true">
             </div>
         </div>
 
@@ -229,6 +254,10 @@
                 <label for="settings_file" class="import-button">Import Settings</label>
             </form>
         </div>
+    </div>
+    <div class="cookie-disclaimer">
+        <h3>Cookie Usage</h3>
+        <p>Searched uses cookies to store your settings preferences locally on your device. These cookies are essential for the proper functioning of the settings feature and do not collect any personal information. By using these settings, you agree to the use of these necessary cookies.</p>
     </div>
 </div>
 {% endblock content %}

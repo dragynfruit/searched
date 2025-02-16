@@ -10,6 +10,7 @@ extern crate sled;
 mod web;
 mod settings;
 mod favicon;
+mod url_cleaner;  // Add this line
 
 use axum::{
     http::{HeaderMap, HeaderValue}, middleware
@@ -65,6 +66,9 @@ async fn main() {
         .init();
 
     info!("Starting up...");
+
+    // Initialize tracking rules if enabled
+    url_cleaner::ensure_rules_exist().await;
 
     let eng = PluginEngine::new(client.clone()).await.unwrap();
 

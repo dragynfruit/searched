@@ -1,14 +1,14 @@
-use std::collections::HashMap;
 use axum::{
     body::Body,
-    extract::{Query, Request, Json, Extension, Multipart, Form},
+    extract::{Extension, Form, Json, Multipart, Query, Request},
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
 };
 use axum_extra::extract::CookieJar;
-use serde::{Deserialize, Serialize};
 use base64::{engine::general_purpose, Engine as _};
+use serde::{Deserialize, Serialize};
+use std::collections::HashMap;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -17,6 +17,7 @@ pub struct Settings {
     pub show_query_title: bool,
     pub compact_view: bool,
     pub no_js: bool,
+    pub remove_tracking: bool,
 }
 
 impl Default for Settings {
@@ -27,6 +28,7 @@ impl Default for Settings {
             show_query_title: true,
             compact_view: false,
             no_js: false,
+            remove_tracking: true,
         }
     }
 }
@@ -41,30 +43,42 @@ impl Settings {
         let json = serde_json::to_string(self).unwrap();
         let encoded = general_purpose::STANDARD.encode(json);
         // Removed the Secure flag for local testing.
-        format!("settings={}; Path=/; Max-Age=31536000; SameSite=Strict", encoded)
+        format!(
+            "settings={}; Path=/; Max-Age=31536000; SameSite=Strict; HttpOnly",
+            encoded
+        )
     }
 
     pub fn merge_from_json(json_value: serde_json::Value) -> Self {
         let defaults = Settings::default();
-        
+
         // Try to get each field, fall back to default if missing or wrong type
         Settings {
-            favicons: json_value.get("favicons")
+            favicons: json_value
+                .get("favicons")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(defaults.favicons),
-            theme: json_value.get("theme")
+            theme: json_value
+                .get("theme")
                 .and_then(|v| v.as_str())
                 .map(String::from)
                 .unwrap_or(defaults.theme),
-            show_query_title: json_value.get("show_query_title")
+            show_query_title: json_value
+                .get("show_query_title")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(defaults.show_query_title),
-            compact_view: json_value.get("compact_view")
+            compact_view: json_value
+                .get("compact_view")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(defaults.compact_view),
-            no_js: json_value.get("no_js")
+            no_js: json_value
+                .get("no_js")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(defaults.no_js),
+            remove_tracking: json_value
+                .get("remove_tracking")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(defaults.remove_tracking),
         }
     }
 }
@@ -76,6 +90,7 @@ pub struct SettingsBuilder {
     show_query_title: Option<bool>,
     compact_view: Option<bool>,
     no_js: Option<bool>,
+    remove_tracking: Option<bool>,
 }
 
 impl SettingsBuilder {
@@ -104,6 +119,11 @@ impl SettingsBuilder {
         self
     }
 
+    pub fn remove_tracking(mut self, remove_tracking: bool) -> Self {
+        self.remove_tracking = Some(remove_tracking);
+        self
+    }
+
     pub fn build(self) -> Settings {
         let defaults = Settings::default();
         Settings {
@@ -112,6 +132,7 @@ impl SettingsBuilder {
             show_query_title: self.show_query_title.unwrap_or(defaults.show_query_title),
             compact_view: self.compact_view.unwrap_or(defaults.compact_view),
             no_js: self.no_js.unwrap_or(defaults.no_js),
+            remove_tracking: self.remove_tracking.unwrap_or(defaults.remove_tracking),
         }
     }
 }
@@ -148,14 +169,43 @@ pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> imp
     }
     let defaults = Settings::default();
     let settings = Settings::new()
-        .favicons(params.get("favicons").map(|v| v == "true").unwrap_or(defaults.favicons))
-        .theme(params.get("theme")
-            .map(|t| t.to_string())
-            .filter(|s| !s.is_empty())
-            .unwrap_or(defaults.theme))
-        .show_query_title(params.get("show_query_title").map(|v| v == "true").unwrap_or(defaults.show_query_title))
-        .compact_view(params.get("compact_view").map(|v| v == "true").unwrap_or(defaults.compact_view))
-        .no_js(params.get("no_js").map(|v| v == "true").unwrap_or(defaults.no_js))
+        .favicons(
+            params
+                .get("favicons")
+                .map(|v| v == "true")
+                .unwrap_or(defaults.favicons),
+        )
+        .theme(
+            params
+                .get("theme")
+                .map(|t| t.to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or(defaults.theme),
+        )
+        .show_query_title(
+            params
+                .get("show_query_title")
+                .map(|v| v == "true")
+                .unwrap_or(defaults.show_query_title),
+        )
+        .compact_view(
+            params
+                .get("compact_view")
+                .map(|v| v == "true")
+                .unwrap_or(defaults.compact_view),
+        )
+        .no_js(
+            params
+                .get("no_js")
+                .map(|v| v == "true")
+                .unwrap_or(defaults.no_js),
+        )
+        .remove_tracking(
+            params
+                .get("remove_tracking")
+                .map(|v| v == "true")
+                .unwrap_or(defaults.remove_tracking),
+        )
         .build();
 
     let cookie = settings.to_cookies();
@@ -177,7 +227,10 @@ pub async fn export_settings(
         Response::builder()
             .status(StatusCode::OK)
             .header("Content-Type", "application/json")
-            .header("Content-Disposition", "attachment; filename=\"settings.json\"")
+            .header(
+                "Content-Disposition",
+                "attachment; filename=\"settings.json\"",
+            )
             .body(Body::from(json))
             .unwrap()
     } else {
@@ -198,9 +251,7 @@ pub async fn import_settings(Json(json_value): Json<serde_json::Value>) -> impl 
 }
 
 // New endpoint: Import settings from multipart form submission (non-JS).
-pub async fn import_settings_form(
-    mut multipart: Multipart,
-) -> impl IntoResponse {
+pub async fn import_settings_form(mut multipart: Multipart) -> impl IntoResponse {
     while let Some(field) = multipart.next_field().await.unwrap() {
         if field.name() == Some("settings_file") {
             let data = field.bytes().await.unwrap();

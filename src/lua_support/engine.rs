@@ -73,7 +73,13 @@ impl PluginEngine {
         for path in read_dir("plugins/engines").unwrap() {
             if let Ok(path) = path {
                 // Do war crime level code
-                let name = path.path().file_stem().expect("bad file path").to_str().expect("filename should be utf-8").to_string();
+                let name = path
+                    .path()
+                    .file_stem()
+                    .expect("bad file path")
+                    .to_str()
+                    .expect("filename should be utf-8")
+                    .to_string();
 
                 debug!("loading {name}...");
                 let load_st = Instant::now();
@@ -101,7 +107,10 @@ impl PluginEngine {
         let providers = &self.providers;
 
         if let Some(provider) = providers.0.get(&query.provider) {
-            let engine = provider.engine.clone().unwrap_or_else(|| query.provider.clone());
+            let engine = provider
+                .engine
+                .clone()
+                .unwrap_or_else(|| query.provider.clone());
             let target = format!("searched::engine::{engine}");
 
             // Get engine implementation
@@ -139,4 +148,3 @@ impl PluginEngine {
         Vec::new()
     }
 }
-

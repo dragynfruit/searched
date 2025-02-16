@@ -1,7 +1,4 @@
-use std::{
-    collections::HashMap,
-    sync::Arc,
-};
+use std::{collections::HashMap, sync::Arc};
 
 use fend_core::Context;
 use mlua::prelude::*;
@@ -213,4 +210,3 @@ pub fn fend_eval(_: &Lua, input: String) -> LuaResult<String> {
         .get_main_result()
         .to_string())
 }
-
