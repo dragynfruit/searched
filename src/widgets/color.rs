@@ -1,5 +1,12 @@
 use csscolorparser::Color as CssColor;
 use serde::Serialize;
+use once_cell::sync::Lazy;
+use regex::Regex;
+
+// New regex for color picker variations
+static COLOR_PICKER_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)^(?:(?:color|hex|rgb|hsl)\s*picker|pick\s*(?:a\s*)?(?:color|hex|rgb|hsl))$").unwrap()
+});
 
 #[derive(Debug, Serialize)]
 pub struct Color {
@@ -16,9 +23,8 @@ impl Color {
     pub fn detect(query: &str) -> Option<Self> {
         let query = query.trim();
 
-        // Match patterns like "color picker", "colorpicker", "pick color"
-        if query.to_lowercase().contains("color") && query.to_lowercase().contains("pick") {
-            // Generate random color using fastrand
+        // Match any color picker variation using regex
+        if COLOR_PICKER_RE.is_match(query) {
             let r = fastrand::u8(..);
             let g = fastrand::u8(..);
             let b = fastrand::u8(..);

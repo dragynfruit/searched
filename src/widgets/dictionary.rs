@@ -1,5 +1,7 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use once_cell::sync::Lazy;
+use regex::Regex;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Phonetic {
@@ -47,63 +49,34 @@ pub struct Dictionary {
     pub error: Option<String>,
 }
 
+// New regex to capture a word with optional explicit key phrases.
+static DICTIONARY_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)^(?:(?:definition(?:\s+of)?|def|define|synonym(?:\s+of|s)?|antonym(?:\s+of|s)?)\s+)?(?P<word>\w+)(?:\s+(?:definition|synonym(?:s)?|antonym(?:s)?))?$")
+        .unwrap()
+});
+
 impl Dictionary {
     pub async fn detect_with_client(query: &str, client: &Client) -> Option<Self> {
         let query = query.trim().to_lowercase();
-
-        // Match different query patterns and extract just the word to look up
-        let (word, lookup_type) = if let Some(word) = query.strip_prefix("definition of ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("definition ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("def ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("define ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("synonym of ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("synonym for ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("synonyms of ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("synonyms for ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("antonym of ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("antonym for ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("antonyms of ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if let Some(word) = query.strip_prefix("antonyms for ") {
-            (word.trim().split_whitespace().next()?, "explicit")
-        } else if query.ends_with(" definition") {
-            let word = query.strip_suffix(" definition")?;
-            (word, "explicit")
-        } else if query.ends_with(" synonym") || query.ends_with(" synonyms") {
-            let word = query
-                .strip_suffix(" synonym")
-                .or_else(|| query.strip_suffix(" synonyms"))?;
-            (word, "explicit")
-        } else if query.ends_with(" antonym") || query.ends_with(" antonyms") {
-            let word = query
-                .strip_suffix(" antonym")
-                .or_else(|| query.strip_suffix(" antonyms"))?;
-            (word, "explicit")
+        
+        let caps = DICTIONARY_RE.captures(&query)?;
+        let word = caps.name("word")?.as_str();
+        let lookup_type = if query.contains("def")
+            || query.contains("define")
+            || query.contains("synonym")
+            || query.contains("antonym")
+        {
+            "explicit"
         } else if !query.contains(' ') && query.len() >= 5 {
-            // Single word query must be at least 5 characters
-            (query.as_str(), "implicit")
+            "implicit"
         } else {
-            return None;
+            "explicit"
         };
 
-        // Fetch definition from API
         let entries = Self::fetch_definition(word, client).await;
-
-        // For implicit lookups (single word), only return if definition exists
         if lookup_type == "implicit" && entries.is_none() {
             return None;
         }
-
         Some(Dictionary {
             word: word.to_string(),
             error: if entries.is_none() {

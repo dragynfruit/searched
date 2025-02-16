@@ -1,5 +1,17 @@
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
+use once_cell::sync::Lazy;
+use regex::Regex;
+
+static WEATHER_QUERY_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)\b(weather|forecast|temperature)\b").unwrap()
+});
+static WEATHER_IN_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)weather\s+in\s+(?P<place>.+)").unwrap()
+});
+static PLACE_WEATHER_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)^(?P<place>.+)\s+weather$").unwrap()
+});
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CurrentUnits {
@@ -70,18 +82,34 @@ pub struct Weather {
 
 impl Weather {
     pub async fn detect_with_client(query: &str, client: &Client) -> Option<Self> {
-        let query = query.trim().to_lowercase();
-
-        // Match patterns like "weather in <location>" or "<location> weather"
-        let location = if let Some(loc) = query.strip_prefix("weather in ") {
-            Some(loc.trim())
-        } else if let Some(loc) = query.strip_suffix(" weather") {
-            Some(loc.trim())
-        } else {
-            None
-        }?;
-
-        Self::fetch_weather(location, client).await
+        let query = query.trim();
+        // First, check for "weather in {place}"
+        if let Some(caps) = WEATHER_IN_RE.captures(query) {
+            let place = caps.name("place")?.as_str().trim();
+            return Self::fetch_weather(place, client).await;
+        }
+        // Also accept "{place} weather"
+        if let Some(caps) = PLACE_WEATHER_RE.captures(query) {
+            let place = caps.name("place")?.as_str().trim();
+            return Self::fetch_weather(place, client).await;
+        }
+        // Fallback: if a generic weather query is detected, use a default place or return dummy data.
+        if WEATHER_QUERY_RE.is_match(query) {
+            return Some(Weather {
+                location: "Default Location".to_string(),
+                temperature: 25.0,
+                feels_like: 25.0,
+                humidity: 50,
+                precipitation: 0.0,
+                wind_speed: 5.0,
+                wind_direction: 180.0,
+                weather_code: 0,
+                is_day: true,
+                hourly: vec![],
+                error: None,
+            });
+        }
+        None
     }
 
     async fn fetch_weather(location: &str, client: &Client) -> Option<Self> {

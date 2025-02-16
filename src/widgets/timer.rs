@@ -1,4 +1,6 @@
 use serde::Serialize;
+use once_cell::sync::Lazy;
+use regex::Regex;
 
 #[derive(Debug, Serialize)]
 pub struct Timer {
@@ -64,89 +66,50 @@ impl Timer {
     }
 }
 
+// New regex for combined time format.
+static COMBINED_TIME_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"^(?P<number>\d+)(?P<unit>h(?:r(?:s)?)?|hour(?:s)?|m(?:in(?:s)?)?|minute(?:s)?|s(?:ec(?:s)?)?|second(?:s)?|ms|millisecond(?:s)?)$")
+        .unwrap()
+});
+
+// New regex for tokenized time parts.
+static TIME_TOKEN_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)(?P<number>\d+)(?P<unit>h(?:r(?:s)?)?|hour(?:s)?|m(?:in(?:s)?)?|minute(?:s)?|s(?:ec(?:s)?)?|second(?:s)?|ms|millisecond(?:s)?)")
+        .unwrap()
+});
+
 /// Parse combined format like "5m", "10s", etc.
 fn parse_combined_time(input: &str) -> Option<u64> {
-    let mut number_end = 0;
-    for (i, c) in input.chars().enumerate() {
-        if !c.is_ascii_digit() {
-            number_end = i;
-            break;
-        }
-    }
-
-    if number_end == 0 {
-        return None;
-    }
-
-    let (num_str, unit_str) = input.split_at(number_end);
-    let amount: u64 = num_str.parse().ok()?;
-
-    // Even with invalid/missing unit, return the value in milliseconds
-    let ms = match unit_str {
-        "h" | "hr" | "hrs" | "hour" | "hours" => amount * 3600000,
-        "m" | "min" | "mins" | "minute" | "minutes" => amount * 60000,
-        "s" | "sec" | "secs" | "second" | "seconds" => amount * 1000,
-        "ms" | "milliseconds" | "millisecond" => amount,
-        _ => amount * 1000, // Default to seconds for invalid/missing units
-    };
-
-    Some(ms)
-}
-
-fn parse_time_string(query: &str) -> Option<u64> {
-    let parts: Vec<&str> = query.split_whitespace().collect();
-    let mut total_ms = 0;
-    let mut i = 1; // Skip "timer" word
-
-    while i < parts.len() {
-        if parts[i] == "for" {
-            i += 1;
-            continue;
-        }
-
-        let part = parts[i];
-
-        // Try to find where the number ends and unit begins
-        let mut split_idx = part.len();
-        for (idx, ch) in part.char_indices() {
-            if !ch.is_ascii_digit() {
-                split_idx = idx;
-                break;
-            }
-        }
-
-        // Split the part into number and unit
-        let (num_str, unit_str) = part.split_at(split_idx);
-
-        // Parse the number
-        let amount: u64 = match num_str.parse() {
-            Ok(num) => num,
-            Err(_) => break,
-        };
-
-        // If there's no unit in this part, look at next part
-        let unit = if unit_str.is_empty() && i + 1 < parts.len() {
-            i += 1;
-            parts[i]
-        } else {
-            unit_str
-        };
-
-        let ms = match unit {
+    let input = input.trim();
+    if let Some(caps) = COMBINED_TIME_RE.captures(input) {
+        let amount: u64 = caps.name("number")?.as_str().parse().ok()?;
+        let unit = caps.name("unit")?.as_str().to_lowercase();
+        let ms = match unit.as_str() {
             "h" | "hr" | "hrs" | "hour" | "hours" => amount * 3600000,
             "m" | "min" | "mins" | "minute" | "minutes" => amount * 60000,
             "s" | "sec" | "secs" | "second" | "seconds" => amount * 1000,
-            "ms" | "milliseconds" | "millisecond" => amount,
-            _ => amount * 1000, // Default to seconds for invalid/missing units
+            "ms" | "millisecond" | "milliseconds" => amount,
+            _ => amount * 1000,
         };
-
-        total_ms += ms;
-        i += 1;
-    }
-
-    if total_ms > 0 {
-        Some(total_ms)
+        Some(ms)
     } else {
         None
     }
+}
+
+fn parse_time_string(query: &str) -> Option<u64> {
+    let mut total_ms = 0u64;
+    for cap in TIME_TOKEN_RE.captures_iter(query) {
+        let amount: u64 = cap.name("number")?.as_str().parse().ok()?;
+        let unit = cap.name("unit")?.as_str().to_lowercase();
+        let ms = match unit.as_str() {
+            "h" | "hr" | "hrs" | "hour" | "hours" => amount * 3600000,
+            "m" | "min" | "mins" | "minute" | "minutes" => amount * 60000,
+            "s" | "sec" | "secs" | "second" | "seconds" => amount * 1000,
+            "ms" | "millisecond" | "milliseconds" => amount,
+            _ => amount * 1000,
+        };
+        total_ms += ms;
+    }
+    if total_ms > 0 { Some(total_ms) } else { None }
 }

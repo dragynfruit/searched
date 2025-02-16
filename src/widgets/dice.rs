@@ -1,4 +1,6 @@
 use serde::Serialize;
+use once_cell::sync::Lazy;
+use regex::Regex;
 
 #[derive(Debug, Serialize)]
 pub struct DiceRoll {
@@ -7,10 +9,26 @@ pub struct DiceRoll {
     pub count: u32,
     pub sides: u32,
     pub show_sum: bool,
-    pub is_coin: bool, // New field
+    pub is_coin: bool,
 }
 
+static DICE_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)^(?:roll\s+)?(?P<count>\d*)d(?P<sides>\d+)$").unwrap()
+});
+
 impl DiceRoll {
+    fn extract_dice_notation(query: &str) -> Option<(u32, u32)> {
+        let trimmed = query.trim();
+        if let Some(caps) = DICE_RE.captures(trimmed) {
+            let count_str = caps.name("count").map_or("", |m| m.as_str());
+            let count = if count_str.is_empty() { 1 } else { count_str.parse().unwrap_or(1) };
+            let sides: u32 = caps.name("sides")?.as_str().parse().ok()?;
+            Some((count, sides))
+        } else {
+            None
+        }
+    }
+
     pub fn detect(query: &str) -> Option<Self> {
         let query = query.trim().to_lowercase();
 
@@ -23,35 +41,19 @@ impl DiceRoll {
         }
 
         // Specific dice rolling commands
-        let is_dice_command = [
-            "roll dice",
-            "roll a dice",
-            "throw dice",
-            "dice roll",
-            "roll the dice",
-        ].iter().any(|&cmd| query == cmd);
-
-        if is_dice_command {
+        if ["roll dice", "roll a dice", "throw dice", "dice roll", "roll the dice"]
+            .iter()
+            .any(|&cmd| query == cmd)
+        {
             return Some(Self::default_roll());
         }
 
-        // Match explicit dice notation patterns (e.g., "roll 2d6", "3d20")
-        if let Some(notation) = Self::extract_dice_notation(&query) {
-            let parts: Vec<&str> = notation.split('d').collect();
-            if parts.len() == 2 {
-                let count = if parts[0].is_empty() {
-                    1 // Handle "d20" as "1d20"
-                } else {
-                    parts[0].parse().unwrap_or(1)
-                };
-
-                let sides = parts[1].parse().unwrap_or(6);
-
-                // Validate input
+        // Allow "roll a {dice notation}" command
+        if let Some(stripped) = query.strip_prefix("roll a ") {
+            if let Some((count, sides)) = Self::extract_dice_notation(stripped) {
                 if count > 0 && count <= 100 && sides > 0 && sides <= 1000 {
                     let values: Vec<u32> = (0..count).map(|_| fastrand::u32(1..=sides)).collect();
                     let sum = values.iter().sum();
-                    
                     return Some(DiceRoll {
                         values,
                         sum,
@@ -64,32 +66,22 @@ impl DiceRoll {
             }
         }
 
-        None
-    }
-
-    fn extract_dice_notation(query: &str) -> Option<&str> {
-        // Look for patterns like "roll 2d6" or just "2d6"
-        let parts: Vec<&str> = query.split_whitespace().collect();
-        
-        match parts.len() {
-            1 => {
-                // Single word must be dice notation
-                if parts[0].contains('d') {
-                    Some(parts[0])
-                } else {
-                    None
-                }
-            },
-            2 => {
-                // Two words: "roll 2d6"
-                if parts[0] == "roll" && parts[1].contains('d') {
-                    Some(parts[1])
-                } else {
-                    None
-                }
-            },
-            _ => None,
+        // Use regex to extract dice notation.
+        if let Some((count, sides)) = Self::extract_dice_notation(&query) {
+            if count > 0 && count <= 100 && sides > 0 && sides <= 1000 {
+                let values: Vec<u32> = (0..count).map(|_| fastrand::u32(1..=sides)).collect();
+                let sum = values.iter().sum();
+                return Some(DiceRoll {
+                    values,
+                    sum,
+                    count,
+                    sides,
+                    show_sum: count > 1,
+                    is_coin: false,
+                });
+            }
         }
+        None
     }
 
     fn coin_flip() -> Self {
