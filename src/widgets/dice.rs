@@ -14,55 +14,82 @@ impl DiceRoll {
     pub fn detect(query: &str) -> Option<Self> {
         let query = query.trim().to_lowercase();
 
-        // Check for coin flip variations
-        if query.contains("flip") && query.contains("coin")
-            || query == "coin"
-            || query == "toss coin"
+        // Check for coin flip variations first
+        if ["flip coin", "coin flip", "coin", "toss coin", "flip a coin"]
+            .iter()
+            .any(|&pattern| query == pattern)
         {
             return Some(Self::coin_flip());
         }
 
-        // Match patterns like "roll dice", "roll 2d6", "dice", "2d20"
-        if !query.contains("dice") && !query.contains("roll") && !query.contains('d') {
-            return None;
-        }
+        // Specific dice rolling commands
+        let is_dice_command = [
+            "roll dice",
+            "roll a dice",
+            "throw dice",
+            "dice roll",
+            "roll the dice",
+        ].iter().any(|&cmd| query == cmd);
 
-        // Extract dice notation (e.g., 2d6)
-        let dice_part = query.split_whitespace().find(|part| part.contains('d'))?;
-
-        // Parse dice notation
-        let parts: Vec<&str> = dice_part.split('d').collect();
-        if parts.len() != 2 {
-            return Some(Self::default_roll()); // Default to 1d6
-        }
-
-        let count = if parts[0].is_empty() {
-            1 // Handle "d20" as "1d20"
-        } else {
-            parts[0].parse().unwrap_or(1)
-        };
-
-        let sides = parts[1].parse().unwrap_or(6);
-
-        // Validate input
-        if count == 0 || count > 100 || sides == 0 || sides > 1000 {
+        if is_dice_command {
             return Some(Self::default_roll());
         }
 
-        // Generate rolls
-        let values: Vec<u32> = (0..count).map(|_| fastrand::u32(1..=sides)).collect();
+        // Match explicit dice notation patterns (e.g., "roll 2d6", "3d20")
+        if let Some(notation) = Self::extract_dice_notation(&query) {
+            let parts: Vec<&str> = notation.split('d').collect();
+            if parts.len() == 2 {
+                let count = if parts[0].is_empty() {
+                    1 // Handle "d20" as "1d20"
+                } else {
+                    parts[0].parse().unwrap_or(1)
+                };
 
-        let sum = values.iter().sum();
-        let show_sum = count > 1;
+                let sides = parts[1].parse().unwrap_or(6);
 
-        Some(DiceRoll {
-            values,
-            sum,
-            count,
-            sides,
-            show_sum,
-            is_coin: false,
-        })
+                // Validate input
+                if count > 0 && count <= 100 && sides > 0 && sides <= 1000 {
+                    let values: Vec<u32> = (0..count).map(|_| fastrand::u32(1..=sides)).collect();
+                    let sum = values.iter().sum();
+                    
+                    return Some(DiceRoll {
+                        values,
+                        sum,
+                        count,
+                        sides,
+                        show_sum: count > 1,
+                        is_coin: false,
+                    });
+                }
+            }
+        }
+
+        None
+    }
+
+    fn extract_dice_notation(query: &str) -> Option<&str> {
+        // Look for patterns like "roll 2d6" or just "2d6"
+        let parts: Vec<&str> = query.split_whitespace().collect();
+        
+        match parts.len() {
+            1 => {
+                // Single word must be dice notation
+                if parts[0].contains('d') {
+                    Some(parts[0])
+                } else {
+                    None
+                }
+            },
+            2 => {
+                // Two words: "roll 2d6"
+                if parts[0] == "roll" && parts[1].contains('d') {
+                    Some(parts[1])
+                } else {
+                    None
+                }
+            },
+            _ => None,
+        }
     }
 
     fn coin_flip() -> Self {
