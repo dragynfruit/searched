@@ -7,8 +7,7 @@
 --- 
 --- @return boolean
 local function is_ad_url(url)
-	return string.match(url, "duckduckgo.com.*ad_") ~= nil
-		or string.match(url, "duckduckgo.com.*ads%-by%-microsoft") ~= nil
+	return string.match(url, "duckduckgo.com.*ad*") ~= nil
 end
 
 add_engine('duckduckgo', function(client, query, _)
