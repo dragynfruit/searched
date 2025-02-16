@@ -14,7 +14,7 @@ use tokio::sync::RwLock;
 use serde::Deserialize;
 use tower_http::services::ServeDir;
 
-use crate::{settings::{Settings, settings_middleware, update_settings, export_settings, import_settings}, AppState};
+use crate::{settings::{Settings, settings_middleware, update_settings, export_settings, import_settings, import_settings_form}, AppState};
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
@@ -133,15 +133,24 @@ pub async fn settings_page(
     Html(rendered).into_response()
 }
 
+pub async fn about_page(Extension(settings): Extension<Settings>) -> impl IntoResponse {
+    let mut context = Context::new();
+    context.insert("settings", &settings);
+    let rendered = TERA.read().await.render("about.html", &context).unwrap();
+    Html(rendered).into_response()
+}
+
 // Router configuration
 pub fn router() -> Router<AppState> {
     Router::new()
         .route("/", get(index))
         .route("/search", get(search_results))
         .route("/settings", get(settings_page))
-        .route("/settings/update", get(update_settings))
+        .route("/settings/update", post(update_settings))
         .route("/settings/export", get(export_settings))
         .route("/settings/import", post(import_settings))
+        .route("/settings/import_form", post(import_settings_form))
+        .route("/about", get(about_page))
         .route("/favicon", get(crate::favicon::favicon))
         .fallback_service(
             ServeDir::new(PathBuf::from("static"))

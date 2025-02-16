@@ -1,5 +1,3 @@
-{% import "components/search_bar.html" as search_bar %}
-{% import "components/result_view.html" as result_view %}
 {% extends "template.html" %}
 
 {% block title %}Settings | Searched{% endblock title %}
@@ -10,20 +8,6 @@
 <link rel="preload" href="assets/logo.png" as="image" />
 
 <style>
-    #settings-header {
-        padding: 10px;
-    }
-
-    #settings-header h3 {
-        margin: 0;
-        padding: 0;
-    }
-
-    #settings-header a {
-        text-decoration: none;
-        color: var(--text-primary);
-    }
-
     #settings-container {
         padding: 30px;
         max-width: 600px;
@@ -83,45 +67,95 @@
         background-color: var(--bg-input);
         color: var(--text-primary);
         border: none;
-        padding: 12px 24px;
+        padding: 0;
+        height: 48px;
         border-radius: 8px;
         cursor: pointer;
         font-size: 16px;
         font-weight: 500;
         transition: all 0.2s ease;
-        margin-top: 10px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
-    input[type="submit"]:hover {
-        background-color: var(--accent-primary);
-        color: var(--bg-primary);
-        transform: translateY(-1px);
+    /* Unified button styles */
+    .action-section {
+        display: flex;
+        gap: 20px;
+        margin-top: 20px;
+        align-items: center;
     }
 
-    /* New styles for export and import buttons */
-    button#export-settings,
-    button#import-settings {
-        background-color: var(--accent-primary);
-        color: var(--bg-primary);
+    .action-section > * {
+        flex: 1;
+        height: 48px;
+        background-color: var(--bg-input);
+        color: var(--text-primary);
         border: none;
-        padding: 10px 20px;
+        padding: 0;
         border-radius: 8px;
         cursor: pointer;
         font-size: 16px;
-        margin: 5px;
-        transition: background-color 0.2s ease, transform 0.2s ease;
+        font-weight: 500;
+        transition: all 0.2s ease;
+        text-decoration: none;
+        text-align: center;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
-    button#export-settings:hover,
-    button#import-settings:hover {
-        background-color: var(--accent-secondary, #f0f0f0);
-        transform: scale(1.05);
+
+    .action-section label.import-button {
+        cursor: pointer;
+    }
+
+    .action-section > *:hover {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+    }
+
+    .action-section button.reset {
+        background-color: var(--accent-secondary);
+        color: var(--bg-primary);
+    }
+
+    @keyframes shake {
+        0%, 100% { transform: translateX(0); }
+        25% { transform: translateX(-2px); }
+        75% { transform: translateX(2px); }
+    }
+
+    .action-section button.reset:hover {
+        animation: shake 0.3s ease-in-out infinite;
+    }
+
+    .export-import-section {
+        margin-top: 20px;
+    }
+
+    .action-section.compact > * {
+        height: 36px;
+        line-height: 12px;
+    }
+
+    .action-section form {
+        flex: 1;
+        display: flex;
+        height: 100%;
+    }
+
+    .action-section label.import-button {
+        cursor: pointer;
+        width: 100%;
+        height: 100%;
+        margin: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
     }
 
     @media screen and (max-width: 520px) {
-        #settings-header h3 {
-            display: none;
-        }
-        
         #settings-container {
             padding: 15px;
             margin: 20px 15px;
@@ -133,41 +167,37 @@
     }
 </style>
 
-{{ search_bar::generate_style() }}
-{{ result_view::generate_style() }}
 {% endblock head %}
 
 {% block left_header %}
-<table id="settings-header">
-    <tr>
-        <td>
-            <a href="/"><img src="assets/logo.png" width="48" height="48" alt="Logo" /></a>
-        </td>
-        <td>
-            <a href="/"><h3>Searched Settings</h3></a>
-        </td>
-    </tr>
-</table>
+    {% set header_title = "Searched Settings" %}
+    {% include "components/common_header.html" %}
 {% endblock left_header %}
-
-{% block right_header %}{% endblock right_header %}
 
 {% block content %}
 <div id="settings-container">
-    <form action="/settings/update">
+    <form method="post" action="/settings/update">
         <div class="settings-section">
             <h2>General</h2>
             <div class="settings-group">
                 <label for="favicons">Show website icons</label>
+                <input type="hidden" name="favicons" value="false">
                 <input type="checkbox" id="favicons" name="favicons" {% if settings.favicons %}checked{% endif %} value="true">
             </div>
             <div class="settings-group">
                 <label for="show_query_title">Show search query in title</label>
+                <input type="hidden" name="show_query_title" value="false">
                 <input type="checkbox" id="show_query_title" name="show_query_title" {% if settings.show_query_title %}checked{% endif %} value="true">
             </div>
             <div class="settings-group">
                 <label for="compact_view">Use compact view</label>
+                <input type="hidden" name="compact_view" value="false">
                 <input type="checkbox" id="compact_view" name="compact_view" {% if settings.compact_view %}checked{% endif %} value="true">
+            </div>
+            <div class="settings-group">
+                <label for="no_js">Disable JavaScript</label>
+                <input type="hidden" name="no_js" value="false">
+                <input type="checkbox" id="no_js" name="no_js" {% if settings.no_js %}checked{% endif %} value="true">
             </div>
             <div class="settings-group">
                 <label for="theme">Theme</label>
@@ -185,52 +215,20 @@
                 <p style="color: #999; text-align: center; width: 100%; margin: 0;">No engine settings available yet</p>
             </div>
         </div>
-
-        <div style="margin-top:20px; display: flex; justify-content: space-between; gap: 4%;">
-            <button type="button" id="export-settings" style="width:48%;">Export Settings</button>
-            <button type="button" id="import-settings" style="width:48%;">Import Settings</button>
+        
+        <div class="action-section">
+            <input type="submit" value="Save">
+            <button type="submit" name="reset" value="true" class="reset">Reset</button>
         </div>
-        <input type="file" id="import-file" accept=".json" style="display:none;" />
-        <input type="submit" value="Save Changes" style="margin-top:20px;">
     </form>
+    <div class="export-import-section">
+        <div class="action-section compact">
+            <a href="/settings/export?download=1">Export Settings</a>
+            <form action="/settings/import_form" method="POST" enctype="multipart/form-data" style="flex: 1;">
+                <input type="file" name="settings_file" accept=".json" required style="display:none;" id="settings_file" onchange="this.form.submit()"/>
+                <label for="settings_file" class="import-button">Import Settings</label>
+            </form>
+        </div>
+    </div>
 </div>
-
-<script>
-document.getElementById("export-settings").addEventListener("click", async function() {
-    const res = await fetch('/settings/export');
-    const json = await res.json();
-    const blob = new Blob([JSON.stringify(json, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "settings.json";
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
-});
-
-document.getElementById("import-settings").addEventListener("click", function(){
-    document.getElementById("import-file").click();
-});
-
-document.getElementById("import-file").addEventListener("change", async function(e){
-    const file = e.target.files[0];
-    if (!file) return;
-    const text = await file.text();
-    try {
-        const settings = JSON.parse(text);
-        const res = await fetch('/settings/import', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify(settings)
-        });
-        if(res.redirected) {
-            window.location.href = res.url;
-        }
-    } catch(err) {
-        alert("Invalid settings file.");
-    }
-});
-</script>
 {% endblock content %}

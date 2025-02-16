@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 use axum::{
     body::Body,
-    extract::{Query, Request, Json, Extension},
+    extract::{Query, Request, Json, Extension, Multipart, Form},
     http::StatusCode,
     middleware::Next,
     response::{IntoResponse, Response},
@@ -16,6 +16,7 @@ pub struct Settings {
     pub theme: String,
     pub show_query_title: bool,
     pub compact_view: bool,
+    pub no_js: bool,
 }
 
 impl Default for Settings {
@@ -25,6 +26,7 @@ impl Default for Settings {
             theme: "auto".to_string(),
             show_query_title: true,
             compact_view: false,
+            no_js: false,
         }
     }
 }
@@ -38,7 +40,8 @@ impl Settings {
         // Serialize settings to JSON and base64-encode to make it cookie-safe.
         let json = serde_json::to_string(self).unwrap();
         let encoded = general_purpose::STANDARD.encode(json);
-        format!("settings={}; Path=/; Max-Age=31536000; SameSite=Strict; Secure", encoded)
+        // Removed the Secure flag for local testing.
+        format!("settings={}; Path=/; Max-Age=31536000; SameSite=Strict", encoded)
     }
 }
 
@@ -48,6 +51,7 @@ pub struct SettingsBuilder {
     theme: Option<String>,
     show_query_title: Option<bool>,
     compact_view: Option<bool>,
+    no_js: Option<bool>,
 }
 
 impl SettingsBuilder {
@@ -71,6 +75,11 @@ impl SettingsBuilder {
         self
     }
 
+    pub fn no_js(mut self, no_js: bool) -> Self {
+        self.no_js = Some(no_js);
+        self
+    }
+
     pub fn build(self) -> Settings {
         let defaults = Settings::default();
         Settings {
@@ -78,6 +87,7 @@ impl SettingsBuilder {
             theme: self.theme.unwrap_or(defaults.theme),
             show_query_title: self.show_query_title.unwrap_or(defaults.show_query_title),
             compact_view: self.compact_view.unwrap_or(defaults.compact_view),
+            no_js: self.no_js.unwrap_or(defaults.no_js),
         }
     }
 }
@@ -101,7 +111,17 @@ pub async fn settings_middleware(jar: CookieJar, mut request: Request, next: Nex
     next.run(request).await
 }
 
-pub async fn update_settings(Query(params): Query<HashMap<String, String>>) -> impl IntoResponse {
+pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> impl IntoResponse {
+    if params.contains_key("reset") {
+        let settings = Settings::default();
+        let cookie = settings.to_cookies();
+        return Response::builder()
+            .status(302)
+            .header("Location", "/settings")
+            .header("Set-Cookie", cookie)
+            .body(Body::empty())
+            .unwrap();
+    }
     let defaults = Settings::default();
     let settings = Settings::new()
         .favicons(params.get("favicons").map(|v| v == "true").unwrap_or(defaults.favicons))
@@ -111,6 +131,7 @@ pub async fn update_settings(Query(params): Query<HashMap<String, String>>) -> i
             .unwrap_or(defaults.theme))
         .show_query_title(params.get("show_query_title").map(|v| v == "true").unwrap_or(defaults.show_query_title))
         .compact_view(params.get("compact_view").map(|v| v == "true").unwrap_or(defaults.compact_view))
+        .no_js(params.get("no_js").map(|v| v == "true").unwrap_or(defaults.no_js))
         .build();
 
     let cookie = settings.to_cookies();
@@ -122,10 +143,22 @@ pub async fn update_settings(Query(params): Query<HashMap<String, String>>) -> i
         .unwrap()
 }
 
-// New endpoint: Export settings as JSON.
-pub async fn export_settings(Extension(settings): Extension<Settings>) -> impl IntoResponse {
-    // Return settings as JSON.
-    Json(settings)
+// Modified export_settings endpoint to allow download via query parameter.
+pub async fn export_settings(
+    Extension(settings): Extension<Settings>,
+    Query(params): Query<HashMap<String, String>>,
+) -> impl IntoResponse {
+    if params.contains_key("download") {
+        let json = serde_json::to_string_pretty(&settings).unwrap();
+        Response::builder()
+            .status(StatusCode::OK)
+            .header("Content-Type", "application/json")
+            .header("Content-Disposition", "attachment; filename=\"settings.json\"")
+            .body(Body::from(json))
+            .unwrap()
+    } else {
+        Json(settings).into_response()
+    }
 }
 
 // New endpoint: Import settings from JSON payload.
@@ -136,5 +169,34 @@ pub async fn import_settings(Json(new_settings): Json<Settings>) -> impl IntoRes
         .header("Location", "/settings")
         .header("Set-Cookie", cookie)
         .body(Body::empty())
+        .unwrap()
+}
+
+// New endpoint: Import settings from multipart form submission (non-JS).
+pub async fn import_settings_form(
+    mut multipart: Multipart,
+) -> impl IntoResponse {
+    while let Some(field) = multipart.next_field().await.unwrap() {
+        if field.name() == Some("settings_file") {
+            let data = field.bytes().await.unwrap();
+            if let Ok(new_settings) = serde_json::from_slice::<Settings>(&data) {
+                let cookie = new_settings.to_cookies();
+                return Response::builder()
+                    .status(StatusCode::FOUND)
+                    .header("Location", "/settings")
+                    .header("Set-Cookie", cookie)
+                    .body(Body::empty())
+                    .unwrap();
+            } else {
+                return Response::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .body(Body::from("Invalid settings file"))
+                    .unwrap();
+            }
+        }
+    }
+    Response::builder()
+        .status(StatusCode::BAD_REQUEST)
+        .body(Body::from("No file provided"))
         .unwrap()
 }

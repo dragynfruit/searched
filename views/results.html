@@ -217,20 +217,22 @@
 
 <img id="ferris" class="hover" src="/assets/logo.png" width="48" height="48" alt="Ferris" />
 
+{% if not settings.no_js %}
 <script>
-	const ferris = document.getElementById("ferris");
+    const ferris = document.getElementById("ferris");
 
-	ferris.addEventListener("click", function () {
-		if (this.classList.contains("animate")) {
-			return;
-		}
+    ferris.addEventListener("click", function () {
+        if (this.classList.contains("animate")) {
+            return;
+        }
 
-		this.classList.remove("hover");
-		this.classList.add("animate");
-		setTimeout(() => {
-			this.classList.add("hover");
-			this.classList.remove("animate");
-		}, 3000);
-	});
+        this.classList.remove("hover");
+        this.classList.add("animate");
+        setTimeout(() => {
+            this.classList.add("hover");
+            this.classList.remove("animate");
+        }, 3000);
+    });
 </script>
+{% endif %}
 {% endblock body %}

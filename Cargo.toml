@@ -12,7 +12,7 @@ __luau-jit = ["mlua/luau-jit"]
 
 [dependencies]
 tower-http = { version = "0.6.2", features = ["fs"] }
-axum = { version = "0.8.1", default-features = false, features = ["form", "http1", "json", "matched-path", "original-uri", "query", "tokio", "tower-log", "macros"] }
+axum = { version = "0.8.1", default-features = false, features = ["form", "http1", "json", "matched-path", "original-uri", "query", "tokio", "tower-log", "macros", "multipart"] }
 env_logger = "0.11.6"
 log = "0.4.25"
 #lru = "0.12.5"

@@ -1,0 +1,16 @@
+{% extends "template.html" %}
+{% block title %}About | Searched{% endblock title %}
+{% block left_header %}
+    {% set header_title = "About Searched" %}
+    {% include "components/common_header.html" %}
+{% endblock left_header %}
+
+{% block right_header %}{% endblock right_header %}
+
+{% block content %}
+<div style="max-width:600px; margin:40px auto; padding:20px;">
+    <h1>About Searched</h1>
+    <p>Searched is a fast, privacy-respecting search engine built with Rust and Tera.</p>
+    <p>Powered by various providers and designed for performance.</p>
+</div>
+{% endblock content %}
