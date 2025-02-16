@@ -21,7 +21,6 @@ add_engine('duckduckgo', function(client, query, _)
 	local headers = { q = query.query }
 	if query.page > 1 then
 		headers = {
-			q = query.query,
 			s = tostring(offset),
 			nextParams = '',
 			v = 'l',
