@@ -3,13 +3,18 @@
 -- -- (c) 2024 Dragynfruit
 
 add_engine('qwant', function(client, query, opts)
-	local url = Url.from_template('https://api.qwant.com/v3/search/web?locale=en_us&count=10&p={page}&q={query}', {
+	local url = Url.from_template('https://api.qwant.com/v3/search/web?q={query}&count=10&locale=en_US&offset={offset}&device=desktop&tgp=3&safesearch=1&displayed=true&llm=false', {
 		query = query.query,
-		page = tostring(query.page),
+		offset = tostring((query.page - 1) * 10),
 	}):string()
 
 	local res = client:get(url, {})
 	local data = parse_json(res)
+	
+	if data.status == "error" and data.data and data.data.error_code == 27 then
+		error("captcha")
+	end
+
 	local mainline = data.data.result.items.mainline
 
 	local results = {}
