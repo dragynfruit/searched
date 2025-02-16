@@ -7,8 +7,5 @@ A blazingly fast metasearch engine written in Rust
 
 # Todo
 config table for providers.toml to configure the engine <br/>
-plugins (calculator, dictionary, etc) <br/>
-for dictionary maybe see if first result has definition in title
-
-aasodiashd
-Need to cache location lookups in db
+No js metronome by generating audio on the backend <br/>
+cache responses from providers

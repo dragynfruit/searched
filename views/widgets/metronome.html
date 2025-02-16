@@ -1,0 +1,611 @@
+{% include "widgets/common_style.html" %}
+
+{% if settings.no_js %}
+<div class="widget metronome">
+    <div class="widget-content">
+        <h3 class="widget-title">Metronome</h3>
+        <div class="simple-metronome">
+            <div class="pendulum-visual">
+                <div class="pendulum swing">
+                    <div class="rod"></div>
+                    <div class="base"></div>
+                    <div class="weight"></div>
+                </div>
+            </div>
+            <div class="speed-display">
+                <span class="bpm-value">{{ widget.Metronome.initial_bpm | default(value=120) }}</span>
+                <span class="bpm-label">BPM</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .simple-metronome {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 24px;
+        padding: 20px;
+    }
+
+    .simple-metronome .speed-display {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+        font-size: 1.5em;
+    }
+
+    .simple-metronome .bpm-value {
+        font-family: monospace;
+        font-weight: bold;
+        color: var(--text-primary);
+    }
+
+    .simple-metronome .bpm-label {
+        color: var(--text-secondary);
+    }
+
+    .simple-metronome .pendulum-visual {
+        height: 200px;
+        width: 100%;
+        position: relative;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .simple-metronome .pendulum {
+        position: relative;
+        transform-origin: top center;
+        height: 160px;
+    }
+
+    .simple-metronome .rod,
+    .simple-metronome .base,
+    .simple-metronome .weight {
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        background: var(--accent-primary);
+    }
+
+    .simple-metronome .rod {
+        width: 4px;
+        height: 140px;
+        transform-origin: top center;
+    }
+
+    .simple-metronome .base {
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        top: -8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .simple-metronome .weight {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        bottom: 0;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    .simple-metronome .swing {
+        animation: pendulum-swing calc(60s / {{ widget.Metronome.initial_bpm | default(value=120) }}) ease-in-out infinite;
+    }
+
+    @keyframes pendulum-swing {
+        0% { transform: rotate(20deg); }
+        50% { transform: rotate(-20deg); }
+        100% { transform: rotate(20deg); }
+    }
+</style>
+{% else %}
+<div class="widget metronome">
+    <div class="widget-content">
+        <h3 class="widget-title">Metronome</h3>
+        <div class="metronome-layout">
+            <div class="metronome-main">
+                <div class="beat-indicators"></div>
+                <div class="pendulum-visual">
+                    <div class="pendulum">
+                        <div class="rod"></div>
+                        <div class="base"></div>
+                        <div class="weight"></div>
+                    </div>
+                </div>
+            </div>
+            <div class="control-panel">
+                <div class="tempo-section">
+                    <div class="bpm-display">
+                        <input type="number" id="bpm-input" min="30" max="250" value="{{ widget.Metronome.initial_bpm | default(value=120) }}">
+                        <span class="bpm-label">BPM</span>
+                    </div>
+                    <div class="bpm-controls">
+                        <button id="bpm-minus" class="metro-btn icon-btn">−</button>
+                        <button id="bpm-plus" class="metro-btn icon-btn">+</button>
+                    </div>
+                </div>
+                <div class="controls-section">
+                    <button id="metronome-toggle" class="metro-btn primary-btn">Start</button>
+                    <button id="tap-tempo" class="metro-btn secondary-btn">Tap Tempo</button>
+                    <select id="beat-pattern" class="time-signature">
+                        <option value="2">2/4</option>
+                        <option value="3">3/4</option>
+                        <option value="4" selected>4/4</option>
+                        <option value="6">6/8</option>
+                        <option value="8">8/8</option>
+                    </select>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .metronome .metronome-layout {
+        display: grid;
+        grid-template-columns: 1.2fr 1fr;
+        gap: 24px;
+        margin-top: 16px;
+    }
+
+    .metronome .metronome-main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        padding-right: 24px;
+        border-right: 1px solid var(--border-color);
+    }
+
+    .metronome .control-panel {
+        display: flex;
+        flex-direction: column;
+        gap: 24px;
+    }
+
+    .metronome .tempo-section {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 12px;
+    }
+
+    .metronome .bpm-display {
+        display: flex;
+        align-items: baseline;
+        gap: 8px;
+    }
+
+    .metronome .bpm-label {
+        font-size: 1.2em;
+        color: var(--text-secondary);
+        font-weight: 500;
+    }
+
+    .metronome #bpm-input {
+        width: 90px;
+        padding: 8px;
+        border: 2px solid var(--border-color);
+        border-radius: 8px;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        font-size: 2em;
+        text-align: center;
+        font-family: monospace;
+        transition: border-color 0.2s;
+    }
+
+    .metronome #bpm-input:focus {
+        border-color: var(--accent-primary);
+        outline: none;
+    }
+
+    .metronome .bpm-controls {
+        display: flex;
+        gap: 8px;
+    }
+
+    .metronome .controls-section {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .metronome .metro-btn {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        cursor: pointer;
+        transition: all 0.2s;
+        font-size: 1em;
+    }
+
+    .metronome .icon-btn {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        font-size: 1.5em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .metronome .primary-btn {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+        border: none;
+        font-size: 1.2em;
+        font-weight: 500;
+    }
+
+    .metronome .secondary-btn {
+        background: var(--bg-secondary);
+        border: 1px solid var(--accent-primary);
+        color: var(--accent-primary);
+    }
+
+    .metronome .metro-btn:hover {
+        transform: translateY(-1px);
+        filter: brightness(1.1);
+    }
+
+    .metronome .metro-btn:active {
+        transform: translateY(1px);
+    }
+
+    .metronome .time-signature {
+        padding: 12px;
+        border-radius: 8px;
+        border: 1px solid var(--border-color);
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 1em;
+        width: 100%;
+    }
+
+    .metronome .beat-indicators {
+        display: flex;
+        justify-content: center;
+        gap: 8px;
+        margin-bottom: 24px;
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+    }
+
+    .metronome .beat-indicator {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        background: var(--bg-secondary);
+        border: 2px solid var(--border-color);
+        transition: all 0.15s cubic-bezier(0.4, 0, 0.2, 1);
+    }
+
+    .metronome .beat-indicator.accent {
+        border-color: var(--accent-primary);
+    }
+
+    .metronome .beat-indicator.current {
+        background: var(--accent-primary);
+        border-color: var(--accent-primary);
+        transform: scale(1.2);
+        box-shadow: 0 0 12px var(--accent-primary);
+    }
+
+    .metronome .pendulum-visual {
+        height: 200px;
+        width: 100%;
+        position: relative;
+        perspective: 1000px;
+        display: flex;
+        justify-content: center;
+        align-items: flex-start;
+    }
+
+    .metronome .pendulum {
+        position: relative;
+        transform-origin: top center;
+        transform-style: preserve-3d;
+        height: 160px;
+    }
+
+    .metronome .rod {
+        width: 4px;
+        height: 140px;
+        background: linear-gradient(to bottom, var(--accent-primary), var(--accent-primary));
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+        transform-origin: top center;
+    }
+
+    .metronome .base {
+        width: 16px;
+        height: 16px;
+        background: var(--accent-primary);
+        border-radius: 50%;
+        position: absolute;
+        top: -8px;
+        left: 50%;
+        transform: translateX(-50%);
+        box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+    }
+
+    .metronome .weight {
+        width: 40px;
+        height: 40px;
+        background: var(--accent-primary);
+        border-radius: 50%;
+        position: absolute;
+        bottom: 0;
+        left: 50%;
+        transform: translateX(-50%);
+        box-shadow: 0 4px 8px rgba(0,0,0,0.3);
+    }
+
+    @keyframes pendulum-swing {
+        0% { transform: rotate(20deg); }
+        50% { transform: rotate(-20deg); }
+        100% { transform: rotate(20deg); }
+    }
+
+    .metronome .pendulum.active {
+        animation: pendulum-swing calc(60s / var(--bpm)) ease-in-out infinite;
+        animation-play-state: running;
+    }
+
+    @media (max-width: 600px) {
+        .metronome .metronome-layout {
+            grid-template-columns: 1fr;
+        }
+
+        .metronome .metronome-main {
+            padding-right: 0;
+            border-right: none;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 24px;
+        }
+    }
+</style>
+
+<script>
+    class Metronome {
+        constructor() {
+            this.audioContext = null;
+            this.isPlaying = false;
+            // Safely parse the initial BPM from template string
+            const initialBpmString = "{{ widget.Metronome.initial_bpm | default(value=120) }}";
+            this.bpm = Math.max(30, Math.min(250, parseInt(initialBpmString) || 120));
+            this.nextNoteTime = 0;
+            this.timerWorker = null;
+            this.currentBeat = 0;
+            this.pattern = 4;
+            this.lastTapTime = 0;
+            this.tapTimes = [];
+            
+            this.setupElements();
+            this.setupEventListeners();
+            this.createWorker();
+            this.createBeatIndicators();
+            this.setupSoundBuffers();
+        }
+
+        setupElements() {
+            this.toggleBtn = document.getElementById('metronome-toggle');
+            this.bpmInput = document.getElementById('bpm-input');
+            this.pendulum = document.querySelector('.pendulum');
+            this.tapButton = document.getElementById('tap-tempo');
+            this.patternSelect = document.getElementById('beat-pattern');
+            this.beatIndicators = document.querySelector('.beat-indicators');
+        }
+
+        setupEventListeners() {
+            this.toggleBtn.addEventListener('click', () => this.toggle());
+            
+            document.getElementById('bpm-plus').addEventListener('click', () => {
+                this.bpm = Math.min(250, parseInt(this.bpmInput.value) + 1);
+                this.bpmInput.value = this.bpm;
+                this.updateBPM();
+            });
+            
+            document.getElementById('bpm-minus').addEventListener('click', () => {
+                this.bpm = Math.max(30, parseInt(this.bpmInput.value) - 1);
+                this.bpmInput.value = this.bpm;
+                this.updateBPM();
+            });
+            
+            this.bpmInput.addEventListener('input', () => {
+                let value = parseInt(this.bpmInput.value);
+                value = Math.max(30, Math.min(250, value));
+                this.bpm = value;
+                this.updateBPM();
+            });
+
+            this.tapButton.addEventListener('click', () => this.handleTap());
+
+            this.patternSelect.addEventListener('change', () => {
+                this.pattern = parseInt(this.patternSelect.value);
+                this.createBeatIndicators();
+                this.currentBeat = 0;
+            });
+        }
+
+        updateBPM() {
+            if (this.isPlaying) {
+                // Restart pendulum animation with new speed
+                this.pendulum.classList.remove('active');
+                // Force reflow to reset animation
+                void this.pendulum.offsetWidth;
+                this.pendulum.style.setProperty('--bpm', this.bpm);
+                this.pendulum.classList.add('active');
+                
+                // Sync audio context timing
+                this.nextNoteTime = this.audioContext.currentTime;
+            }
+        }
+
+        createBeatIndicators() {
+            this.beatIndicators.innerHTML = '';
+            for (let i = 0; i < this.pattern; i++) {
+                const indicator = document.createElement('div');
+                indicator.className = 'beat-indicator';
+                if (i === 0) indicator.classList.add('accent');
+                this.beatIndicators.appendChild(indicator);
+            }
+        }
+
+        async setupSoundBuffers() {
+            if (!this.audioContext) {
+                this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+
+            // Create and load click sounds
+            const createClickBuffer = (frequency, duration) => {
+                const sampleRate = this.audioContext.sampleRate;
+                const samples = duration * sampleRate;
+                const buffer = this.audioContext.createBuffer(1, samples, sampleRate);
+                const data = buffer.getChannelData(0);
+                
+                for (let i = 0; i < samples; i++) {
+                    const t = i / sampleRate;
+                    data[i] = Math.sin(2 * Math.PI * frequency * t) * 
+                             Math.exp(-5 * t); // Decay envelope
+                }
+                
+                return buffer;
+            };
+
+            this.accentClickBuffer = createClickBuffer(1200, 0.1);
+            this.normalClickBuffer = createClickBuffer(800, 0.1);
+        }
+
+        handleTap() {
+            const now = performance.now();
+            if (this.lastTapTime) {
+                const interval = now - this.lastTapTime;
+                this.tapTimes.push(interval);
+                
+                if (this.tapTimes.length > 3) {
+                    this.tapTimes.shift();
+                }
+                
+                if (this.tapTimes.length >= 2) {
+                    const avgInterval = this.tapTimes.reduce((a, b) => a + b) / this.tapTimes.length;
+                    const newBpm = Math.round(60000 / avgInterval);
+                    if (newBpm >= 30 && newBpm <= 250) {
+                        this.bpm = newBpm;
+                        this.bpmInput.value = this.bpm;
+                    }
+                }
+            }
+            this.lastTapTime = now;
+            
+            // Visual feedback
+            this.tapButton.style.transform = 'scale(0.95)';
+            setTimeout(() => {
+                this.tapButton.style.transform = '';
+            }, 100);
+        }
+
+        createWorker() {
+            const workerBlob = new Blob([`
+                let timerId = null;
+                
+                self.onmessage = function(e) {
+                    if (e.data === "start") {
+                        timerId = setInterval(() => self.postMessage("tick"), 25);
+                    } else if (e.data === "stop") {
+                        clearInterval(timerId);
+                    }
+                };
+            `], { type: 'text/javascript' });
+            
+            this.timerWorker = new Worker(URL.createObjectURL(workerBlob));
+            this.timerWorker.onmessage = () => this.scheduler();
+        }
+
+        async initAudio() {
+            this.audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            await this.audioContext.resume();
+        }
+
+        toggle() {
+            if (this.isPlaying) {
+                this.stop();
+            } else {
+                this.start();
+            }
+        }
+
+        async start() {
+            if (!this.audioContext) {
+                await this.initAudio();
+            }
+            
+            this.isPlaying = true;
+            this.currentBeat = 0;
+            this.nextNoteTime = this.audioContext.currentTime;
+            this.toggleBtn.textContent = 'Stop';
+            this.timerWorker.postMessage("start");
+        }
+
+        stop() {
+            this.isPlaying = false;
+            this.toggleBtn.textContent = 'Start';
+            this.timerWorker.postMessage("stop");
+            this.pendulum.classList.remove('active');
+        }
+
+        scheduler() {
+            while (this.nextNoteTime < this.audioContext.currentTime + 0.1) {
+                this.playClick();
+                this.nextNoteTime += 60.0 / this.bpm;
+            }
+        }
+
+        playClick() {
+            const isAccent = this.currentBeat === 0;
+            const buffer = isAccent ? this.accentClickBuffer : this.normalClickBuffer;
+            
+            const source = this.audioContext.createBufferSource();
+            const gain = this.audioContext.createGain();
+            
+            source.buffer = buffer;
+            source.connect(gain);
+            gain.connect(this.audioContext.destination);
+            
+            gain.gain.value = isAccent ? 1.0 : 0.7;
+            
+            source.start(this.nextNoteTime);
+            
+            // Update visual elements
+            this.updateVisuals();
+            
+            this.currentBeat = (this.currentBeat + 1) % this.pattern;
+        }
+
+        updateVisuals() {
+            // Update beat indicators
+            const indicators = this.beatIndicators.children;
+            for (let i = 0; i < indicators.length; i++) {
+                indicators[i].classList.toggle('current', i === this.currentBeat);
+            }
+            
+            // Update pendulum
+            if (!this.pendulum.classList.contains('active')) {
+                this.pendulum.style.setProperty('--bpm', this.bpm);
+                this.pendulum.classList.add('active');
+            }
+        }
+    }
+
+    new Metronome();
+</script>
+{% endif %}

@@ -217,12 +217,15 @@
 				{% if widget is containing("Time") %}
 					{% include "widgets/time.html" %}
 				{% endif %}
+				{% if widget is containing("Metronome") %}
+                    {% include "widgets/metronome.html" %}
+                {% endif %}
             </div>
         {% endif %}
         <div id="results" class="{% if settings.compact_view %}compact-view{% endif %}">
             {% if results %}
             {% for result in results %}
-            {{ result_view::generate_content(result=result, favicon=settings.favicons, compact=settings.compact_view) }}
+            {{ result_view::generate_content(result=result, favicon=settings.favicons, compact=settings.compact_view, settings=settings) }}
             {% endfor %}
             <div id="bottom">
                 {% set page_start = query.page - 5 %}

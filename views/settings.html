@@ -242,6 +242,11 @@
         <div class="settings-section">
             <h2>Results</h2>
             <div class="settings-group">
+                <label for="show_full_path">Show full URL path</label>
+                <input type="hidden" name="show_full_path" value="false">
+                <input type="checkbox" id="show_full_path" name="show_full_path" {% if settings.show_full_path %}checked{% endif %} value="true">
+            </div>
+            <div class="settings-group">
                 <label for="safesearch">SafeSearch</label>
                 <select id="safesearch" name="safesearch">
                     <option value="strict" {% if settings.safesearch == "strict" %}selected{% endif %}>Strict</option>

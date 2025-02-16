@@ -1,6 +1,6 @@
-use serde::Serialize;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct DiceRoll {
@@ -12,16 +12,19 @@ pub struct DiceRoll {
     pub is_coin: bool,
 }
 
-static DICE_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)^(?:roll\s+)?(?P<count>\d*)d(?P<sides>\d+)$").unwrap()
-});
+static DICE_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)^(?:roll\s+)?(?P<count>\d*)d(?P<sides>\d+)$").unwrap());
 
 impl DiceRoll {
     fn extract_dice_notation(query: &str) -> Option<(u32, u32)> {
         let trimmed = query.trim();
         if let Some(caps) = DICE_RE.captures(trimmed) {
             let count_str = caps.name("count").map_or("", |m| m.as_str());
-            let count = if count_str.is_empty() { 1 } else { count_str.parse().unwrap_or(1) };
+            let count = if count_str.is_empty() {
+                1
+            } else {
+                count_str.parse().unwrap_or(1)
+            };
             let sides: u32 = caps.name("sides")?.as_str().parse().ok()?;
             Some((count, sides))
         } else {
@@ -41,9 +44,15 @@ impl DiceRoll {
         }
 
         // Specific dice rolling commands
-        if ["roll dice", "roll a dice", "throw dice", "dice roll", "roll the dice"]
-            .iter()
-            .any(|&cmd| query == cmd)
+        if [
+            "roll dice",
+            "roll a dice",
+            "throw dice",
+            "dice roll",
+            "roll the dice",
+        ]
+        .iter()
+        .any(|&cmd| query == cmd)
         {
             return Some(Self::default_roll());
         }

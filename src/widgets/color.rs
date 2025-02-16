@@ -1,11 +1,12 @@
 use csscolorparser::Color as CssColor;
-use serde::Serialize;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Serialize;
 
 // New regex for color picker variations
 static COLOR_PICKER_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)^(?:(?:color|hex|rgb|hsl)\s*picker|pick\s*(?:a\s*)?(?:color|hex|rgb|hsl))$").unwrap()
+    Regex::new(r"(?i)^(?:(?:color|hex|rgb|hsl)\s*picker|pick\s*(?:a\s*)?(?:color|hex|rgb|hsl))$")
+        .unwrap()
 });
 
 #[derive(Debug, Serialize)]

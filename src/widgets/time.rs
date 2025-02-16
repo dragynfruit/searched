@@ -1,7 +1,7 @@
 use chrono::{DateTime, Local};
-use serde::Serialize;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Serialize;
 
 static TIME_QUERY_RE: Lazy<Regex> = Lazy::new(|| {
     Regex::new(r"(?i)^(?:time|current\s+time|what(?:\s+is)?\s+(?:time\s+is\s+it|is\s+the\s+current\s+time|the\s+time)|whats\s+the\s+time)$")

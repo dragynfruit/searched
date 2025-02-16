@@ -80,7 +80,7 @@
                     <img src="/favicon?domain={{ protocol_domain }}" width="16" height="16" alt="{{ domain }} Favicon" />
                 {% endif %}
                 <a href="{{ protocol_domain }}" class="domain">{{ protocol_domain }}</a>
-                {% if not compact %}
+                {% if not compact and settings.show_full_path %}
                 &#x276F;
                 {% for i in range(start=1, end=split_path | length) %}
                 {% set path = split_path[i] %}

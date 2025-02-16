@@ -1,17 +1,14 @@
-use reqwest::Client;
-use serde::{Deserialize, Serialize};
 use once_cell::sync::Lazy;
 use regex::Regex;
+use reqwest::Client;
+use serde::{Deserialize, Serialize};
 
-static WEATHER_QUERY_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)\b(weather|forecast|temperature)\b").unwrap()
-});
-static WEATHER_IN_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)weather\s+in\s+(?P<place>.+)").unwrap()
-});
-static PLACE_WEATHER_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)^(?P<place>.+)\s+weather$").unwrap()
-});
+static WEATHER_QUERY_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)\b(weather|forecast|temperature)\b").unwrap());
+static WEATHER_IN_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)weather\s+(?:in|at)\s+(?P<place>.+)").unwrap());
+static PLACE_WEATHER_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"(?i)^(?P<place>.+)\s+weather$").unwrap());
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CurrentUnits {
@@ -129,9 +126,9 @@ impl Weather {
         // Get coordinates with caching
         let coords = Self::get_coordinates(location, client, db).await?;
         let weather_cache = db.open_tree("weather").ok()?;
-        
+
         let cache_key = format!("{}_{}", coords.0, coords.1);
-        
+
         // Check weather cache first
         if let Ok(Some(cached)) = weather_cache.get(cache_key.as_bytes()) {
             if let Ok(cached_weather) = bincode::deserialize::<CachedWeather>(&cached) {
@@ -172,13 +169,19 @@ impl Weather {
                             }
                             Some(())
                         });
-                        
+
                         return Self::build_weather_response(location, &weather);
                     }
                 }
-                Some(Weather::error_response(location, "Failed to fetch weather data"))
+                Some(Weather::error_response(
+                    location,
+                    "Failed to fetch weather data",
+                ))
             }
-            Err(_) => Some(Weather::error_response(location, "Failed to connect to weather service")),
+            Err(_) => Some(Weather::error_response(
+                location,
+                "Failed to connect to weather service",
+            )),
         }
     }
 
@@ -278,7 +281,7 @@ impl Weather {
                                 }
                                 Some(())
                             });
-                            
+
                             return Some((lat, lon));
                         }
                     }

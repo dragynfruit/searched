@@ -15,26 +15,20 @@
                             <span class="phonetic">{{ entry.phonetic }}</span>
                         {% endif %}
                     </div>
-                    {% if not settings.no_js %}
-                        <div class="audio-buttons">
-                            {% for phonetic in entry.phonetics %}
-                                {% if phonetic.audio %}
-                                    {% set accent = phonetic.audio | split(pat="-") | last | split(pat=".") | first %}
-                                    <button class="sound-btn" 
-                                            onclick="playPronunciation(this, '{{ phonetic.audio }}')" 
-                                            title="Play {{ accent | upper }} pronunciation">
-                                        <span class="audio-icon">🔊</span>
-                                        <span class="accent-label">{{ accent | upper }}</span>
-                                        <div class="audio-wave">
-                                            <span></span>
-                                            <span></span>
-                                            <span></span>
-                                        </div>
-                                    </button>
-                                {% endif %}
-                            {% endfor %}
-                        </div>
-                    {% endif %}
+                    <div class="audio-buttons">
+                        {% for phonetic in entry.phonetics %}
+                            {% if phonetic.audio %}
+                                {% set accent = phonetic.audio | split(pat="-") | last | split(pat=".") | first %}
+                                <div class="audio-control">
+                                    <audio controls>
+                                        <source src="{{ phonetic.audio }}" type="audio/mpeg">
+                                        Your browser does not support the audio element.
+                                    </audio>
+                                    <span class="accent-label">{{ accent | upper }}</span>
+                                </div>
+                            {% endif %}
+                        {% endfor %}
+                    </div>
                 </div>
                 {% if entry.origin %}
                     <div class="origin">{{ entry.origin }}</div>
@@ -253,91 +247,29 @@
         margin: 4px 0;
     }
 
-    .dictionary .sound-btn {
-        display: flex;
-        align-items: center;
-        gap: 6px;
-        background: var(--bg-tertiary);
-        border: none;
-        cursor: pointer;
-        padding: 4px 8px;
-        border-radius: 4px;
-        transition: all 0.2s;
-        color: var(--text-secondary);
-        font-size: 0.9em;
-    }
-
-    .dictionary .sound-btn:hover {
-        background: var(--bg-input);
-        color: var(--text-primary);
-    }
-
-    .dictionary .sound-btn.playing {
-        background: var(--accent-primary);
-        color: var(--bg-primary);
-    }
-
-    .dictionary .audio-wave {
-        display: flex;
-        align-items: center;
-        gap: 2px;
-        height: 12px;
-    }
-
-    .dictionary .audio-wave span {
-        width: 2px;
-        height: 8px;
-        background: currentColor;
-        border-radius: 1px;
-    }
-
-    .dictionary .sound-btn.playing .audio-wave span {
-        animation: wave 0.5s ease-in-out infinite;
-    }
-
-    .dictionary .sound-btn.playing .audio-wave span:nth-child(2) {
-        animation-delay: 0.2s;
-    }
-
-    .dictionary .sound-btn.playing .audio-wave span:nth-child(3) {
-        animation-delay: 0.4s;
-    }
-
-    @keyframes wave {
-        0%, 100% { height: 8px; }
-        50% { height: 12px; }
-    }
-
     .dictionary .audio-buttons {
         display: flex;
         align-items: center;
         gap: 8px;
         flex-wrap: wrap;
     }
-</style>
 
-{% if not settings.no_js %}
-<script>
-    function playPronunciation(button, url) {
-        // Remove playing class from all buttons
-        document.querySelectorAll('.sound-btn').forEach(btn => {
-            btn.classList.remove('playing');
-        });
-        
-        const audio = new Audio(url);
-        
-        audio.onplay = () => {
-            button.classList.add('playing');
-        };
-        
-        audio.onended = () => {
-            button.classList.remove('playing');
-        };
-        
-        audio.play().catch(err => {
-            console.error('Error playing audio:', err);
-            button.classList.remove('playing');
-        });
+    .dictionary .audio-control {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        background: var(--bg-tertiary);
+        padding: 4px;
+        border-radius: 4px;
     }
-</script>
-{% endif %}
+
+    .dictionary .audio-control audio {
+        height: 30px;
+        width: 150px;
+    }
+
+    .dictionary .audio-control .accent-label {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+</style>

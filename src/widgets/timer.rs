@@ -1,6 +1,6 @@
-use serde::Serialize;
 use once_cell::sync::Lazy;
 use regex::Regex;
+use serde::Serialize;
 
 #[derive(Debug, Serialize)]
 pub struct Timer {
@@ -111,5 +111,9 @@ fn parse_time_string(query: &str) -> Option<u64> {
         };
         total_ms += ms;
     }
-    if total_ms > 0 { Some(total_ms) } else { None }
+    if total_ms > 0 {
+        Some(total_ms)
+    } else {
+        None
+    }
 }

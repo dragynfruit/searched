@@ -22,6 +22,7 @@ pub struct Settings {
     pub bold_terms: bool,
     pub safesearch: SafeSearch,
     pub enable_widgets: bool,
+    pub show_full_path: bool,
 }
 
 impl Default for Settings {
@@ -36,6 +37,7 @@ impl Default for Settings {
             bold_terms: true,
             safesearch: SafeSearch::default(),
             enable_widgets: true,
+            show_full_path: false,
         }
     }
 }
@@ -99,6 +101,10 @@ impl Settings {
                 .get("enable_widgets")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(defaults.enable_widgets),
+            show_full_path: json_value
+                .get("show_full_path")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(defaults.show_full_path),
         }
     }
 }
@@ -114,6 +120,7 @@ pub struct SettingsBuilder {
     bold_terms: Option<bool>,
     safesearch: Option<SafeSearch>,
     enable_widgets: Option<bool>,
+    show_full_path: Option<bool>,
 }
 
 impl SettingsBuilder {
@@ -162,6 +169,11 @@ impl SettingsBuilder {
         self
     }
 
+    pub fn show_full_path(mut self, show_full_path: bool) -> Self {
+        self.show_full_path = Some(show_full_path);
+        self
+    }
+
     pub fn build(self) -> Settings {
         let defaults = Settings::default();
         Settings {
@@ -174,6 +186,7 @@ impl SettingsBuilder {
             bold_terms: self.bold_terms.unwrap_or(defaults.bold_terms),
             safesearch: self.safesearch.unwrap_or(defaults.safesearch),
             enable_widgets: self.enable_widgets.unwrap_or(defaults.enable_widgets),
+            show_full_path: self.show_full_path.unwrap_or(defaults.show_full_path),
         }
     }
 }
@@ -264,6 +277,12 @@ pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> imp
                 .get("enable_widgets")
                 .map(|v| v == "true")
                 .unwrap_or(defaults.enable_widgets),
+        )
+        .show_full_path(
+            params
+                .get("show_full_path")
+                .map(|v| v == "true")
+                .unwrap_or(defaults.show_full_path),
         )
         .build();
 
