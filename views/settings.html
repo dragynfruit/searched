@@ -213,6 +213,11 @@
                     <option value="light" {% if settings.theme == "light" %}selected{% endif %}>Light</option>
                 </select>
             </div>
+            <div class="settings-group">
+                <label for="bold_terms">Bold matching terms</label>
+                <input type="hidden" name="bold_terms" value="false">
+                <input type="checkbox" id="bold_terms" name="bold_terms" {% if settings.bold_terms %}checked{% endif %} value="true">
+            </div>
         </div>
 
         <div class="settings-section">
@@ -240,7 +245,7 @@
                 <p style="color: #999; text-align: center; width: 100%; margin: 0;">No engine settings available yet</p>
             </div>
         </div>
-        
+
         <div class="action-section">
             <input type="submit" value="Save">
             <button type="submit" name="reset" value="true" class="reset">Reset</button>

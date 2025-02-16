@@ -1,24 +1,26 @@
-extern crate log;
 extern crate axum;
 extern crate env_logger;
+extern crate log;
 extern crate reqwest;
-extern crate tera;
-extern crate serde;
 extern crate searched;
+extern crate serde;
 extern crate sled;
+extern crate tera;
 
-mod web;
-mod settings;
 mod favicon;
-mod url_cleaner;  // Add this line
+mod settings;
+mod text_matcher;
+mod url_cleaner;
+mod web;
 
 use axum::{
-    http::{HeaderMap, HeaderValue}, middleware
+    http::{HeaderMap, HeaderValue},
+    middleware,
 };
 use log::{info, LevelFilter};
+use reqwest::Client;
 use searched::lua_support::PluginEngine;
 use tokio::net::TcpListener;
-use reqwest::Client;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -74,7 +76,11 @@ async fn main() {
 
     info!("initializing web");
     let app = web::router()
-        .with_state(AppState { eng, client: client.clone(), db })
+        .with_state(AppState {
+            eng,
+            client: client.clone(),
+            db,
+        })
         .layer(middleware::from_fn(settings::settings_middleware));
 
     tokio::spawn(async {

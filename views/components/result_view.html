@@ -100,7 +100,9 @@
     </tr>
     <tr>
         <td>
-            <a href="{{ result.url }}" class="title" aria-label="{{ result.title | safe }}"><b>{{ result.title | safe }}</b></a>
+            <a href="{{ result.url }}" class="title" aria-label="{{ result.title | striptags }}">
+                {{ result.title | safe }}
+            </a>
             {% if result.general and compact %}
             <p class="snippet">
                 {{ result.general.snippet | safe }}

@@ -1,11 +1,11 @@
-use std::collections::HashMap;
 use log::info;
+use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::Deserialize;
-use once_cell::sync::Lazy;
-use url::Url;
 use sled::Db;
+use std::collections::HashMap;
 use std::time::{SystemTime, UNIX_EPOCH};
+use url::Url;
 
 static DB: Lazy<Db> = Lazy::new(|| {
     sled::open("data/tracking_rules").expect("Failed to open tracking rules database")
@@ -59,7 +59,8 @@ pub async fn ensure_rules_exist() {
             .to_string();
 
         DB.insert("rules", rules.as_bytes()).unwrap();
-        DB.insert("rules_timestamp", current_time.as_bytes()).unwrap();
+        DB.insert("rules_timestamp", current_time.as_bytes())
+            .unwrap();
         info!("Tracking rules downloaded and cached");
     }
 }
@@ -85,9 +86,7 @@ pub fn clean_url(url: &str) -> String {
                                     .map(|(k, v)| (k.to_string(), v.to_string()))
                                     .filter(|(k, _)| {
                                         !provider.rules.iter().any(|rule| {
-                                            Regex::new(rule)
-                                                .map(|r| r.is_match(k))
-                                                .unwrap_or(false)
+                                            Regex::new(rule).map(|r| r.is_match(k)).unwrap_or(false)
                                         })
                                     })
                                     .collect();
@@ -116,7 +115,9 @@ pub fn clean_url(url: &str) -> String {
                                         if let Ok(regex) = Regex::new(redirection) {
                                             if let Some(caps) = regex.captures(url) {
                                                 if let Some(real_url) = caps.get(1) {
-                                                    if let Ok(decoded) = urlencoding::decode(real_url.as_str()) {
+                                                    if let Ok(decoded) =
+                                                        urlencoding::decode(real_url.as_str())
+                                                    {
                                                         return decoded.to_string();
                                                     }
                                                 }

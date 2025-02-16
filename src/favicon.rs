@@ -174,7 +174,7 @@ pub async fn favicon(
                         let packed_data = pack_favicon_data(&save_png_data);
                         favicon_db.insert(host.as_bytes(), packed_data).unwrap();
                     });
-                    
+
                     favicon_data = Some(png_data);
                 }
             }

@@ -8,6 +8,7 @@ use axum::{
     Router,
 };
 use once_cell::sync::Lazy;
+use regex::Regex;
 use searched::Kind;
 use serde::Deserialize;
 use tera::{Context, Tera};
@@ -21,6 +22,7 @@ use crate::{
     },
     AppState,
 };
+use crate::text_matcher::highlight_text;
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
@@ -64,6 +66,11 @@ pub struct SearchParams {
     p: Option<usize>,
 }
 
+fn strip_html_tags(text: &str) -> String {
+    static TAG_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"<[^>]*>").unwrap());
+    TAG_RE.replace_all(text, "").into_owned()
+}
+
 pub async fn index(Extension(settings): Extension<Settings>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("settings", &settings);
@@ -99,7 +106,25 @@ pub async fn search_results(
         let mut results = if query.provider == "all" {
             vec![] // TODO: Implement all-provider search
         } else {
-            st.eng.search(query.clone()).await
+            let mut results = st.eng.search(query.clone()).await;
+            
+            // Clean and process results
+            for result in &mut results {
+                // Strip HTML from title and snippet
+                result.title = strip_html_tags(&result.title);
+                if let Some(general) = &mut result.general {
+                    if let Some(snippet) = &general.snippet {
+                        general.snippet = Some(strip_html_tags(snippet));
+                    }
+                }
+
+                // Only highlight titles if enabled
+                if settings.bold_terms {
+                    result.title = highlight_text(&result.title, &q);
+                }
+            }
+
+            results
         };
 
         // Clean tracking from URLs if enabled

@@ -18,6 +18,7 @@ pub struct Settings {
     pub compact_view: bool,
     pub no_js: bool,
     pub remove_tracking: bool,
+    pub bold_terms: bool,
 }
 
 impl Default for Settings {
@@ -29,6 +30,7 @@ impl Default for Settings {
             compact_view: false,
             no_js: false,
             remove_tracking: true,
+            bold_terms: true,
         }
     }
 }
@@ -79,6 +81,10 @@ impl Settings {
                 .get("remove_tracking")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(defaults.remove_tracking),
+            bold_terms: json_value
+                .get("bold_terms")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(defaults.bold_terms),
         }
     }
 }
@@ -91,6 +97,7 @@ pub struct SettingsBuilder {
     compact_view: Option<bool>,
     no_js: Option<bool>,
     remove_tracking: Option<bool>,
+    bold_terms: Option<bool>,
 }
 
 impl SettingsBuilder {
@@ -124,6 +131,11 @@ impl SettingsBuilder {
         self
     }
 
+    pub fn bold_terms(mut self, bold_terms: bool) -> Self {
+        self.bold_terms = Some(bold_terms);
+        self
+    }
+
     pub fn build(self) -> Settings {
         let defaults = Settings::default();
         Settings {
@@ -133,6 +145,7 @@ impl SettingsBuilder {
             compact_view: self.compact_view.unwrap_or(defaults.compact_view),
             no_js: self.no_js.unwrap_or(defaults.no_js),
             remove_tracking: self.remove_tracking.unwrap_or(defaults.remove_tracking),
+            bold_terms: self.bold_terms.unwrap_or(defaults.bold_terms),
         }
     }
 }
@@ -205,6 +218,12 @@ pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> imp
                 .get("remove_tracking")
                 .map(|v| v == "true")
                 .unwrap_or(defaults.remove_tracking),
+        )
+        .bold_terms(
+            params
+                .get("bold_terms")
+                .map(|v| v == "true")
+                .unwrap_or(defaults.bold_terms),
         )
         .build();
 
