@@ -10,6 +10,7 @@ pub mod config;
 pub mod lua_support;
 
 use std::collections::HashMap;
+use std::str::FromStr;
 
 use config::ProvidersConfig;
 use mlua::{FromLua, IntoLua, LuaSerdeExt};
@@ -38,12 +39,13 @@ gen_enum! {
         Papers         = "pprs",
     }
 
-    SafeSearch (SafeSearch::On) {
-        Off    = "off",
-        On     = "on",
-        Strict = "strict",
+    SafeSearch (SafeSearch::Moderate) {
+        Off      = "off",
+        Moderate = "moderate",
+        Strict   = "strict",
     }
 }
+
 impl IntoLua for Kind {
     fn into_lua(self, lua: &mlua::Lua) -> mlua::Result<mlua::Value> {
         lua.to_value(&self)
@@ -52,6 +54,28 @@ impl IntoLua for Kind {
 impl FromLua for Kind {
     fn from_lua(value: mlua::Value, lua: &mlua::Lua) -> mlua::Result<Self> {
         lua.from_value(value)
+    }
+}
+
+impl FromStr for SafeSearch {
+    type Err = ();
+    fn from_str(s: &str) -> std::result::Result<Self, Self::Err> {
+        match s.to_lowercase().as_str() {
+            "off" => Ok(SafeSearch::Off),
+            "moderate" => Ok(SafeSearch::Moderate),
+            "strict" => Ok(SafeSearch::Strict),
+            _ => Err(()),
+        }
+    }
+}
+
+impl std::fmt::Display for SafeSearch {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            SafeSearch::Off => write!(f, "off"),
+            SafeSearch::Moderate => write!(f, "moderate"),
+            SafeSearch::Strict => write!(f, "strict"),
+        }
     }
 }
 
@@ -70,7 +94,7 @@ pub struct Query {
 }
 
 #[derive(Debug, Default, Clone, Deserialize, Serialize)]
-pub struct Result {
+pub struct SearchResult {
     pub url: String,
     pub title: String,
     pub general: Option<GeneralResult>,

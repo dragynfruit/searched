@@ -7,6 +7,7 @@ use axum::{
 };
 use axum_extra::extract::CookieJar;
 use base64::{engine::general_purpose, Engine as _};
+use searched::SafeSearch;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 
@@ -19,6 +20,7 @@ pub struct Settings {
     pub no_js: bool,
     pub remove_tracking: bool,
     pub bold_terms: bool,
+    pub safesearch: SafeSearch,
 }
 
 impl Default for Settings {
@@ -31,6 +33,7 @@ impl Default for Settings {
             no_js: false,
             remove_tracking: true,
             bold_terms: true,
+            safesearch: SafeSearch::default(),
         }
     }
 }
@@ -85,6 +88,11 @@ impl Settings {
                 .get("bold_terms")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(defaults.bold_terms),
+            safesearch: json_value
+                .get("safesearch")
+                .and_then(|v| v.as_str())
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(defaults.safesearch),
         }
     }
 }
@@ -98,6 +106,7 @@ pub struct SettingsBuilder {
     no_js: Option<bool>,
     remove_tracking: Option<bool>,
     bold_terms: Option<bool>,
+    safesearch: Option<SafeSearch>,
 }
 
 impl SettingsBuilder {
@@ -136,6 +145,11 @@ impl SettingsBuilder {
         self
     }
 
+    pub fn safesearch(mut self, safesearch: SafeSearch) -> Self {
+        self.safesearch = Some(safesearch);
+        self
+    }
+
     pub fn build(self) -> Settings {
         let defaults = Settings::default();
         Settings {
@@ -146,6 +160,7 @@ impl SettingsBuilder {
             no_js: self.no_js.unwrap_or(defaults.no_js),
             remove_tracking: self.remove_tracking.unwrap_or(defaults.remove_tracking),
             bold_terms: self.bold_terms.unwrap_or(defaults.bold_terms),
+            safesearch: self.safesearch.unwrap_or(defaults.safesearch),
         }
     }
 }
@@ -224,6 +239,12 @@ pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> imp
                 .get("bold_terms")
                 .map(|v| v == "true")
                 .unwrap_or(defaults.bold_terms),
+        )
+        .safesearch(
+            params
+                .get("safesearch")
+                .and_then(|s| s.parse().ok())
+                .unwrap_or(defaults.safesearch),
         )
         .build();
 

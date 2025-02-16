@@ -15,6 +15,7 @@ use tera::{Context, Tera};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 
+use crate::text_matcher::highlight_text;
 use crate::{
     settings::{
         export_settings, import_settings, import_settings_form, settings_middleware,
@@ -22,7 +23,6 @@ use crate::{
     },
     AppState,
 };
-use crate::text_matcher::highlight_text;
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
     let tera = match Tera::new("views/**/*") {
@@ -99,6 +99,7 @@ pub async fn search_results(
             query: q.clone(),
             kind: kind.clone(),
             page: params.p.unwrap_or(1),
+            safe: settings.safesearch.clone(),
             ..Default::default()
         };
 
@@ -107,7 +108,7 @@ pub async fn search_results(
             vec![] // TODO: Implement all-provider search
         } else {
             let mut results = st.eng.search(query.clone()).await;
-            
+
             // Clean and process results
             for result in &mut results {
                 // Strip HTML from title and snippet

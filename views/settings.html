@@ -194,7 +194,7 @@
 <div id="settings-container">
     <form method="post" action="/settings/update">
         <div class="settings-section">
-            <h2>General</h2>
+            <h2>Appearance</h2>
             <div class="settings-group">
                 <label for="favicons">Show website icons</label>
                 <input type="hidden" name="favicons" value="false">
@@ -206,17 +206,17 @@
                 <input type="checkbox" id="compact_view" name="compact_view" {% if settings.compact_view %}checked{% endif %} value="true">
             </div>
             <div class="settings-group">
+                <label for="bold_terms">Bold matching terms</label>
+                <input type="hidden" name="bold_terms" value="false">
+                <input type="checkbox" id="bold_terms" name="bold_terms" {% if settings.bold_terms %}checked{% endif %} value="true">
+            </div>
+            <div class="settings-group">
                 <label for="theme">Theme</label>
                 <select id="theme" name="theme">
                     <option value="auto" {% if settings.theme == "auto" or not settings.theme %}selected{% endif %}>System</option>
                     <option value="dark" {% if settings.theme == "dark" %}selected{% endif %}>Dark</option>
                     <option value="light" {% if settings.theme == "light" %}selected{% endif %}>Light</option>
                 </select>
-            </div>
-            <div class="settings-group">
-                <label for="bold_terms">Bold matching terms</label>
-                <input type="hidden" name="bold_terms" value="false">
-                <input type="checkbox" id="bold_terms" name="bold_terms" {% if settings.bold_terms %}checked{% endif %} value="true">
             </div>
         </div>
 
@@ -236,6 +236,18 @@
                 <label for="remove_tracking">Remove Tracking</label>
                 <input type="hidden" name="remove_tracking" value="false">
                 <input type="checkbox" id="remove_tracking" name="remove_tracking" {% if settings.remove_tracking %}checked{% endif %} value="true">
+            </div>
+        </div>
+
+        <div class="settings-section">
+            <h2>Results</h2>
+            <div class="settings-group">
+                <label for="safesearch">SafeSearch</label>
+                <select id="safesearch" name="safesearch">
+                    <option value="strict" {% if settings.safesearch == "strict" %}selected{% endif %}>Strict</option>
+                    <option value="moderate" {% if settings.safesearch == "moderate" %}selected{% endif %}>Moderate</option>
+                    <option value="off" {% if settings.safesearch == "off" %}selected{% endif %}>Off</option>
+                </select>
             </div>
         </div>
 

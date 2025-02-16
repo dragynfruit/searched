@@ -97,7 +97,7 @@ impl PluginEngine {
     }
 
     /// Process the given query
-    pub async fn search(&self, query: Query) -> Vec<crate::Result> {
+    pub async fn search(&self, query: Query) -> Vec<crate::SearchResult> {
         #[cfg(feature = "hot_reload")]
         Self::load_engines(&self.lua).await;
 

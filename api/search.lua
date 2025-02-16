@@ -41,6 +41,7 @@ Kind = {
 ---
 --- @field public query string
 --- @field public page number
+--- @field public safe string
 Query = {}
 
 --- @class Element

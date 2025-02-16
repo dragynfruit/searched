@@ -13,6 +13,7 @@ impl LuaUserData for Query {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("query", |_, this| Ok(this.query.clone()));
         fields.add_field_method_get("page", |_, this| Ok(this.page));
+        fields.add_field_method_get("safe", |_, this| Ok(this.safe.to_string().to_lowercase()));
     }
 }
 
