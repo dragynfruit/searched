@@ -15,7 +15,6 @@ use tera::{Context, Tera};
 use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 
-use crate::text_matcher::highlight_text;
 use crate::{
     settings::{
         export_settings, import_settings, import_settings_form, settings_middleware,
@@ -23,15 +22,10 @@ use crate::{
     },
     AppState,
 };
+use crate::{text_matcher::highlight_text, widgets};
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
-    let tera = match Tera::new("views/**/*") {
-        Ok(t) => t,
-        Err(e) => {
-            println!("Parsing error(s): {}", e);
-            process::exit(1);
-        }
-    };
+    let tera = create_tera();
     Arc::new(RwLock::new(tera))
 });
 
@@ -52,6 +46,11 @@ const MOTD: &'static [&'static str] = &[
     "<i>\"skibidi sigma ohio rizzler\"</i><br>&mdash; Drake",
     "<i>\"ok I'll do it tmrw\"</i><br>&mdash; Lincoln",
     "<i>\"Never gonna let you down\"</i><br>&mdash; Rick Astley",
+    "<a href=\"https://phoenix4533.org/\">Phoenix 4533</a>",
+    "I strongly dislike css",
+    "Look ma, no JS!",
+    "What's technical debt?",
+    "Compiling searched v0.1.0",
 ];
 
 fn get_motd() -> &'static str {
@@ -69,6 +68,18 @@ pub struct SearchParams {
 fn strip_html_tags(text: &str) -> String {
     static TAG_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"<[^>]*>").unwrap());
     TAG_RE.replace_all(text, "").into_owned()
+}
+
+fn create_tera() -> Tera {
+    let tera = match Tera::new("views/**/*") {
+        Ok(t) => t,
+        Err(e) => {
+            println!("Parsing error(s): {}", e);
+            process::exit(1);
+        }
+    };
+
+    tera
 }
 
 pub async fn index(Extension(settings): Extension<Settings>) -> impl IntoResponse {
@@ -91,6 +102,13 @@ pub async fn search_results(
     if let Some(q) = params.q {
         if q == "rust" {
             return Redirect::to("https://rust-lang.org").into_response();
+        }
+
+        // Check for widgets if enabled
+        if settings.enable_widgets {
+            if let Some(widget) = widgets::detect_widget(&q, &st.client).await {
+                context.insert("widget", &widget);
+            }
         }
 
         let kind = params.k.unwrap_or_default();

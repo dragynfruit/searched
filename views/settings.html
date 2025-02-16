@@ -249,6 +249,11 @@
                     <option value="off" {% if settings.safesearch == "off" %}selected{% endif %}>Off</option>
                 </select>
             </div>
+            <div class="settings-group">
+                <label for="enable_widgets">Enable Widgets</label>
+                <input type="hidden" name="enable_widgets" value="false">
+                <input type="checkbox" id="enable_widgets" name="enable_widgets" {% if settings.enable_widgets %}checked{% endif %} value="true">
+            </div>
         </div>
 
         <div class="settings-section">

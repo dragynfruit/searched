@@ -21,6 +21,7 @@ pub struct Settings {
     pub remove_tracking: bool,
     pub bold_terms: bool,
     pub safesearch: SafeSearch,
+    pub enable_widgets: bool,
 }
 
 impl Default for Settings {
@@ -34,6 +35,7 @@ impl Default for Settings {
             remove_tracking: true,
             bold_terms: true,
             safesearch: SafeSearch::default(),
+            enable_widgets: true,
         }
     }
 }
@@ -93,6 +95,10 @@ impl Settings {
                 .and_then(|v| v.as_str())
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(defaults.safesearch),
+            enable_widgets: json_value
+                .get("enable_widgets")
+                .and_then(|v| v.as_bool())
+                .unwrap_or(defaults.enable_widgets),
         }
     }
 }
@@ -107,6 +113,7 @@ pub struct SettingsBuilder {
     remove_tracking: Option<bool>,
     bold_terms: Option<bool>,
     safesearch: Option<SafeSearch>,
+    enable_widgets: Option<bool>,
 }
 
 impl SettingsBuilder {
@@ -150,6 +157,11 @@ impl SettingsBuilder {
         self
     }
 
+    pub fn enable_widgets(mut self, enable_widgets: bool) -> Self {
+        self.enable_widgets = Some(enable_widgets);
+        self
+    }
+
     pub fn build(self) -> Settings {
         let defaults = Settings::default();
         Settings {
@@ -161,6 +173,7 @@ impl SettingsBuilder {
             remove_tracking: self.remove_tracking.unwrap_or(defaults.remove_tracking),
             bold_terms: self.bold_terms.unwrap_or(defaults.bold_terms),
             safesearch: self.safesearch.unwrap_or(defaults.safesearch),
+            enable_widgets: self.enable_widgets.unwrap_or(defaults.enable_widgets),
         }
     }
 }
@@ -245,6 +258,12 @@ pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> imp
                 .get("safesearch")
                 .and_then(|s| s.parse().ok())
                 .unwrap_or(defaults.safesearch),
+        )
+        .enable_widgets(
+            params
+                .get("enable_widgets")
+                .map(|v| v == "true")
+                .unwrap_or(defaults.enable_widgets),
         )
         .build();
 

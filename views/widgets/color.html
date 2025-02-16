@@ -1,0 +1,530 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget color-widget">
+    <div class="widget-content">
+        <h3 class="widget-title">Color</h3>
+        
+        {% if settings.no_js %}
+            <!-- Static color viewer for no-js -->
+            <div class="color-static">
+                <div class="color-preview" style="background-color: {{ widget.Color.hex }}">
+                    <div class="color-value">{{ widget.Color.hex }}</div>
+                </div>
+                <div class="color-details">
+                    <div class="color-format">
+                        <span class="format-label">RGB:</span>
+                        <span class="format-value">{{ widget.Color.rgb.0 }}, {{ widget.Color.rgb.1 }}, {{ widget.Color.rgb.2 }}</span>
+                    </div>
+                    <div class="color-format">
+                        <span class="format-label">HSL:</span>
+                        <span class="format-value">{{ widget.Color.hsl.0 | round }}°, {{ widget.Color.hsl.1 | round }}%, {{ widget.Color.hsl.2 | round }}%</span>
+                    </div>
+                    <div class="color-info-text">
+                        {% if widget.Color.is_dark %}
+                            Dark color (luminance < 50%)
+                        {% else %}
+                            Light color (luminance > 50%)
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Interactive color picker (existing code) -->
+            <div class="color-layout">
+                <div class="color-main">
+                    <div class="color-preview" style="background-color: {{ widget.Color.hex }}">
+                        <div class="color-value">{{ widget.Color.hex }}</div>
+                    </div>
+                    <div class="color-sliders">
+                        <div class="slider-group">
+                            <label>R</label>
+                            <input type="range" class="rgb-slider r-slider" min="0" max="255" value="{{ widget.Color.rgb.0 }}">
+                            <input type="number" class="rgb-input r-input" min="0" max="255" value="{{ widget.Color.rgb.0 }}">
+                        </div>
+                        <div class="slider-group">
+                            <label>G</label>
+                            <input type="range" class="rgb-slider g-slider" min="0" max="255" value="{{ widget.Color.rgb.1 }}">
+                            <input type="number" class="rgb-input g-input" min="0" max="255" value="{{ widget.Color.rgb.1 }}">
+                        </div>
+                        <div class="slider-group">
+                            <label>B</label>
+                            <input type="range" class="rgb-slider b-slider" min="0" max="255" value="{{ widget.Color.rgb.2 }}">
+                            <input type="number" class="rgb-input b-input" min="0" max="255" value="{{ widget.Color.rgb.2 }}">
+                        </div>
+                        <div class="slider-group">
+                            <label>H</label>
+                            <input type="range" class="hsl-slider h-slider" min="0" max="360" value="{{ widget.Color.hsl.0 | round }}">
+                            <input type="number" class="hsl-input h-input" min="0" max="360" value="{{ widget.Color.hsl.0 | round }}">
+                        </div>
+                        <div class="slider-group">
+                            <label>S</label>
+                            <input type="range" class="hsl-slider s-slider" min="0" max="100" value="{{ widget.Color.hsl.1 | round }}">
+                            <input type="number" class="hsl-input s-input" min="0" max="100" value="{{ widget.Color.hsl.1 | round }}">
+                        </div>
+                        <div class="slider-group">
+                            <label>L</label>
+                            <input type="range" class="hsl-slider l-slider" min="0" max="100" value="{{ widget.Color.hsl.2 | round }}">
+                            <input type="number" class="hsl-input l-input" min="0" max="100" value="{{ widget.Color.hsl.2 | round }}">
+                        </div>
+                    </div>
+                </div>
+                <div class="color-info">
+                    <div class="format">
+                        <div class="format-label">HEX</div>
+                        <input type="text" class="hex-input" value="{{ widget.Color.hex }}">
+                    </div>
+                    <div class="format">
+                        <div class="format-label">RGB</div>
+                        <input type="text" class="rgb-text" readonly value="rgb({{ widget.Color.rgb.0 }}, {{ widget.Color.rgb.1 }}, {{ widget.Color.rgb.2 }})">
+                    </div>
+                    <div class="format">
+                        <div class="format-label">HSL</div>
+                        <input type="text" class="hsl-text" readonly value="hsl({{ widget.Color.hsl.0 | round }}, {{ widget.Color.hsl.1 | round }}%, {{ widget.Color.hsl.2 | round }}%)">
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .color-widget .color-layout {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 12px;
+    }
+
+    .color-widget .color-main {
+        display: flex;
+        gap: 16px;
+    }
+
+    .color-widget .color-preview {
+        width: 100px;
+        height: 100px;
+        border-radius: 8px;
+        position: relative;
+        flex-shrink: 0;
+        border: 1px solid var(--border-color);
+    }
+
+    .color-widget .color-value {
+        position: absolute;
+        bottom: 8px;
+        left: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        font-family: monospace;
+    }
+
+    .color-widget .color-sliders {
+        flex-grow: 1;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .color-widget .slider-group {
+        display: grid;
+        grid-template-columns: 20px 1fr 65px; /* Increased from 50px to 65px */
+        align-items: center;
+        gap: 8px;
+    }
+
+    .color-widget label {
+        color: var(--text-secondary);
+        font-weight: bold;
+    }
+
+    .color-widget input[type="range"] {
+        -webkit-appearance: none;
+        width: 100%;
+        height: 6px;
+        border-radius: 3px;
+        background: var(--bg-tertiary);
+        cursor: grab;
+    }
+
+    .color-widget input[type="range"]:active {
+        cursor: grabbing;
+    }
+
+    .color-widget input[type="range"]::-webkit-slider-thumb {
+        -webkit-appearance: none;
+        width: 16px;
+        height: 16px;
+        border-radius: 50%;
+        background: var(--accent-primary);
+        cursor: pointer;
+        border: 2px solid var(--bg-primary);
+    }
+
+    .color-widget input[type="number"],
+    .color-widget input[type="text"] {
+        width: 100%;
+        padding: 4px 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        font-family: monospace;
+    }
+
+    .color-widget input[type="number"] {
+        width: 65px;
+        padding: 4px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--bg-tertiary);
+        color: var(--text-primary);
+        font-family: monospace;
+        font-size: 0.9em;
+    }
+
+    .color-widget input[type="number"]::-webkit-inner-spin-button {
+        opacity: 1;
+        background: var(--bg-input);
+        border-left: 1px solid var(--border-color);
+        height: 100%;
+    }
+
+    .color-widget input[type="number"] {
+        width: 60px;
+        -moz-appearance: textfield;
+        font-size: 0.9em;
+    }
+
+    /* Add max-width for non-default style number inputs */
+    .color-widget .number-controls input[type="number"] {
+        width: 45px;
+        padding-right: 16px;
+        text-align: right;
+    }
+
+    .color-widget input[type="number"]::-webkit-inner-spin-button,
+    .color-widget input[type="number"]::-webkit-outer-spin-button {
+        -webkit-appearance: none;
+        margin: 0;
+    }
+
+    .color-widget .number-controls {
+        position: relative;
+        display: inline-block;
+        width: 100%;
+    }
+
+    .color-widget .number-controls input[type="number"] {
+        padding-right: 20px;
+    }
+
+    .color-widget .number-arrows {
+        position: absolute;
+        right: 2px;
+        top: 50%;
+        transform: translateY(-50%);
+        display: flex;
+        flex-direction: column;
+        gap: 1px;
+    }
+
+    .color-widget .number-arrow {
+        width: 12px;
+        height: 9px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        user-select: none;
+        color: var(--text-secondary);
+        font-size: 8px;
+        border-radius: 2px;
+    }
+
+    .color-widget .number-arrow:hover {
+        background: var(--bg-input);
+        color: var(--text-primary);
+    }
+
+    .color-widget .r-slider::-webkit-slider-thumb { background: #ff4444; }
+    .color-widget .g-slider::-webkit-slider-thumb { background: #44ff44; }
+    .color-widget .b-slider::-webkit-slider-thumb { background: #4444ff; }
+
+    .color-widget .color-info {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+    }
+
+    .color-widget .format {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .color-widget .format-label {
+        width: 40px;
+        color: var(--text-secondary);
+        font-weight: bold;
+    }
+
+    .color-widget input[readonly] {
+        background: var(--bg-secondary);
+        cursor: default;
+    }
+
+    @media (max-width: 600px) {
+        .color-widget .color-main {
+            flex-direction: column;
+        }
+
+        .color-widget .color-preview {
+            width: 100%;
+            height: 60px;
+        }
+    }
+
+    /* Add styles for static color viewer */
+    .color-widget .color-static {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+        margin-top: 12px;
+    }
+
+    .color-widget .color-details {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        padding: 12px;
+        background: var(--bg-tertiary);
+        border-radius: 8px;
+    }
+
+    .color-widget .color-format {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        font-family: monospace;
+    }
+
+    .color-widget .format-label {
+        color: var(--text-secondary);
+        font-weight: bold;
+        width: 45px;
+    }
+
+    .color-widget .format-value {
+        color: var(--text-primary);
+    }
+
+    .color-widget .color-info-text {
+        margin-top: 8px;
+        padding-top: 8px;
+        border-top: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        font-style: italic;
+    }
+
+    @media (max-width: 600px) {
+        .color-widget .color-preview {
+            height: 80px;
+        }
+    }
+
+    .color-widget .color-static .color-preview {
+        width: 100%;
+        height: 120px;
+        margin-bottom: 16px;
+    }
+</style>
+
+{% if not settings.no_js %}
+<script>
+    class ColorPicker {
+        constructor() {
+            this.preview = document.querySelector('.color-preview');
+            this.hexInput = document.querySelector('.hex-input');
+            this.rgbText = document.querySelector('.rgb-text');
+            this.hslText = document.querySelector('.hsl-text');
+            this.colorValue = document.querySelector('.color-value');
+            
+            // RGB inputs
+            this.rInput = document.querySelector('.r-input');
+            this.gInput = document.querySelector('.g-input');
+            this.bInput = document.querySelector('.b-input');
+            this.rSlider = document.querySelector('.r-slider');
+            this.gSlider = document.querySelector('.g-slider');
+            this.bSlider = document.querySelector('.b-slider');
+            
+            // HSL inputs
+            this.hInput = document.querySelector('.h-input');
+            this.sInput = document.querySelector('.s-input');
+            this.lInput = document.querySelector('.l-input');
+            this.hSlider = document.querySelector('.h-slider');
+            this.sSlider = document.querySelector('.s-slider');
+            this.lSlider = document.querySelector('.l-slider');
+            
+            this.setupEventListeners();
+        }
+
+        setupEventListeners() {
+            // RGB events
+            [this.rSlider, this.gSlider, this.bSlider].forEach(slider => {
+                slider.addEventListener('input', () => this.updateFromRGB());
+            });
+            [this.rInput, this.gInput, this.bInput].forEach(input => {
+                input.addEventListener('change', () => this.updateFromRGB());
+            });
+
+            // HSL events
+            [this.hSlider, this.sSlider, this.lSlider].forEach(slider => {
+                slider.addEventListener('input', () => this.updateFromHSL());
+            });
+            [this.hInput, this.sInput, this.lInput].forEach(input => {
+                input.addEventListener('change', () => this.updateFromHSL());
+            });
+
+            // HEX input
+            this.hexInput.addEventListener('change', () => this.updateFromHex());
+        }
+
+        updateFromRGB() {
+            const r = parseInt(this.rSlider.value);
+            const g = parseInt(this.gSlider.value);
+            const b = parseInt(this.bSlider.value);
+            
+            this.rInput.value = r;
+            this.gInput.value = g;
+            this.bInput.value = b;
+            
+            const hex = this.rgbToHex(r, g, b);
+            this.updateColor(hex);
+        }
+
+        updateFromHSL() {
+            const h = parseInt(this.hSlider.value);
+            const s = parseInt(this.sSlider.value);
+            const l = parseInt(this.lSlider.value);
+            
+            this.hInput.value = h;
+            this.sInput.value = s;
+            this.lInput.value = l;
+            
+            const rgb = this.hslToRgb(h, s, l);
+            const hex = this.rgbToHex(rgb.r, rgb.g, rgb.b);
+            this.updateColor(hex);
+        }
+
+        updateFromHex() {
+            let hex = this.hexInput.value;
+            if (!hex.startsWith('#')) hex = '#' + hex;
+            if (/^#[0-9A-Fa-f]{6}$/.test(hex)) {
+                this.updateColor(hex);
+            }
+        }
+
+        updateColor(hex) {
+            const rgb = this.hexToRgb(hex);
+            const hsl = this.rgbToHsl(rgb.r, rgb.g, rgb.b);
+            
+            // Update preview
+            this.preview.style.backgroundColor = hex;
+            this.colorValue.textContent = hex;
+            this.hexInput.value = hex;
+            
+            // Update RGB
+            this.rSlider.value = rgb.r;
+            this.gSlider.value = rgb.g;
+            this.bSlider.value = rgb.b;
+            this.rInput.value = rgb.r;
+            this.gInput.value = rgb.g;
+            this.bInput.value = rgb.b;
+            this.rgbText.value = `rgb(${rgb.r}, ${rgb.g}, ${rgb.b})`;
+            
+            // Update HSL
+            this.hSlider.value = hsl.h;
+            this.sSlider.value = hsl.s;
+            this.lSlider.value = hsl.l;
+            this.hInput.value = hsl.h;
+            this.sInput.value = hsl.s;
+            this.lInput.value = hsl.l;
+            this.hslText.value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+
+            // Update URL
+            const currentUrl = new URL(window.location.href);
+            currentUrl.searchParams.set('q', hex);
+            window.history.replaceState({}, '', currentUrl.toString());
+            
+            // Trigger search update
+            if (typeof performSearch === 'function') {
+                performSearch(hex);
+            }
+        }
+
+        rgbToHex(r, g, b) {
+            return '#' + [r, g, b].map(x => {
+                const hex = x.toString(16);
+                return hex.length === 1 ? '0' + hex : hex;
+            }).join('');
+        }
+
+        hexToRgb(hex) {
+            const result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
+            return result ? {
+                r: parseInt(result[1], 16),
+                g: parseInt(result[2], 16),
+                b: parseInt(result[3], 16)
+            } : null;
+        }
+
+        hslToRgb(h, s, l) {
+            s /= 100;
+            l /= 100;
+            const k = n => (n + h / 30) % 12;
+            const a = s * Math.min(l, 1 - l);
+            const f = n =>
+                l - a * Math.max(-1, Math.min(k(n) - 3, Math.min(9 - k(n), 1)));
+            return {
+                r: Math.round(255 * f(0)),
+                g: Math.round(255 * f(8)),
+                b: Math.round(255 * f(4))
+            };
+        }
+
+        rgbToHsl(r, g, b) {
+            r /= 255;
+            g /= 255;
+            b /= 255;
+            const max = Math.max(r, g, b);
+            const min = Math.min(r, g, b);
+            let h, s, l = (max + min) / 2;
+
+            if (max === min) {
+                h = s = 0;
+            } else {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+
+            return {
+                h: Math.round(h * 360),
+                s: Math.round(s * 100),
+                l: Math.round(l * 100)
+            };
+        }
+    }
+
+    new ColorPicker();
+</script>
+{% endif %}

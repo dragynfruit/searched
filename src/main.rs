@@ -12,6 +12,7 @@ mod settings;
 mod text_matcher;
 mod url_cleaner;
 mod web;
+mod widgets;
 
 use axum::{
     http::{HeaderMap, HeaderValue},

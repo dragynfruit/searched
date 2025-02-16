@@ -1,0 +1,536 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget timer">
+    <div class="widget-content">
+        <div class="widget-header">
+            <div class="title-with-mode">
+                <h3 class="widget-title">Timer & Stopwatch</h3>
+                <button id="timer-mode" class="timer-btn mode-btn" title="Switch between Timer and Stopwatch">
+                    <span class="mode-icon">⟳</span>
+                </button>
+            </div>
+        </div>
+        <div class="widget-controls">
+            <button id="timer-toggle" class="timer-btn">Start</button>
+            <button id="timer-reset" class="timer-btn">Reset</button>
+            <button id="timer-lap" class="timer-btn" style="display: none;">Lap</button>
+        </div>
+        <div class="widget-display">
+            <span id="timer-display">00:00:00</span><span id="timer-ms" class="milliseconds">.000</span>
+        </div>
+        <div id="timer-input" class="widget-input" style="display: none;">
+            <div class="time-input-container">
+                <input type="text" id="timer-hours" maxlength="2" value="00" pattern="[0-9]*">
+                <span class="separator">:</span>
+                <input type="text" id="timer-minutes" maxlength="2" value="00" pattern="[0-9]*">
+                <span class="separator">:</span>
+                <input type="text" id="timer-seconds" maxlength="2" value="00" pattern="[0-9]*">
+            </div>
+        </div>
+        <div id="lap-times" class="lap-times" style="display: none;">
+            <div class="lap-header">
+                <span>Lap</span>
+                <span>Time</span>
+                <span>Total</span>
+            </div>
+            <div class="lap-list"></div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .timer .widget-controls {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .timer .timer-btn {
+        padding: 8px 16px;
+        border-radius: 4px;
+        border: none;
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .timer .timer-btn:hover {
+        opacity: 0.9;
+    }
+
+    .timer .widget-display {
+        font-size: 2.5em;
+        font-family: monospace;
+        text-align: center;
+        margin: 20px 0;
+        color: var(--accent-primary);
+    }
+
+    .timer .widget-input {
+        display: flex;
+        justify-content: center;
+        margin: 10px 0;
+    }
+
+    .timer .time-input-container {
+        display: inline-flex;
+        align-items: center;
+        background: var(--bg-input);
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        padding: 4px 8px;
+        transition: border-color 0.2s;
+    }
+
+    .timer .time-input-container:focus-within {
+        border-color: var(--accent-primary);
+    }
+
+    .timer .time-input-container input {
+        width: 32px;
+        border: none;
+        background: transparent;
+        color: var(--text-primary);
+        text-align: center;
+        font-family: monospace;
+        font-size: 1.2em;
+        padding: 4px 0;
+    }
+
+    .timer .time-input-container input:focus {
+        outline: none;
+    }
+
+    .timer .time-input-container .separator {
+        color: var(--text-secondary);
+        margin: 0 2px;
+        user-select: none;
+    }
+
+    .timer .time-input-container input.invalid {
+        color: var(--error-color);
+    }
+
+    /* Remove existing input group styles */
+    .timer .input-group {
+        display: none;
+    }
+
+    .timer .milliseconds {
+        font-size: 0.6em;
+        color: var(--text-secondary);
+        font-family: monospace;
+    }
+
+    .timer.countdown .milliseconds {
+        display: none;
+    }
+
+    .timer .lap-times {
+        margin-top: 16px;
+        max-height: 200px;
+        overflow-y: auto;
+        font-family: monospace;
+    }
+
+    .timer .lap-header {
+        display: grid;
+        grid-template-columns: 60px 1fr 1fr;
+        gap: 8px;
+        padding: 8px;
+        border-bottom: 1px solid var(--border-color);
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+
+    .timer .lap-item {
+        display: grid;
+        grid-template-columns: 60px 1fr 1fr;
+        gap: 8px;
+        padding: 8px;
+        border-bottom: 1px solid var(--border-color);
+        font-size: 0.9em;
+    }
+
+    .timer .lap-item:last-child {
+        border-bottom: none;
+    }
+
+    .timer .lap-item .lap-number {
+        color: var(--text-secondary);
+    }
+
+    .timer .lap-item .best {
+        color: var(--accent-primary);
+    }
+
+    .timer .lap-item .worst {
+        color: var(--error-color);
+    }
+
+    .timer .widget-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+    }
+
+    .timer .mode-btn {
+        padding: 4px;
+        font-size: 1em;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: var(--bg-tertiary);
+        opacity: 0.7;
+        border-radius: 4px;
+        width: 24px;
+        height: 24px;
+    }
+
+    .timer .mode-btn:hover {
+        opacity: 1;
+        background: var(--bg-tertiary);
+    }
+
+    .timer .mode-icon {
+        display: inline-block;
+        transition: transform 0.5s ease-in-out;
+        color: var(--text-secondary);
+    }
+
+    .timer .mode-btn:hover .mode-icon {
+        transform: rotate(180deg);
+    }
+
+    .timer .mode-btn.switching .mode-icon {
+        animation: spin 0.5s ease-in-out;
+    }
+
+    .timer .title-with-mode {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    @keyframes spin {
+        from { transform: rotate(0deg); }
+        to { transform: rotate(360deg); }
+    }
+</style>
+
+<script>
+    class TimerWidget {
+        constructor() {
+            this.display = document.getElementById('timer-display');
+            this.toggleBtn = document.getElementById('timer-toggle');
+            this.resetBtn = document.getElementById('timer-reset');
+            this.modeBtn = document.getElementById('timer-mode');
+            this.inputDiv = document.getElementById('timer-input');
+            this.msDisplay = document.getElementById('timer-ms');
+            this.container = document.querySelector('.widget.timer');
+            
+            this.isRunning = false;
+            this.isStopwatch = true;
+            this.startTime = 0;
+            this.elapsed = 0;
+            this.remaining = 0;
+            this.intervalId = null;
+
+            // Set initial mode and visibility based on backend
+            this.isStopwatch = {% if widget.Timer.mode == "stopwatch" %}true{% else %}false{% endif %};
+            this.inputDiv.style.display = this.isStopwatch ? 'none' : 'flex';
+            this.modeBtn.textContent = this.isStopwatch ? 'Switch to Timer' : 'Switch to Stopwatch';
+            this.container.classList.toggle('countdown', !this.isStopwatch);
+
+            // Initialize lap button
+            this.lapBtn = document.getElementById('timer-lap');
+            this.lapBtn.style.display = this.isStopwatch ? 'inline-block' : 'none';
+            this.lapList = document.querySelector('.lap-list');
+            this.lapTimes = document.getElementById('lap-times');
+            this.laps = [];
+            this.lastLapTime = 0;
+
+            {% if widget.Timer.initial_time %}
+            this.isStopwatch = false;
+            this.remaining = {{ widget.Timer.initial_time }};
+            this.updateDisplay(this.remaining);
+            this.lapBtn.style.display = 'none';
+            {% endif %}
+
+            // If there's an initial time from backend, set up the timer inputs
+            if (this.mode === "timer" && {% if widget.Timer.initial_time %}true{% else %}false{% endif %}) {
+                const ms = {{ widget.Timer.initial_time | default(value=0) }};
+                const totalSec = Math.floor(ms / 1000);
+                const hours = Math.floor(totalSec / 3600);
+                const minutes = Math.floor((totalSec % 3600) / 60);
+                const seconds = totalSec % 60;
+                
+                document.getElementById('timer-hours').value = hours.toString().padStart(2, '0');
+                document.getElementById('timer-minutes').value = minutes.toString().padStart(2, '0');
+                document.getElementById('timer-seconds').value = seconds.toString().padStart(2, '0');
+                this.remaining = ms;
+            }
+
+            // Set initial timer value from backend if provided
+            {% if widget.Timer.initial_time %}
+            const ms = {{ widget.Timer.initial_time }};
+            this.isStopwatch = false;
+            const totalSec = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSec / 3600);
+            const minutes = Math.floor((totalSec % 3600) / 60);
+            const seconds = totalSec % 60;
+            
+            // Set input fields
+            document.getElementById('timer-hours').value = hours.toString().padStart(2, '0');
+            document.getElementById('timer-minutes').value = minutes.toString().padStart(2, '0');
+            document.getElementById('timer-seconds').value = seconds.toString().padStart(2, '0');
+            
+            // Set remaining time and update display
+            this.remaining = ms;
+            this.updateDisplay(this.remaining);
+            
+            // Update UI mode
+            this.inputDiv.style.display = 'flex';
+            this.lapBtn.style.display = 'none';
+            this.container.classList.add('countdown');
+            {% endif %}
+
+            this.setupEventListeners();
+
+            // Update mode button text to just show icon
+            this.modeBtn.innerHTML = '<span class="mode-icon">⟳</span>';
+            this.updateModeButtonTooltip();
+        }
+
+        setupEventListeners() {
+            this.toggleBtn.addEventListener('click', () => this.toggle());
+            this.resetBtn.addEventListener('click', () => this.reset());
+            this.modeBtn.addEventListener('click', () => this.switchMode());
+            
+            // Add input handling
+            ['hours', 'minutes', 'seconds'].forEach(unit => {
+                const input = document.getElementById(`timer-${unit}`);
+                input.addEventListener('input', (e) => this.handleTimeInput(e, unit));
+                input.addEventListener('blur', (e) => this.formatTimeInput(e.target));
+                input.addEventListener('keydown', (e) => {
+                    if (e.key === 'Enter') {
+                        this.start();
+                    }
+                });
+            });
+
+            this.lapBtn.addEventListener('click', () => this.recordLap());
+        }
+
+        toggle() {
+            if (this.isRunning) {
+                this.stop();
+            } else {
+                this.start();
+            }
+        }
+
+        start() {
+            if (this.isStopwatch) {
+                this.startTime = Date.now() - this.elapsed;
+            } else {
+                if (!this.remaining) {
+                    this.remaining = this.getInputTime();
+                }
+                this.startTime = Date.now();
+            }
+
+            this.isRunning = true;
+            this.toggleBtn.textContent = 'Stop';
+            
+            this.intervalId = setInterval(() => this.update(), 10);
+        }
+
+        stop() {
+            clearInterval(this.intervalId);
+            this.isRunning = false;
+            this.toggleBtn.textContent = 'Start';
+        }
+
+        reset() {
+            this.stop();
+            if (this.isStopwatch) {
+                this.elapsed = 0;
+                this.laps = [];
+                this.lastLapTime = 0;
+                this.lapList.innerHTML = '';
+                this.lapTimes.style.display = 'none';
+            } else {
+                // In timer mode, restore the initial target time
+                this.remaining = this.getInputTime();
+            }
+            this.updateDisplay(this.isStopwatch ? 0 : this.remaining);
+        }
+
+        switchMode() {
+            this.reset();
+            this.modeBtn.classList.add('switching');
+            
+            setTimeout(() => {
+                this.isStopwatch = !this.isStopwatch;
+                this.inputDiv.style.display = this.isStopwatch ? 'none' : 'flex';
+                this.container.classList.toggle('countdown', !this.isStopwatch);
+                this.lapBtn.style.display = this.isStopwatch ? 'inline-block' : 'none';
+
+                // Clear timer inputs when switching to stopwatch
+                if (this.isStopwatch) {
+                    document.getElementById('timer-hours').value = '00';
+                    document.getElementById('timer-minutes').value = '00';
+                    document.getElementById('timer-seconds').value = '00';
+                }
+
+                this.updateModeButtonTooltip();
+                
+                this.lapTimes.style.display = 'none';
+                this.laps = [];
+                this.lastLapTime = 0;
+                this.lapList.innerHTML = '';
+                
+                setTimeout(() => {
+                    this.modeBtn.classList.remove('switching');
+                }, 500);
+            }, 100);
+        }
+
+        update() {
+            if (this.isStopwatch) {
+                this.elapsed = Date.now() - this.startTime;
+                this.updateDisplay(this.elapsed);
+            } else {
+                const elapsed = Date.now() - this.startTime;
+                this.remaining = Math.max(0, this.getInputTime() - elapsed);
+                this.updateDisplay(this.remaining);
+                
+                if (this.remaining === 0) {
+                    this.stop();
+                }
+            }
+        }
+
+        handleTimeInput(event, unit) {
+            let input = event.target;
+            let value = input.value.replace(/\D/g, '');
+            
+            // Apply unit-specific limits
+            let max = unit === 'hours' ? 23 : 59;
+            if (value !== '') {
+                let num = parseInt(value);
+                if (num > max) {
+                    value = max.toString();
+                }
+            }
+            
+            input.value = value;
+            input.classList.toggle('invalid', value === '' || parseInt(value) > max);
+        }
+
+        formatTimeInput(input) {
+            let value = input.value;
+            if (value === '') value = '0';
+            input.value = value.padStart(2, '0');
+            input.classList.remove('invalid');
+        }
+
+        getInputTime() {
+            const hours = parseInt(document.getElementById('timer-hours').value) || 0;
+            const minutes = parseInt(document.getElementById('timer-minutes').value) || 0;
+            const seconds = parseInt(document.getElementById('timer-seconds').value) || 0;
+            
+            // Don't start if any input is invalid
+            if (hours > 23 || minutes > 59 || seconds > 59) {
+                return 0;
+            }
+            
+            return ((hours * 3600) + (minutes * 60) + seconds) * 1000;
+        }
+
+        updateDisplay(ms) {
+            const totalSec = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSec / 3600);
+            const minutes = Math.floor((totalSec % 3600) / 60);
+            const seconds = totalSec % 60;
+            const milliseconds = Math.floor((ms % 1000));
+
+            this.display.textContent = 
+                `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            if (this.isStopwatch) {
+                this.msDisplay.textContent = `.${milliseconds.toString().padStart(3, '0')}`;
+                if (this.laps.length > 0) {
+                    this.updateLapDisplay();
+                }
+            }
+        }
+
+        recordLap() {
+            if (!this.isRunning || !this.isStopwatch) return;
+
+            const currentTime = Date.now() - this.startTime;
+            const lapTime = currentTime - this.lastLapTime;
+            this.lastLapTime = currentTime;
+            this.laps.push(lapTime);
+
+            this.updateLapDisplay();
+        }
+
+        updateLapDisplay() {
+            if (this.laps.length === 0) {
+                this.lapTimes.style.display = 'none';
+                return;
+            }
+
+            this.lapTimes.style.display = 'block';
+            this.lapList.innerHTML = '';
+
+            const bestLap = Math.min(...this.laps);
+            const worstLap = Math.max(...this.laps);
+
+            this.laps.forEach((lap, index) => {
+                const lapElement = document.createElement('div');
+                lapElement.className = 'lap-item';
+                
+                // Add classes for best/worst laps if we have more than 2 laps
+                let timeClass = '';
+                if (this.laps.length > 2) {
+                    if (lap === bestLap) timeClass = 'best';
+                    if (lap === worstLap) timeClass = 'worst';
+                }
+
+                lapElement.innerHTML = `
+                    <span class="lap-number">Lap ${this.laps.length - index}</span>
+                    <span class="${timeClass}">${this.formatTime(lap, true)}</span>
+                    <span>${this.formatTime(this.startTime + lap, true)}</span>
+                `;
+                this.lapList.insertBefore(lapElement, this.lapList.firstChild);
+            });
+        }
+
+        formatTime(ms, showMs = false) {
+            const totalSec = Math.floor(ms / 1000);
+            const hours = Math.floor(totalSec / 3600);
+            const minutes = Math.floor((totalSec % 3600) / 60);
+            const seconds = totalSec % 60;
+            const milliseconds = Math.floor((ms % 1000));
+
+            let time = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            if (showMs) {
+                time += `.${milliseconds.toString().padStart(3, '0')}`;
+            }
+            return time;
+        }
+
+        updateModeButtonTooltip() {
+            this.modeBtn.title = this.isStopwatch ? 
+                'Switch to Timer mode' : 
+                'Switch to Stopwatch mode';
+        }
+    }
+
+    new TimerWidget();
+</script>

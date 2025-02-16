@@ -1,0 +1,432 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget weather">
+    <div class="widget-content">
+        <h3 class="widget-title">Weather</h3>
+        {% if widget.Weather.error %}
+            <div class="error">{{ widget.Weather.error }}</div>
+        {% else %}
+            <div class="weather-main-section">
+                <!-- Location and main weather -->
+                <div class="weather-primary">
+                    <div class="location-info">
+                        <h2 class="location">{{ widget.Weather.location }}</h2>
+                        <div class="weather-condition">
+                            {% if widget.Weather.weather_code == 0 %}Clear sky
+                            {% elif widget.Weather.weather_code == 1 %}Mainly clear
+                            {% elif widget.Weather.weather_code == 2 %}Partly cloudy
+                            {% elif widget.Weather.weather_code == 3 %}Overcast
+                            {% elif widget.Weather.weather_code >= 51 and widget.Weather.weather_code <= 55 %}Drizzle
+                            {% elif widget.Weather.weather_code >= 56 and widget.Weather.weather_code <= 57 %}Freezing drizzle
+                            {% elif widget.Weather.weather_code >= 61 and widget.Weather.weather_code <= 65 %}Rain
+                            {% elif widget.Weather.weather_code >= 66 and widget.Weather.weather_code <= 67 %}Freezing rain
+                            {% elif widget.Weather.weather_code >= 71 and widget.Weather.weather_code <= 75 %}Snow
+                            {% elif widget.Weather.weather_code == 77 %}Snow grains
+                            {% elif widget.Weather.weather_code >= 80 and widget.Weather.weather_code <= 82 %}Rain showers
+                            {% elif widget.Weather.weather_code >= 85 and widget.Weather.weather_code <= 86 %}Snow showers
+                            {% elif widget.Weather.weather_code == 95 %}Thunderstorm
+                            {% elif widget.Weather.weather_code >= 96 %}Thunderstorm with hail
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="current-weather">
+                        <div class="weather-icon">
+                            {% if widget.Weather.is_day %}
+                                {% if widget.Weather.weather_code == 0 %}☀️
+                                {% elif widget.Weather.weather_code == 1 %}🌤️
+                                {% elif widget.Weather.weather_code == 2 %}⛅
+                                {% elif widget.Weather.weather_code == 3 %}☁️
+                                {% elif widget.Weather.weather_code >= 51 and widget.Weather.weather_code <= 67 %}🌧️
+                                {% elif widget.Weather.weather_code >= 71 and widget.Weather.weather_code <= 77 %}🌨️
+                                {% elif widget.Weather.weather_code >= 80 and widget.Weather.weather_code <= 82 %}🌦️
+                                {% elif widget.Weather.weather_code >= 85 and widget.Weather.weather_code <= 86 %}🌨️
+                                {% elif widget.Weather.weather_code >= 95 %}⛈️
+                                {% endif %}
+                            {% else %}
+                                {% if widget.Weather.weather_code == 0 %}🌙
+                                {% elif widget.Weather.weather_code == 1 %}🌤️
+                                {% elif widget.Weather.weather_code == 2 %}☁️
+                                {% elif widget.Weather.weather_code == 3 %}☁️
+                                {% elif widget.Weather.weather_code >= 51 and widget.Weather.weather_code <= 67 %}🌧️
+                                {% elif widget.Weather.weather_code >= 71 and widget.Weather.weather_code <= 77 %}🌨️
+                                {% elif widget.Weather.weather_code >= 80 and widget.Weather.weather_code <= 82 %}🌧️
+                                {% elif widget.Weather.weather_code >= 85 and widget.Weather.weather_code <= 86 %}🌨️
+                                {% elif widget.Weather.weather_code >= 95 %}⛈️
+                                {% endif %}
+                            {% endif %}
+                        </div>
+                        <div class="temperature">{{ widget.Weather.temperature | round }}°</div>
+                        <div class="feels-like">Feels like {{ widget.Weather.feels_like | round }}°</div>
+                    </div>
+                </div>
+
+                <!-- Weather details grid -->
+                <div class="weather-details">
+                    <div class="detail-card">
+                        <div class="detail-icon">💧</div>
+                        <div class="detail-info">
+                            <div class="detail-value">{{ widget.Weather.humidity }}%</div>
+                            <div class="detail-label">Humidity</div>
+                        </div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-icon">🌧️</div>
+                        <div class="detail-info">
+                            <div class="detail-value">{{ widget.Weather.precipitation }} in</div>
+                            <div class="detail-label">Precipitation</div>
+                        </div>
+                    </div>
+                    <div class="detail-card">
+                        <div class="detail-icon">💨</div>
+                        <div class="detail-info">
+                            <div class="detail-value">
+                                {{ widget.Weather.wind_speed | round }} mph
+                                <span class="wind-direction" style="transform: rotate({{ widget.Weather.wind_direction }}deg)">↑</span>
+                            </div>
+                            <div class="detail-label">Wind Speed</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Hourly forecast -->
+            <div class="hourly-forecast">
+                <details class="forecast-details">
+                    <summary>
+                        <h4>24-Hour Forecast</h4>
+                        <span class="expand-icon">▼</span>
+                    </summary>
+                    <div class="forecast-scroll">
+                        {% for hour in widget.Weather.hourly %}
+                            <div class="forecast-item">
+                                <div class="forecast-hour">{{ hour.time }}</div>
+                                <div class="forecast-temp">{{ hour.temperature | round }}°</div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </details>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .weather .weather-main-section {
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 16px;
+    }
+
+    .weather .weather-primary {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+    }
+
+    .weather .location {
+        font-size: 1.8em;
+        margin: 0;
+        color: var(--text-primary);
+        font-weight: 600;
+    }
+
+    .weather .weather-condition {
+        color: var(--text-secondary);
+        font-size: 1.1em;
+        margin-top: 4px;
+    }
+
+    .weather .current-weather {
+        text-align: right;
+    }
+
+    .weather .weather-icon {
+        font-size: 3em;
+        line-height: 1;
+        margin-bottom: 4px;
+    }
+
+    .weather .temperature {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: var(--accent-primary);
+        line-height: 1;
+    }
+
+    .weather .feels-like {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        margin-top: 4px;
+    }
+
+    .weather .weather-details {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+        gap: 12px;
+    }
+
+    .weather .detail-card {
+        background: var(--bg-secondary);
+        padding: 12px;
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 0;
+    }
+
+    .weather .detail-icon {
+        font-size: 1.5em;
+        line-height: 1;
+    }
+
+    .weather .detail-info {
+        flex: 1;
+        min-width: 0; /* Allow text to wrap */
+        overflow: hidden; /* Prevent overflow */
+    }
+
+    .weather .detail-value {
+        font-size: 1.1em;
+        font-weight: 500;
+        color: var(--text-primary);
+        display: flex;
+        align-items: center;
+        gap: 4px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    .weather .detail-label {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+        margin-top: 2px;
+    }
+
+    .weather .wind-direction {
+        display: inline-block;
+        font-weight: bold;
+    }
+
+    .weather .hourly-forecast {
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+        padding: 0; /* Removed padding as it's now handled by details */
+        margin-bottom: 16px;
+    }
+
+    .weather .forecast-details {
+        width: 100%;
+    }
+
+    .weather .forecast-details summary {
+        padding: 16px 20px;
+        cursor: pointer;
+        user-select: none;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-radius: 12px;
+    }
+
+    .weather .forecast-details summary:hover {
+        background: var(--bg-secondary);
+    }
+
+    .weather .forecast-details[open] summary {
+        border-bottom: 1px solid var(--border-color);
+        border-radius: 12px 12px 0 0;
+    }
+
+    .weather .forecast-details summary h4 {
+        margin: 0;
+        display: inline;
+    }
+
+    .weather .expand-icon {
+        color: var(--text-secondary);
+        transition: transform 0.2s;
+    }
+
+    .weather .forecast-details[open] .expand-icon {
+        transform: rotate(180deg);
+    }
+
+    .weather .forecast-scroll {
+        padding: 16px;
+    }
+
+    /* Custom scrollbar */
+    .weather .forecast-scroll::-webkit-scrollbar {
+        height: 4px;
+    }
+
+    .weather .forecast-scroll::-webkit-scrollbar-track {
+        background: var(--bg-secondary);
+        border-radius: 2px;
+    }
+
+    .weather .forecast-scroll::-webkit-scrollbar-thumb {
+        background: var(--accent-primary);
+        border-radius: 2px;
+    }
+
+    @media screen and (min-width: 1820px) {
+        .weather .forecast-scroll {
+            display: grid;
+            grid-auto-flow: column;
+            grid-auto-columns: 1fr;
+            overflow-x: hidden;
+        }
+
+        .weather .forecast-item {
+            flex: none;
+            width: auto;
+        }
+    }
+
+    /* Responsive styles */
+    @media screen and (max-width: 600px) {
+        .weather .weather-primary {
+            flex-direction: column;
+            text-align: center;
+            gap: 16px;
+        }
+
+        .weather .current-weather {
+            text-align: center;
+        }
+
+        .weather .weather-details {
+            grid-template-columns: repeat(auto-fit, minmax(80px, 1fr));
+        }
+
+        .weather .detail-card {
+            padding: 8px;
+        }
+
+        .weather .detail-icon {
+            font-size: 1.2em;
+        }
+
+        .weather .detail-card {
+            padding: 12px;
+        }
+
+        .weather .forecast-scroll {
+            grid-auto-columns: minmax(80px, 1fr);
+        }
+    }
+
+    @media screen and (min-width: 601px) and (max-width: 900px) {
+        .weather .weather-details {
+            grid-template-columns: repeat(2, 1fr);
+        }
+    }
+
+    .weather .weather-main-section,
+    .weather .hourly-forecast {
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+        padding: 16px;
+        margin-bottom: 16px;
+        min-width: 0; /* Allow container to shrink */
+    }
+
+    .weather .weather-primary {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 24px;
+        flex-wrap: wrap; /* Allow wrapping on small screens */
+        gap: 16px;
+    }
+
+    .weather .location-info {
+        min-width: 0; /* Allow text to shrink */
+        flex: 1;
+    }
+
+    .weather .location {
+        font-size: 1.8em;
+        margin: 0;
+        color: var(--text-primary);
+        font-weight: 600;
+        overflow: hidden;
+        text-overflow: ellipsis;
+    }
+
+    /* Layout changes for smaller screens */
+    @media screen and (max-width: 1625px) {
+        .weather .weather-main-section {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .weather .weather-primary {
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            margin-bottom: 0;
+        }
+
+        .weather .current-weather {
+            text-align: center;
+        }
+
+        .weather .location-info {
+            text-align: center;
+        }
+
+        .weather .weather-details {
+            grid-template-columns: repeat(3, 1fr);
+        }
+    }
+
+    /* Mobile adjustments */
+    @media screen and (max-width: 400px) {
+        .weather .weather-main-section,
+        .weather .hourly-forecast {
+            padding: 12px;
+        }
+
+        .weather .location {
+            font-size: 1.4em;
+        }
+
+        .weather .temperature {
+            font-size: 2em;
+        }
+
+        .weather .weather-icon {
+            font-size: 2.5em;
+        }
+
+        .weather .forecast-item {
+            flex: 0 0 50px; /* Smaller width on mobile */
+            padding: 6px;
+        }
+
+        .weather .detail-card {
+            padding: 8px;
+            gap: 4px;
+        }
+    }
+
+    /* Layout changes for smaller screens */
+    @media screen and (max-width: 735px) {
+        .weather .weather-details {
+            grid-template-columns: 1fr !important; /* Override all other column settings */
+            gap: 8px;
+        }
+
+        .weather .detail-card {
+            flex-direction: row; /* Keep icon and text side by side */
+            padding: 10px;
+        }
+    }
+</style>

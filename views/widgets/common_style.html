@@ -1,0 +1,64 @@
+<style>
+    .widget {
+        background: var(--bg-secondary);
+        border-radius: 12px;
+        padding: 24px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .widget-content {
+        display: flex;
+        flex-direction: column;
+        gap: 16px;
+    }
+
+    .widget-title {
+        font-size: 14px;
+        color: var(--text-secondary);
+        margin: 0;
+        text-transform: uppercase;
+        letter-spacing: 0.5px;
+    }
+
+    .widget-result {
+        font-size: 1.5em;
+        text-align: center;
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 8px;
+        color: var(--text-primary);
+    }
+
+    .widget-result .value {
+        font-weight: bold;
+        color: var(--accent-primary);
+    }
+
+    .widget-result .unit {
+        color: var(--text-secondary);
+        margin: 0 5px;
+        cursor: help;
+        font-size: 0.9em;
+    }
+
+    .widget-result .equals {
+        margin: 0 12px;
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+
+    .widget-formula {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+        text-align: center;
+        font-style: italic;
+    }
+
+    @media screen and (max-width: 520px) {
+        .widget {
+            padding: 16px;
+            margin: 10px 0;
+        }
+    }
+</style>

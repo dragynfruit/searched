@@ -59,9 +59,22 @@
 
 	#results {
 		padding: 10px;
-		height: calc(100% - 20px);
 		width: calc(100% - 20px);
 		background: radial-gradient(circle at 100% 0%, rgba(152, 219, 124, 0.15), transparent 50%), radial-gradient(circle at 0% 100%, rgba(255, 71, 85, 0.15), transparent 50%);
+		flex: 1;
+		overflow-y: auto;
+	}
+
+	/* Add styles for widget container */
+	#widget-container {
+		padding: 0 10px;
+	}
+
+	/* Add styles for content wrapper */
+	#content-wrapper {
+		display: flex;
+		flex-direction: column;
+		height: 100%;
 	}
 
 	.result {
@@ -180,36 +193,60 @@
 {% endblock header %}
 
 {% block content %}
-<div id="results" class="{% if settings.compact_view %}compact-view{% endif %}">
-	{% if results %}
-	{% for result in results %}
-	{{ result_view::generate_content(result=result, favicon=settings.favicons, compact=settings.compact_view) }}
-	{% endfor %}
-	<div id="bottom">
-		{% set page_start = query.page - 5 %}
-		{% set page_end = query.page + 5 %}
-		{% if page_start < 1 %} {% set page_end=page_end + (1 - page_start) %} {% set page_start=1 %} {% endif %} {% if
-			query.page> 1 %}
-			<a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page - 1 }}" class="page-button">&#x276E;&#xFE0E;</a>
-			{% endif %}
-			{% for i in range(start=page_start, end=page_end) %}
-			<a href="?q={{ query.query }}&k={{ kind }}&p={{ i }}" class="page-button"
-				id="{% if i == query.page %}current-page{% endif %}">{{ i }}</a>
-			{% endfor %}
-			<a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page + 1 }}" class="page-button">&#x276F;&#xFE0E;</a>
+    <div id="content-wrapper">
+        {% if settings.enable_widgets and widget %}
+            <div id="widget-container">
+                {% if widget is containing("UnitConverter") %}
+                    {% include "widgets/unit_converter.html" %}
+                {% endif %}
+                {% if widget is containing("Timer") and not settings.no_js %}
+                    {% include "widgets/timer.html" %}
+                {% endif %}
+                {% if widget is containing("Dictionary") %}
+                    {% include "widgets/dictionary.html" %}
+                {% endif %}
+                {% if widget is containing("Color") %}
+                    {% include "widgets/color.html" %}
+                {% endif %}
+				{% if widget is containing("DiceRoll") %}
+					{% include "widgets/dice.html" %}
+				{% endif %}
+				{% if widget is containing("Weather") %}
+					{% include "widgets/weather.html" %}
+				{% endif %}
+            </div>
+        {% endif %}
+        <div id="results" class="{% if settings.compact_view %}compact-view{% endif %}">
+            {% if results %}
+            {% for result in results %}
+            {{ result_view::generate_content(result=result, favicon=settings.favicons, compact=settings.compact_view) }}
+            {% endfor %}
+            <div id="bottom">
+                {% set page_start = query.page - 5 %}
+                {% set page_end = query.page + 5 %}
+                {% if page_start < 1 %} {% set page_end=page_end + (1 - page_start) %} {% set page_start=1 %} {% endif %} {% if
+                    query.page> 1 %}
+                    <a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page - 1 }}" class="page-button">&#x276E;&#xFE0E;</a>
+                    {% endif %}
+                    {% for i in range(start=page_start, end=page_end) %}
+                    <a href="?q={{ query.query }}&k={{ kind }}&p={{ i }}" class="page-button"
+                        id="{% if i == query.page %}current-page{% endif %}">{{ i }}</a>
+                    {% endfor %}
+                    <a href="?q={{ query.query }}&k={{ kind }}&p={{ query.page + 1 }}" class="page-button">&#x276F;&#xFE0E;</a>
 
-			<p>Found {{ results | length }} results in {{ search_time }} ms</p>
-		</div>
-	{%- else -%}
-		<table id="no-results">
-			<tr>
-				<td>
-					<h1>No results found</h1>
-				</td>
-			</tr>
-		</table>
-	{%- endif -%}
-</div>
+                    <p>Found {{ results | length }} results in {{ search_time }} ms</p>
+                </div>
+            {%- else -%}
+                <table id="no-results">
+                    <tr>
+                        <td>
+                            <h1>No results found</h1>
+                        </td>
+                    </tr>
+                </table>
+            {%- endif -%}
+        </div>
+    </div>
 {% endblock content %}
 
 {% block body %}

@@ -1,0 +1,343 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget dictionary">
+    <div class="widget-content">
+        <h3 class="widget-title">Dictionary</h3>
+        {% if widget.Dictionary.error %}
+            <div class="error">{{ widget.Dictionary.error }}</div>
+        {% else %}
+            {% for entry in widget.Dictionary.entries %}
+            <div class="word-section">
+                <div class="word-header">
+                    <div class="word-section-main">
+                        <h2 class="word">{{ entry.word }}</h2>
+                        {% if entry.phonetic %}
+                            <span class="phonetic">{{ entry.phonetic }}</span>
+                        {% endif %}
+                    </div>
+                    {% if not settings.no_js %}
+                        <div class="audio-buttons">
+                            {% for phonetic in entry.phonetics %}
+                                {% if phonetic.audio %}
+                                    {% set accent = phonetic.audio | split(pat="-") | last | split(pat=".") | first %}
+                                    <button class="sound-btn" 
+                                            onclick="playPronunciation(this, '{{ phonetic.audio }}')" 
+                                            title="Play {{ accent | upper }} pronunciation">
+                                        <span class="audio-icon">🔊</span>
+                                        <span class="accent-label">{{ accent | upper }}</span>
+                                        <div class="audio-wave">
+                                            <span></span>
+                                            <span></span>
+                                            <span></span>
+                                        </div>
+                                    </button>
+                                {% endif %}
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+                {% if entry.origin %}
+                    <div class="origin">{{ entry.origin }}</div>
+                {% endif %}
+                
+                <div class="meanings">
+                    {% for meaning in entry.meanings %}
+                    <div class="meaning">
+                        <div class="part-of-speech">{{ meaning.partOfSpeech }}</div>
+                        <ol class="definitions">
+                            {% for def in meaning.definitions %}
+                            <li class="definition">
+                                <div>{{ def.definition }}</div>
+                                {% if def.example %}
+                                    <div class="example">"{{ def.example }}"</div>
+                                {% endif %}
+                                {% if def.synonyms | length > 0 %}
+                                    <div class="synonyms">
+                                        <span>Synonyms:</span> {{ def.synonyms | join(sep=", ") }}
+                                    </div>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ol>
+                    </div>
+                    {% endfor %}
+                </div>
+                <div class="source-info">
+                    {% if entry.license or entry.source_urls %}
+                        <details class="licenses">
+                            <summary>Source & License Information</summary>
+                            <div class="licenses-content">
+                                {% if entry.license %}
+                                    <div class="license">
+                                        <span class="license-icon">⚖️</span>
+                                        Licensed under <a href="{{ entry.license.url }}" target="_blank" rel="noopener">{{ entry.license.name }}</a>
+                                    </div>
+                                {% endif %}
+                                {% if entry.source_urls %}
+                                    <div class="sources">
+                                        <span class="source-icon">📚</span>
+                                        Sources:
+                                        <ul class="source-list">
+                                            {% for url in entry.source_urls %}
+                                                <li><a href="{{ url }}" target="_blank" rel="noopener">{{ url }}</a></li>
+                                            {% endfor %}
+                                        </ul>
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </details>
+                    {% endif %}
+                </div>
+            </div>
+            {% endfor %}
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .dictionary .word-section {
+        padding: 10px 0;
+    }
+
+    .dictionary .word-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        margin-bottom: 8px;
+        flex-wrap: wrap;
+    }
+
+    .dictionary .word-section-main {
+        display: flex;
+        align-items: baseline;
+        gap: 12px;
+    }
+
+    .dictionary .word {
+        font-size: 1.8em;
+        margin: 0;
+        color: var(--accent-primary);
+    }
+
+    .dictionary .pronunciation {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+
+    .dictionary .phonetic {
+        color: var(--text-secondary);
+        font-family: monospace;
+    }
+
+    .dictionary .origin {
+        font-style: italic;
+        color: var(--text-secondary);
+        margin-bottom: 16px;
+        font-size: 0.9em;
+    }
+
+    .dictionary .meaning {
+        margin: 16px 0;
+    }
+
+    .dictionary .part-of-speech {
+        color: var(--accent-primary);
+        font-weight: bold;
+        font-size: 1.1em;
+        margin-bottom: 8px;
+    }
+
+    .dictionary .definitions {
+        margin: 0;
+        padding-left: 20px;
+    }
+
+    .dictionary .definition {
+        margin: 8px 0;
+    }
+
+    .dictionary .example {
+        color: var(--text-secondary);
+        margin-top: 4px;
+        font-style: italic;
+    }
+
+    .dictionary .synonyms {
+        margin-top: 4px;
+        font-size: 0.9em;
+        color: var(--text-secondary);
+    }
+
+    .dictionary .error {
+        color: var(--error-color);
+        text-align: center;
+        padding: 20px;
+    }
+
+    .dictionary .source-info {
+        margin-top: 16px;
+        font-size: 0.9em;
+    }
+
+    .dictionary .licenses {
+        border: 1px solid var(--border-color);
+        border-radius: 6px;
+        background: var(--bg-tertiary);
+    }
+
+    .dictionary .licenses summary {
+        padding: 8px 12px;
+        cursor: pointer;
+        color: var(--text-secondary);
+        user-select: none;
+        transition: background-color 0.2s;
+    }
+
+    .dictionary .licenses summary:hover {
+        background: var(--bg-input);
+    }
+
+    .dictionary .licenses-content {
+        padding: 12px;
+        border-top: 1px solid var(--border-color);
+        background: var(--bg-secondary);
+    }
+
+    .dictionary .license,
+    .dictionary .sources {
+        display: flex;
+        align-items: flex-start;
+        gap: 8px;
+        margin: 4px 0;
+    }
+
+    .dictionary .license-icon,
+    .dictionary .source-icon {
+        flex-shrink: 0;
+    }
+
+    .dictionary .source-list {
+        margin: 4px 0 0 24px;
+        padding: 0;
+    }
+
+    .dictionary .source-list li {
+        margin: 4px 0;
+    }
+
+    .dictionary .source-list a,
+    .dictionary .license a {
+        color: var(--accent-primary);
+        text-decoration: none;
+        word-break: break-all;
+    }
+
+    .dictionary .source-list a:hover,
+    .dictionary .license a:hover {
+        text-decoration: underline;
+    }
+
+    .dictionary .source-info a {
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+
+    .dictionary .source-info a:hover {
+        text-decoration: underline;
+    }
+
+    .dictionary .source,
+    .dictionary .license {
+        margin: 4px 0;
+    }
+
+    .dictionary .sound-btn {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        background: var(--bg-tertiary);
+        border: none;
+        cursor: pointer;
+        padding: 4px 8px;
+        border-radius: 4px;
+        transition: all 0.2s;
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+
+    .dictionary .sound-btn:hover {
+        background: var(--bg-input);
+        color: var(--text-primary);
+    }
+
+    .dictionary .sound-btn.playing {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+    }
+
+    .dictionary .audio-wave {
+        display: flex;
+        align-items: center;
+        gap: 2px;
+        height: 12px;
+    }
+
+    .dictionary .audio-wave span {
+        width: 2px;
+        height: 8px;
+        background: currentColor;
+        border-radius: 1px;
+    }
+
+    .dictionary .sound-btn.playing .audio-wave span {
+        animation: wave 0.5s ease-in-out infinite;
+    }
+
+    .dictionary .sound-btn.playing .audio-wave span:nth-child(2) {
+        animation-delay: 0.2s;
+    }
+
+    .dictionary .sound-btn.playing .audio-wave span:nth-child(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes wave {
+        0%, 100% { height: 8px; }
+        50% { height: 12px; }
+    }
+
+    .dictionary .audio-buttons {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        flex-wrap: wrap;
+    }
+</style>
+
+{% if not settings.no_js %}
+<script>
+    function playPronunciation(button, url) {
+        // Remove playing class from all buttons
+        document.querySelectorAll('.sound-btn').forEach(btn => {
+            btn.classList.remove('playing');
+        });
+        
+        const audio = new Audio(url);
+        
+        audio.onplay = () => {
+            button.classList.add('playing');
+        };
+        
+        audio.onended = () => {
+            button.classList.remove('playing');
+        };
+        
+        audio.play().catch(err => {
+            console.error('Error playing audio:', err);
+            button.classList.remove('playing');
+        });
+    }
+</script>
+{% endif %}

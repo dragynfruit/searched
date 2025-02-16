@@ -1,0 +1,159 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget dice-widget">
+    <div class="widget-content">
+        <h3 class="widget-title">Dice Roll</h3>
+        <div class="dice-result">
+            <div class="dice-info">
+                {% if widget.DiceRoll.is_coin %}
+                Flipping a coin:
+                {% else %}
+                Rolling {{ widget.DiceRoll.count }}d{{ widget.DiceRoll.sides }}:
+                {% endif %}
+            </div>
+            <div class="dice-values">
+                {% for value in widget.DiceRoll.values %}
+                <div class="die {% if widget.DiceRoll.is_coin %}coin{% endif %}">
+                    <div class="die-value">
+                        {% if widget.DiceRoll.is_coin %}
+                            {% if value == 1 %}Heads{% else %}Tails{% endif %}
+                        {% else %}
+                            {{ value }}
+                        {% endif %}
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% if widget.DiceRoll.show_sum %}
+            <div class="dice-sum">
+                Total: {{ widget.DiceRoll.sum }}
+            </div>
+            {% endif %}
+        </div>
+        {% if settings.no_js %}
+        <form method="get" action="">
+            <input type="hidden" name="q" value="roll {{ widget.DiceRoll.count }}d{{ widget.DiceRoll.sides }}">
+            <button type="submit" class="reroll-btn">Roll Again</button>
+        </form>
+        {% else %}
+        <button class="reroll-btn">Roll Again</button>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .dice-widget .dice-result {
+        text-align: center;
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 8px;
+        margin: 12px 0;
+    }
+
+    .dice-widget .dice-info {
+        color: var(--text-secondary);
+        margin-bottom: 12px;
+    }
+
+    .dice-widget .dice-values {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 12px;
+        justify-content: center;
+        margin: 16px 0;
+    }
+
+    .dice-widget .die {
+        width: 48px;
+        height: 48px;
+        background: var(--bg-primary);
+        border: 2px solid var(--accent-primary);
+        border-radius: 8px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .dice-widget .die-value {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: var(--accent-primary);
+    }
+
+    .dice-widget .dice-sum {
+        margin-top: 12px;
+        font-weight: bold;
+        color: var(--text-primary);
+    }
+
+    .dice-widget .reroll-btn {
+        width: 100%;
+        padding: 8px;
+        border: none;
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+        border-radius: 4px;
+        cursor: pointer;
+        transition: opacity 0.2s;
+    }
+
+    .dice-widget .reroll-btn:hover {
+        opacity: 0.9;
+    }
+
+    .dice-widget .coin {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: linear-gradient(145deg, var(--accent-primary), var(--bg-secondary));
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+    }
+
+    .dice-widget .coin .die-value {
+        font-size: 1.2em;
+    }
+</style>
+
+{% if not settings.no_js %}
+<script>
+    class DiceRoller {
+        constructor() {
+            this.count = {{ widget.DiceRoll.count }};
+            this.sides = {{ widget.DiceRoll.sides }};
+            this.isCoin = {% if widget.DiceRoll.is_coin %}true{% else %}false{% endif %};
+            this.rerollBtn = document.querySelector('.reroll-btn');
+            this.valuesContainer = document.querySelector('.dice-values');
+            this.sumDisplay = document.querySelector('.dice-sum');
+            
+            this.rerollBtn.addEventListener('click', () => this.roll());
+        }
+
+        roll() {
+            if (this.isCoin) {
+                const value = Math.random() < 0.5 ? 1 : 2;
+                this.valuesContainer.innerHTML = `
+                    <div class="die coin">
+                        <div class="die-value">${value === 1 ? 'Heads' : 'Tails'}</div>
+                    </div>
+                `;
+            } else {
+                const values = Array.from({length: this.count}, 
+                    () => Math.floor(Math.random() * this.sides) + 1);
+                
+                this.valuesContainer.innerHTML = values.map(v => `
+                    <div class="die">
+                        <div class="die-value">${v}</div>
+                    </div>
+                `).join('');
+
+                if (this.sumDisplay) {
+                    const sum = values.reduce((a, b) => a + b, 0);
+                    this.sumDisplay.textContent = `Total: ${sum}`;
+                }
+            }
+        }
+    }
+
+    new DiceRoller();
+</script>
+{% endif %}
