@@ -56,7 +56,7 @@ static DICTIONARY_RE: Lazy<Regex> = Lazy::new(|| {
 });
 
 impl Dictionary {
-    pub async fn detect_with_client(query: &str, client: &Client) -> Option<Self> {
+    pub async fn detect(query: &str, client: &Client) -> Option<Self> {
         let query = query.trim().to_lowercase();
         
         let caps = DICTIONARY_RE.captures(&query)?;

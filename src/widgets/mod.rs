@@ -28,7 +28,7 @@ pub enum Widget {
     Time(Time),
 }
 
-pub async fn detect_widget(query: &str, client: &Client) -> Option<Widget> {
+pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Option<Widget> {
     if let Some(converter) = UnitConverter::detect(query) {
         return Some(Widget::UnitConverter(converter));
     }
@@ -37,7 +37,7 @@ pub async fn detect_widget(query: &str, client: &Client) -> Option<Widget> {
         return Some(Widget::Timer(timer));
     }
 
-    if let Some(dictionary) = Dictionary::detect_with_client(query, client).await {
+    if let Some(dictionary) = Dictionary::detect(query, client).await {
         return Some(Widget::Dictionary(dictionary));
     }
 
@@ -49,7 +49,7 @@ pub async fn detect_widget(query: &str, client: &Client) -> Option<Widget> {
         return Some(Widget::DiceRoll(dice));
     }
 
-    if let Some(weather) = Weather::detect_with_client(query, client).await {
+    if let Some(weather) = Weather::detect(query, client, db).await {
         return Some(Widget::Weather(weather));
     }
 

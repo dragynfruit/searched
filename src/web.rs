@@ -106,7 +106,7 @@ pub async fn search_results(
 
         // Check for widgets if enabled
         if settings.enable_widgets {
-            if let Some(widget) = widgets::detect_widget(&q, &st.client).await {
+            if let Some(widget) = widgets::detect_widget(&q, &st.client, &st.db).await {
                 context.insert("widget", &widget);
             }
         }
