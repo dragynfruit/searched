@@ -1,0 +1,70 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget time">
+    <div class="widget-content">
+        <h3 class="widget-title">Current Time</h3>
+        <div class="time-display">
+            <div class="time" id="current-time">{{ widget.Time.current_time }}</div>
+            <div class="date" id="current-date">{{ widget.Time.current_date }}</div>
+            <div class="timezone">{{ widget.Time.timezone }}</div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .time .time-display {
+        text-align: center;
+        padding: 20px;
+        background: var(--bg-tertiary);
+        border-radius: 12px;
+    }
+
+    .time .time {
+        font-size: 3em;
+        font-weight: bold;
+        color: var(--accent-primary);
+        font-variant-numeric: tabular-nums;
+        line-height: 1.2;
+    }
+
+    .time .date {
+        color: var(--text-primary);
+        font-size: 1.2em;
+        margin: 8px 0;
+    }
+
+    .time .timezone {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+</style>
+
+{% if not settings.no_js %}
+<script>
+    function updateTime() {
+        const now = new Date();
+        const timeElement = document.getElementById('current-time');
+        const dateElement = document.getElementById('current-date');
+        
+        // Update time
+        timeElement.textContent = now.toLocaleTimeString('en-US', {
+            hour12: false,
+            hour: '2-digit',
+            minute: '2-digit',
+            second: '2-digit'
+        });
+        
+        // Update date
+        dateElement.textContent = now.toLocaleDateString('en-US', {
+            weekday: 'long',
+            year: 'numeric',
+            month: 'long',
+            day: 'numeric'
+        });
+    }
+
+    // Update immediately and then every second
+    updateTime();
+    setInterval(updateTime, 1000);
+</script>
+{% endif %}

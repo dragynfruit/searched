@@ -4,6 +4,7 @@ use serde::Serialize;
 pub mod color;
 pub mod dice;
 pub mod dictionary;
+pub mod time;
 pub mod timer;
 pub mod unit_converter;
 pub mod weather;
@@ -11,6 +12,7 @@ pub mod weather;
 use color::Color;
 use dice::DiceRoll;
 use dictionary::Dictionary;
+use time::Time;
 use timer::Timer;
 use unit_converter::UnitConverter;
 use weather::Weather;
@@ -23,6 +25,7 @@ pub enum Widget {
     Color(Color),
     DiceRoll(DiceRoll),
     Weather(Weather),
+    Time(Time),
 }
 
 pub async fn detect_widget(query: &str, client: &Client) -> Option<Widget> {
@@ -48,6 +51,10 @@ pub async fn detect_widget(query: &str, client: &Client) -> Option<Widget> {
 
     if let Some(weather) = Weather::detect_with_client(query, client).await {
         return Some(Widget::Weather(weather));
+    }
+
+    if let Some(time) = Time::detect(query) {
+        return Some(Widget::Time(time));
     }
 
     None

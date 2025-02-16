@@ -214,6 +214,9 @@
 				{% if widget is containing("Weather") %}
 					{% include "widgets/weather.html" %}
 				{% endif %}
+				{% if widget is containing("Time") %}
+					{% include "widgets/time.html" %}
+				{% endif %}
             </div>
         {% endif %}
         <div id="results" class="{% if settings.compact_view %}compact-view{% endif %}">
