@@ -196,6 +196,9 @@
     <div id="content-wrapper">
         {% if settings.enable_widgets and widget %}
             <div id="widget-container">
+                {% if widget is containing("Calculator") %}
+                    {% include "widgets/calculator.html" %}
+                {% endif %}
                 {% if widget is containing("UnitConverter") %}
                     {% include "widgets/unit_converter.html" %}
                 {% endif %}

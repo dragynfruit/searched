@@ -1,6 +1,7 @@
 use reqwest::Client;
 use serde::Serialize;
 
+pub mod calculator;
 pub mod color;
 pub mod dice;
 pub mod dictionary;
@@ -10,6 +11,7 @@ pub mod timer;
 pub mod unit_converter;
 pub mod weather;
 
+use calculator::Calculator;
 use color::Color;
 use dice::DiceRoll;
 use dictionary::Dictionary;
@@ -21,6 +23,7 @@ use weather::Weather;
 
 #[derive(Debug, Serialize)]
 pub enum Widget {
+    Calculator(Calculator),
     UnitConverter(UnitConverter),
     Timer(Timer),
     Dictionary(Dictionary),
@@ -32,6 +35,10 @@ pub enum Widget {
 }
 
 pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Option<Widget> {
+    if let Some(calculator) = Calculator::detect(query) {
+        return Some(Widget::Calculator(calculator));
+    }
+
     if let Some(converter) = UnitConverter::detect(query) {
         return Some(Widget::UnitConverter(converter));
     }
