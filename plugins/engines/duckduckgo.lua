@@ -2,6 +2,15 @@
 -- Licensed MIT.
 -- (c) 2024 Dragynfruit
 
+--- Checks if a URL is an advertisement
+--- @param url string
+--- 
+--- @return boolean
+local function is_ad_url(url)
+	return string.match(url, "duckduckgo.com.*ad_") ~= nil
+		or string.match(url, "duckduckgo.com.*ads%-by%-microsoft") ~= nil
+end
+
 add_engine('duckduckgo', function(client, query, _)
 	local offset
 	if query.page == 2 then
@@ -55,17 +64,19 @@ add_engine('duckduckgo', function(client, query, _)
 
 	for i, link in ipairs(links) do
 		local url = link:attr('href')
-		local title = link.inner_html
-		local ret_item = {
-			url = url,
-			title = title,
-		}
-		local snippet_item = snippets[i]
-		if snippet_item then
-			ret_item.general = { snippet = snippet_item.inner_html }
-		end
+		if not is_ad_url(url) then
+			local title = link.inner_html
+			local ret_item = {
+				url = url,
+				title = title,
+			}
+			local snippet_item = snippets[i]
+			if snippet_item then
+				ret_item.general = { snippet = snippet_item.inner_html }
+			end
 
-		ret[i] = ret_item
+			table.insert(ret, ret_item)
+		end
 	end
 
 	return ret
