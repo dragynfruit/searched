@@ -1,4 +1,4 @@
-add_engine('stackoverflow', function(client, query, opts)
+add_engine('stackexchange', function(client, query, opts)
 	local res = client:get(
 		'https://api.stackexchange.com/2.3/search/advanced?q='
 			.. query.query
