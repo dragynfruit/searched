@@ -1,4 +1,4 @@
-use log::info;
+use log::{info, debug};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::Deserialize;
@@ -35,7 +35,7 @@ fn is_rules_outdated() -> bool {
                     .duration_since(UNIX_EPOCH)
                     .unwrap()
                     .as_secs();
-                return current_time - stored_time > 7 * 24 * 60 * 60; // 1 week in seconds
+                return current_time - stored_time > 7 * 24 * 60 * 60; // 1 week
             }
         }
     }
@@ -66,6 +66,7 @@ pub async fn ensure_rules_exist() {
 }
 
 pub fn clean_url(url: &str) -> String {
+    debug!("Cleaning URL: {}", url);
     if let Ok(Some(rules_bytes)) = DB.get("rules") {
         if let Ok(rules_str) = String::from_utf8(rules_bytes.to_vec()) {
             if let Ok(rules) = serde_json::from_str::<Rules>(&rules_str) {

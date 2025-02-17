@@ -15,6 +15,7 @@ use serde::Deserialize;
 use std::io::Cursor;
 use std::time::{SystemTime, UNIX_EPOCH};
 use url::Url;
+use log::debug;
 
 #[derive(Deserialize)]
 pub struct FaviconParams {
@@ -39,6 +40,7 @@ async fn try_load_image(client: &reqwest::Client, url: &Url) -> Option<DynamicIm
 }
 
 async fn find_favicon(client: &reqwest::Client, domain_url: &Url) -> Option<DynamicImage> {
+    debug!("Finding favicon for domain: {}", domain_url);
     // 1. Try /favicon.ico
     let mut favicon_urls = vec![];
 
@@ -53,7 +55,6 @@ async fn find_favicon(client: &reqwest::Client, domain_url: &Url) -> Option<Dyna
             let selector =
                 Selector::parse(r#"link[rel~="icon"], link[rel~="shortcut icon"]"#).unwrap();
 
-            // Collect all URLs first before async operations
             favicon_urls.extend(
                 document
                     .select(&selector)
@@ -85,7 +86,6 @@ async fn find_favicon(client: &reqwest::Client, domain_url: &Url) -> Option<Dyna
     image::open("static/favicon.ico").ok()
 }
 
-// Add this new function to handle the combined favicon data and timestamp
 fn pack_favicon_data(png_data: &[u8]) -> Vec<u8> {
     let now = SystemTime::now()
         .duration_since(UNIX_EPOCH)
@@ -107,7 +107,6 @@ fn unpack_favicon_data(packed: &[u8]) -> Option<Vec<u8>> {
         .unwrap()
         .as_secs();
 
-    // Return None if older than 1 week
     if now - timestamp > 604800 {
         return None;
     }
@@ -120,7 +119,7 @@ fn build_favicon_response(data: Option<Vec<u8>>) -> Response {
         Some(png_data) => Response::builder()
             .status(StatusCode::OK)
             .header(header::CONTENT_TYPE, "image/png")
-            .header(header::CACHE_CONTROL, "public, max-age=604800") // 7 days
+            .header(header::CACHE_CONTROL, "public, max-age=604800")
             .header(
                 header::EXPIRES,
                 chrono::Utc::now()
@@ -143,23 +142,21 @@ pub async fn favicon(
     Query(params): Query<FaviconParams>,
     State(state): State<AppState>,
 ) -> impl IntoResponse {
+    debug!("Handling favicon request for domain: {}", params.domain);
     let favicon_db = state.db.open_tree("favicon").unwrap();
     let mut favicon_data = None;
 
     if let Ok(domain_url) = Url::parse(&params.domain) {
         let host = domain_url.host_str().unwrap_or("").to_string();
 
-        // Try to get cached favicon first
         if let Ok(Some(cached_favicon)) = favicon_db.get(host.as_bytes()) {
             if let Some(data) = unpack_favicon_data(&cached_favicon) {
                 favicon_data = Some(data);
             } else {
-                // Remove expired entry
                 favicon_db.remove(host.as_bytes()).unwrap();
             }
         }
 
-        // Fetch new favicon if not found or expired
         if favicon_data.is_none() {
             if let Some(image) = find_favicon(&state.client, &domain_url).await {
                 let resized = resize(&image, 32, 32, FilterType::Nearest);

@@ -7,21 +7,26 @@ extern crate serde;
 extern crate sled;
 extern crate tera;
 
-mod favicon;
 mod settings;
-mod text_matcher;
-mod url_cleaner;
 mod web;
 mod widgets;
+
+mod modules {
+    pub mod favicon;
+    pub mod text_matcher;
+    pub mod url_cleaner;
+}
 
 use axum::{
     http::{HeaderMap, HeaderValue},
     middleware,
 };
-use log::{info, LevelFilter};
+use log::{info, debug, error, LevelFilter};
+use modules::url_cleaner;
 use reqwest::Client;
 use searched::lua_support::PluginEngine;
 use tokio::net::TcpListener;
+use std::process;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -32,6 +37,16 @@ pub struct AppState {
 
 #[tokio::main]
 async fn main() {
+    let start = std::time::Instant::now();
+
+    env_logger::builder()
+        .filter_level(LevelFilter::Info)
+        .parse_default_env()
+        .init();
+
+    info!("Starting searched...");
+    debug!("Configuring HTTP client");
+
     let mut headers = HeaderMap::new();
     for (key, val) in [
         (
@@ -61,21 +76,19 @@ async fn main() {
         .build()
         .unwrap();
 
+    debug!("Opening database");
     let db = sled::open("data/db").unwrap();
 
-    env_logger::builder()
-        .filter_level(LevelFilter::Info)
-        .parse_default_env()
-        .init();
-
-    info!("Starting up...");
+    info!("Initializing components...");
 
     // Initialize tracking rules if enabled
+    debug!("Checking URL tracking rules");
     url_cleaner::ensure_rules_exist().await;
 
+    debug!("Initializing plugin engine");
     let eng = PluginEngine::new(client.clone()).await.unwrap();
 
-    info!("initializing web");
+    info!("Setting up web server");
     let app = web::router()
         .with_state(AppState {
             eng,
@@ -84,15 +97,30 @@ async fn main() {
         })
         .layer(middleware::from_fn(settings::settings_middleware));
 
-    tokio::spawn(async {
-        axum::serve(
-            TcpListener::bind("0.0.0.0:6969").await.unwrap(),
-            app.into_make_service(),
-        )
-        .await
-        .unwrap();
+    let bind_addr = "0.0.0.0:6969";
+    info!("Starting web server on {}", bind_addr);
+    
+    tokio::spawn(async move {
+        match TcpListener::bind(bind_addr).await {
+            Ok(listener) => {
+                if let Err(e) = axum::serve(listener, app.into_make_service()).await {
+                    error!("Server error: {}", e);
+                }
+            }
+            Err(e) => {
+                error!("Failed to bind to {}: {}", bind_addr, e);
+                process::exit(1);
+            }
+        }
     });
 
-    tokio::signal::ctrl_c().await.unwrap();
-    info!("shutting down");
+    info!("Server started successfully");
+    info!("Startup completed in {}ms", start.elapsed().as_millis());
+    
+    match tokio::signal::ctrl_c().await {
+        Ok(()) => info!("Shutdown signal received"),
+        Err(e) => error!("Failed to listen for shutdown signal: {}", e),
+    }
+    
+    info!("Shutting down gracefully...");
 }

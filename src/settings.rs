@@ -10,6 +10,7 @@ use base64::{engine::general_purpose, Engine as _};
 use searched::SafeSearch;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
+use log::{debug, info, warn};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {
@@ -194,12 +195,15 @@ impl SettingsBuilder {
 impl From<CookieJar> for Settings {
     fn from(jar: CookieJar) -> Self {
         if let Some(cookie) = jar.get("settings") {
+            debug!("Loading settings from cookie");
             if let Ok(decoded) = general_purpose::STANDARD.decode(cookie.value()) {
                 if let Ok(settings) = serde_json::from_slice::<Settings>(&decoded) {
                     return settings;
                 }
             }
+            warn!("Failed to decode settings cookie, using defaults");
         }
+        debug!("No settings cookie found, using defaults");
         Settings::default()
     }
 }
@@ -211,6 +215,7 @@ pub async fn settings_middleware(jar: CookieJar, mut request: Request, next: Nex
 }
 
 pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> impl IntoResponse {
+    info!("Updating settings: {:?}", params);
     if params.contains_key("reset") {
         let settings = Settings::default();
         let cookie = settings.to_cookies();
@@ -300,6 +305,7 @@ pub async fn export_settings(
     Extension(settings): Extension<Settings>,
     Query(params): Query<HashMap<String, String>>,
 ) -> impl IntoResponse {
+    debug!("Exporting settings");
     if params.contains_key("download") {
         let json = serde_json::to_string_pretty(&settings).unwrap();
         Response::builder()

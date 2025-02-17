@@ -1,4 +1,5 @@
 use std::{path::PathBuf, process, sync::Arc};
+use log::{debug, error, info};
 
 use axum::{
     extract::{Extension, Query, State},
@@ -16,15 +17,14 @@ use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 
 use crate::{
-    settings::{
+    modules::{self, text_matcher::highlight_text, url_cleaner}, settings::{
         export_settings, import_settings, import_settings_form, settings_middleware,
         update_settings, Settings,
-    },
-    AppState,
+    }, widgets, AppState
 };
-use crate::{text_matcher::highlight_text, widgets};
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
+    info!("Initializing Tera templates");
     let tera = create_tera();
     Arc::new(RwLock::new(tera))
 });
@@ -57,7 +57,7 @@ fn get_motd() -> &'static str {
     MOTD[fastrand::usize(..MOTD.len())]
 }
 
-#[derive(Deserialize, Default)]
+#[derive(Debug, Deserialize, Default)]
 pub struct SearchParams {
     q: Option<String>,
     k: Option<Kind>,
@@ -71,10 +71,11 @@ fn strip_html_tags(text: &str) -> String {
 }
 
 fn create_tera() -> Tera {
+    info!("Loading Tera templates from views/**/*");
     let tera = match Tera::new("views/**/*") {
         Ok(t) => t,
         Err(e) => {
-            println!("Parsing error(s): {}", e);
+            error!("Template parsing error(s): {}", e);
             process::exit(1);
         }
     };
@@ -83,6 +84,7 @@ fn create_tera() -> Tera {
 }
 
 pub async fn index(Extension(settings): Extension<Settings>) -> impl IntoResponse {
+    debug!("Handling index request");
     let mut context = Context::new();
     context.insert("settings", &settings);
     context.insert("motd", get_motd());
@@ -96,6 +98,8 @@ pub async fn search_results(
     Query(params): Query<SearchParams>,
     State(st): State<AppState>,
 ) -> impl IntoResponse {
+    debug!("Handling search request with params: {:?}", params);
+    
     let mut context = Context::new();
     context.insert("settings", &settings);
 
@@ -149,11 +153,12 @@ pub async fn search_results(
         // Clean tracking from URLs if enabled
         if settings.remove_tracking {
             for result in &mut results {
-                result.url = crate::url_cleaner::clean_url(&result.url);
+                result.url = url_cleaner::clean_url(&result.url);
             }
         }
 
         let search_time = search_start.elapsed().as_millis();
+        debug!("Search completed in {}ms", search_time);
 
         // Use the Kind's string value for the template
         match kind {
@@ -205,7 +210,7 @@ pub fn router() -> Router<AppState> {
         .route("/settings/import", post(import_settings))
         .route("/settings/import_form", post(import_settings_form))
         .route("/about", get(about_page))
-        .route("/favicon", get(crate::favicon::favicon))
+        .route("/favicon", get(modules::favicon::favicon))
         .fallback_service(ServeDir::new(PathBuf::from("static")))
         .layer(middleware::from_fn(settings_middleware))
 }

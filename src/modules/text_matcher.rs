@@ -1,9 +1,11 @@
+use log::debug;
 use nucleo_matcher::{
     pattern::{CaseMatching, Normalization, Pattern},
     Config, Matcher,
 };
 
 pub fn highlight_text(text: &str, query: &str) -> String {
+    debug!("Highlighting text for query: {}", query);
     let mut matcher = Matcher::new(Config::DEFAULT);
     let pattern = Pattern::parse(query, CaseMatching::Smart, Normalization::Smart);
 
