@@ -10,12 +10,12 @@ use image::{
     imageops::{resize, FilterType},
     DynamicImage, ImageFormat,
 };
+use log::debug;
 use scraper::{Html, Selector};
 use serde::Deserialize;
 use std::io::Cursor;
 use std::time::{SystemTime, UNIX_EPOCH};
 use url::Url;
-use log::debug;
 
 #[derive(Deserialize)]
 pub struct FaviconParams {

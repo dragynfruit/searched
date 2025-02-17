@@ -10,7 +10,12 @@ pub struct Timer {
 
 impl Timer {
     pub fn detect(query: &str) -> Option<Self> {
-        let query = query.trim().to_lowercase();
+        let query = query.trim();
+        // Skip if query is shorter than "time"
+        if query.len() < 4 {
+            return None;
+        }
+        let query = query.to_lowercase();
 
         // Check for {time} timer format
         if query.ends_with("timer") {

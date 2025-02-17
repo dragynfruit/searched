@@ -21,12 +21,12 @@ use axum::{
     http::{HeaderMap, HeaderValue},
     middleware,
 };
-use log::{info, debug, error, LevelFilter};
+use log::{debug, error, info, LevelFilter};
 use modules::url_cleaner;
 use reqwest::Client;
 use searched::lua_support::PluginEngine;
-use tokio::net::TcpListener;
 use std::process;
+use tokio::net::TcpListener;
 
 #[derive(Clone)]
 pub struct AppState {
@@ -99,7 +99,7 @@ async fn main() {
 
     let bind_addr = "0.0.0.0:6969";
     info!("Starting web server on {}", bind_addr);
-    
+
     tokio::spawn(async move {
         match TcpListener::bind(bind_addr).await {
             Ok(listener) => {
@@ -116,11 +116,11 @@ async fn main() {
 
     info!("Server started successfully");
     info!("Startup completed in {}ms", start.elapsed().as_millis());
-    
+
     match tokio::signal::ctrl_c().await {
         Ok(()) => info!("Shutdown signal received"),
         Err(e) => error!("Failed to listen for shutdown signal: {}", e),
     }
-    
+
     info!("Shutting down gracefully...");
 }

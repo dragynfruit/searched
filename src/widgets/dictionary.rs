@@ -62,7 +62,12 @@ static DICTIONARY_RE: Lazy<Regex> = Lazy::new(|| {
 
 impl Dictionary {
     pub async fn detect(query: &str, client: &Client, db: &sled::Db) -> Option<Self> {
-        let query = query.trim().to_lowercase();
+        let query = query.trim();
+        // Skip if query is shorter than "define"
+        if query.len() < 6 {
+            return None;
+        }
+        let query = query.to_lowercase();
         let caps = DICTIONARY_RE.captures(&query)?;
         let word = caps.name("word")?.as_str();
 

@@ -1,0 +1,70 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget xkcd">
+    <div class="widget-content">
+        <h3 class="widget-title">XKCD #{{ widget.Xkcd.num }}</h3>
+        {% if widget.Xkcd.error %}
+            <div class="error">{{ widget.Xkcd.error }}</div>
+        {% else %}
+            <div class="comic-container">
+                <h4 class="comic-title">{{ widget.Xkcd.title }}</h4>
+                <img src="{{ widget.Xkcd.img }}" alt="{{ widget.Xkcd.alt }}" title="{{ widget.Xkcd.alt }}" class="comic-image">
+                <div class="comic-date">{{ widget.Xkcd.month }}/{{ widget.Xkcd.day }}/{{ widget.Xkcd.year }}</div>
+            </div>
+            <div class="widget-footer">
+                <small>Powered by <a href="https://xkcd.com/{{ widget.Xkcd.num }}" target="_blank" rel="noopener">xkcd.com</a></small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .xkcd .comic-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 16px;
+        padding: 16px;
+        background: var(--bg-tertiary);
+        border-radius: 8px;
+    }
+
+    .xkcd .comic-title {
+        font-size: 1.2em;
+        margin: 0;
+        text-align: center;
+        color: var(--text-primary);
+    }
+
+    .xkcd .comic-image {
+        max-width: 100%;
+        height: auto;
+        border-radius: 4px;
+    }
+
+    .xkcd .comic-date {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+
+    .xkcd .error {
+        color: var(--error-color);
+        text-align: center;
+        padding: 20px;
+    }
+
+    .xkcd .comic-footer {
+        margin-top: 12px;
+        color: var(--text-secondary);
+        text-align: right;
+    }
+
+    .xkcd .comic-footer a {
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+
+    .xkcd .comic-footer a:hover {
+        text-decoration: underline;
+    }
+</style>

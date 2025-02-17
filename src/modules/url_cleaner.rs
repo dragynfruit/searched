@@ -1,4 +1,4 @@
-use log::{info, debug};
+use log::{debug, info};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::Deserialize;

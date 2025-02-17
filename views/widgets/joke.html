@@ -1,0 +1,81 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget joke">
+    <div class="widget-content">
+        <h3 class="widget-title">Joke <small>({{ widget.Joke.category }})</small></h3>
+        {% if widget.Joke.error %}
+            <div class="error">{{ widget.Joke.error }}</div>
+        {% else %}
+            <div class="joke-content">
+                <p class="joke-text">{{ widget.Joke.first_part }}</p>
+                {% if widget.Joke.is_two_part %}
+                    {% if not settings.no_js %}
+                        <details class="punchline">
+                            <summary>Show punchline</summary>
+                            <p class="joke-text">{{ widget.Joke.second_part }}</p>
+                        </details>
+                    {% else %}
+                        <p class="joke-text punchline">{{ widget.Joke.second_part }}</p>
+                    {% endif %}
+                {% endif %}
+            </div>
+            <div class="widget-footer">
+                <small>Powered by <a href="https://jokeapi.dev" target="_blank" rel="noopener">JokeAPI</a></small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .joke .joke-content {
+        padding: 16px;
+        background: var(--bg-secondary);
+        border-radius: 8px;
+        margin: 12px 0;
+    }
+
+    .joke .joke-text {
+        margin: 0;
+        line-height: 1.5;
+        font-size: 1.1em;
+    }
+
+    .joke .punchline {
+        margin-top: 12px;
+    }
+
+    .joke details.punchline {
+        cursor: pointer;
+    }
+
+    .joke details.punchline summary {
+        color: var(--accent-primary);
+        padding: 4px 0;
+        user-select: none;
+    }
+
+    .joke details.punchline summary:hover {
+        text-decoration: underline;
+    }
+
+    .joke .joke-footer {
+        margin-top: 12px;
+        color: var(--text-secondary);
+        text-align: right;
+    }
+
+    .joke .joke-footer a {
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+
+    .joke .joke-footer a:hover {
+        text-decoration: underline;
+    }
+
+    .joke .error {
+        color: var(--error-color);
+        text-align: center;
+        padding: 20px;
+    }
+</style>

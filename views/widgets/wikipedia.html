@@ -1,0 +1,209 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget wikipedia">
+    <div class="widget-content">
+        <h3 class="widget-title">Wikipedia</h3>
+        
+        {% if widget.Wikipedia.error %}
+            <div class="error">{{ widget.Wikipedia.error }}</div>
+        {% else %}
+            <div class="article-header">
+                <h4 class="article-title">{{ widget.Wikipedia.title }}</h4>
+                <a href="{{ widget.Wikipedia.url }}" target="_blank" rel="noopener" class="wiki-link">
+                    <span class="wiki-icon">📖</span>
+                    <span>Read on Wikipedia</span>
+                </a>
+            </div>
+            
+            {% if widget.Wikipedia.is_disambiguation %}
+                <div class="wiki-disambiguation">
+                    <p>{{ widget.Wikipedia.extract }}</p>
+                    <ul class="alternatives-list">
+                        {% for alt in widget.Wikipedia.alternatives %}
+                            <li class="alternative">
+                                <a href="{{ alt.url }}" target="_blank" rel="noopener">
+                                    <span class="alt-title">{{ alt.title }}</span>
+                                    {% if alt.description %}
+                                        <span class="alt-description">— {{ alt.description }}</span>
+                                    {% endif %}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% else %}
+                <div class="wiki-content">
+                    {% if widget.Wikipedia.image %}
+                    <div class="wiki-text-with-image">
+                        <div class="wiki-image">
+                            <img src="{{ widget.Wikipedia.image }}" alt="{{ widget.Wikipedia.title }}" loading="lazy" />
+                        </div>
+                        <div class="wiki-text">
+                            <p>{{ widget.Wikipedia.extract }}</p>
+                        </div>
+                    </div>
+                    {% else %}
+                        <div class="wiki-text">
+                            <p>{{ widget.Wikipedia.extract }}</p>
+                        </div>
+                    {% endif %}
+                </div>
+            {% endif %}
+
+            <div class="widget-footer">
+                <small>
+                    Powered by <a href="https://www.wikipedia.org" target="_blank" rel="noopener">Wikipedia</a> • 
+                    Content licensed under <a href="https://creativecommons.org/licenses/by-sa/4.0/" target="_blank" rel="noopener">CC BY-SA 4.0</a>
+                </small>
+            </div>
+        {% endif %}
+    </div>
+</div>
+
+<style>
+    .wikipedia .wiki-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin-bottom: 16px;
+    }
+
+    .wikipedia .wiki-link {
+        display: flex;
+        align-items: center;
+        gap: 6px;
+        color: var(--accent-primary);
+        text-decoration: none;
+        font-size: 0.9em;
+    }
+
+    .wikipedia .wiki-link:hover {
+        text-decoration: underline;
+    }
+
+    .wikipedia .wiki-content {
+        margin: 16px 0;
+    }
+
+    .wikipedia .wiki-text-with-image {
+        display: flex;
+        gap: 16px;
+        align-items: flex-start;
+    }
+
+    .wikipedia .wiki-image {
+        flex-shrink: 0;
+        width: 180px;
+    }
+
+    .wikipedia .wiki-image img {
+        width: 100%;
+        height: auto;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+    }
+
+    .wikipedia .wiki-text {
+        flex-grow: 1;
+        min-width: 0;
+    }
+
+    .wikipedia .wiki-text p {
+        margin: 0;
+        line-height: 1.5;
+    }
+
+    @media (max-width: 600px) {
+        .wikipedia .wiki-text-with-image {
+            flex-direction: column;
+        }
+
+        .wikipedia .wiki-image {
+            width: 120px;
+            float: left;
+            margin: 0 12px 12px 0;
+        }
+    }
+
+    .wikipedia .wiki-footer {
+        display: none;
+    }
+
+    .wikipedia .wiki-footer a {
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+
+    .wikipedia .wiki-footer a:hover {
+        text-decoration: underline;
+    }
+
+    .wikipedia .error {
+        color: var(--error-color);
+        text-align: center;
+        padding: 20px;
+    }
+
+    .wikipedia .wiki-disambiguation {
+        margin: 16px 0;
+    }
+
+    .wikipedia .alternatives-list {
+        list-style: none;
+        padding: 0;
+        margin: 16px 0;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        overflow: hidden;
+    }
+
+    .wikipedia .alternative {
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .wikipedia .alternative:last-child {
+        border-bottom: none;
+    }
+
+    .wikipedia .alternative a {
+        display: block;
+        padding: 12px 16px;
+        color: var(--text-primary);
+        text-decoration: none;
+        transition: background-color 0.2s;
+    }
+
+    .wikipedia .alternative a:hover {
+        background: var(--bg-tertiary);
+    }
+
+    .wikipedia .alt-title {
+        color: var(--accent-primary);
+        font-weight: 500;
+    }
+
+    .wikipedia .alt-description {
+        margin-left: 8px;
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+
+    .wikipedia .article-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 16px;
+        flex-wrap: wrap;
+        margin: 12px 0 16px 0;
+        padding-bottom: 12px;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .wikipedia .article-title {
+        margin: 0;
+        font-size: 1.1em;
+        color: var(--accent-primary);
+    }
+</style>

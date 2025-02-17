@@ -1,0 +1,102 @@
+{% include "widgets/common_style.html" %}
+
+<div class="widget formula">
+    <div class="widget-content">
+        <h3 class="widget-title">{{ widget.Formula.category | title }} Formulas</h3>
+        <div class="formulas-grid">
+            {% for formula in widget.Formula.formulas %}
+            <div class="formula-card">
+                <div class="formula-header">
+                    <span class="formula-name">{{ formula.name }}</span>
+                </div>
+                <div class="formula-body">
+                    <div class="formula-display">{{ formula.formula }}</div>
+                    <div class="formula-variables">
+                        <div class="variables-title">Where:</div>
+                        <div class="variables-list">
+                            {% for var in formula.variables %}
+                                <div class="variable">{{ var }}</div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
+</div>
+
+<style>
+    .formula .formulas-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+        gap: 16px;
+        padding: 8px 0;
+    }
+
+    .formula .formula-card {
+        background: var(--bg-secondary);
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .formula .formula-card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+    }
+
+    .formula .formula-header {
+        background: var(--bg-tertiary);
+        padding: 12px;
+        border-radius: 8px 8px 0 0;
+        border-bottom: 1px solid var(--border-color);
+    }
+
+    .formula .formula-name {
+        font-weight: bold;
+        color: var(--accent-primary);
+        font-size: 1.1em;
+    }
+
+    .formula .formula-body {
+        padding: 12px;
+    }
+
+    .formula .formula-display {
+        font-family: 'Fira Code', monospace;
+        font-size: 1.2em;
+        padding: 12px;
+        margin: 8px 0;
+        background: var(--bg-tertiary);
+        border-radius: 6px;
+        text-align: center;
+        color: var(--accent-secondary);
+    }
+
+    .formula .formula-variables {
+        margin-top: 12px;
+        font-size: 0.9em;
+    }
+
+    .formula .variables-title {
+        color: var(--text-secondary);
+        margin-bottom: 4px;
+        font-weight: 500;
+    }
+
+    .formula .variables-list {
+        padding-left: 12px;
+    }
+
+    .formula .variable {
+        color: var(--text-secondary);
+        padding: 2px 0;
+    }
+
+    @media (max-width: 600px) {
+        .formula .formulas-grid {
+            grid-template-columns: 1fr;
+        }
+    }
+</style>

@@ -107,6 +107,9 @@
                 </details>
             </div>
         {% endif %}
+        <div class="widget-footer">
+            <small>Powered by <a href="https://nominatim.org" target="_blank" rel="noopener">Nominatim</a> and <a href="https://open-meteo.com" target="_blank" rel="noopener">Open-Meteo</a></small>
+        </div>
     </div>
 </div>
 
@@ -428,5 +431,21 @@
             flex-direction: row; /* Keep icon and text side by side */
             padding: 10px;
         }
+    }
+
+    .weather .weather-footer {
+        margin-top: 12px;
+        color: var(--text-secondary);
+        text-align: right;
+        font-size: 0.9em;
+    }
+
+    .weather .weather-footer a {
+        color: var(--accent-primary);
+        text-decoration: none;
+    }
+
+    .weather .weather-footer a:hover {
+        text-decoration: underline;
     }
 </style>

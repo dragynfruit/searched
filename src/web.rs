@@ -1,5 +1,5 @@
-use std::{path::PathBuf, process, sync::Arc};
 use log::{debug, error, info};
+use std::{path::PathBuf, process, sync::Arc};
 
 use axum::{
     extract::{Extension, Query, State},
@@ -17,10 +17,12 @@ use tokio::sync::RwLock;
 use tower_http::services::ServeDir;
 
 use crate::{
-    modules::{self, text_matcher::highlight_text, url_cleaner}, settings::{
+    modules::{self, text_matcher::highlight_text, url_cleaner},
+    settings::{
         export_settings, import_settings, import_settings_form, settings_middleware,
         update_settings, Settings,
-    }, widgets, AppState
+    },
+    widgets, AppState,
 };
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
@@ -99,7 +101,7 @@ pub async fn search_results(
     State(st): State<AppState>,
 ) -> impl IntoResponse {
     debug!("Handling search request with params: {:?}", params);
-    
+
     let mut context = Context::new();
     context.insert("settings", &settings);
 

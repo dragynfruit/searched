@@ -223,6 +223,24 @@
 				{% if widget is containing("Metronome") %}
                     {% include "widgets/metronome.html" %}
                 {% endif %}
+                {% if widget is containing("Formula") %}
+                    {% include "widgets/formula.html" %}
+                {% endif %}
+                {% if widget is containing("Password") %}
+                    {% include "widgets/password.html" %}
+                {% endif %}
+                {% if widget is containing("Wikipedia") %}
+                    {% include "widgets/wikipedia.html" %}
+                {% endif %}
+                {% if widget is containing("Joke") %}
+                    {% include "widgets/joke.html" %}
+                {% endif %}
+				{% if widget is containing("Xkcd") %}
+					{% include "widgets/xkcd.html" %}
+				{% endif %}
+				{% if widget is containing("QuickAccess") %}
+					{% include "widgets/quick_access.html" %}
+				{% endif %}
             </div>
         {% endif %}
         <div id="results" class="{% if settings.compact_view %}compact-view{% endif %}">

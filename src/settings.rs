@@ -7,10 +7,10 @@ use axum::{
 };
 use axum_extra::extract::CookieJar;
 use base64::{engine::general_purpose, Engine as _};
+use log::{debug, info, warn};
 use searched::SafeSearch;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
-use log::{debug, info, warn};
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Settings {

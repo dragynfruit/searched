@@ -4,9 +4,8 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::Serialize;
 
-static CALCULATOR_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^(?i)(?:calc(?:ulate)?|calculator|=)\s*(?:(?P<expr>.+)|$)$").unwrap()
-});
+static CALCULATOR_RE: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^(?i)(?:calc(?:ulator)?|=)\s*(?P<expr>.+)?$").unwrap());
 
 #[derive(Debug, Serialize)]
 pub struct Calculator {
@@ -23,6 +22,11 @@ pub enum CalcMode {
 
 impl Calculator {
     pub fn detect(query: &str) -> Option<Self> {
+        let query = query.trim();
+        // Skip if query is shorter than "="
+        if query.is_empty() {
+            return None;
+        }
         let query = decode_html_entities(query.trim()).ok()?;
 
         // Check for calculator command patterns
