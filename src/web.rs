@@ -1,4 +1,5 @@
 use log::{debug, error, info};
+use reqwest::Client; // Add this import
 use std::{path::PathBuf, process, sync::Arc};
 
 use axum::{
@@ -14,6 +15,7 @@ use searched::Kind;
 use serde::Deserialize;
 use tera::{Context, Tera};
 use tokio::sync::RwLock;
+use tokio::try_join;
 use tower_http::services::ServeDir;
 
 use crate::{
@@ -95,6 +97,20 @@ pub async fn index(Extension(settings): Extension<Settings>) -> impl IntoRespons
     Html(rendered).into_response()
 }
 
+// Modify helper function to return Result
+async fn detect_widget_async(
+    query: &str,
+    client: &Client,
+    db: &sled::Db,
+    enable_widgets: bool,
+) -> Result<Option<widgets::Widget>, ()> {
+    Ok(if !enable_widgets {
+        None
+    } else {
+        widgets::detect_widget(query, client, db).await
+    })
+}
+
 pub async fn search_results(
     Extension(settings): Extension<Settings>,
     Query(params): Query<SearchParams>,
@@ -110,13 +126,6 @@ pub async fn search_results(
             return Redirect::to("https://rust-lang.org").into_response();
         }
 
-        // Check for widgets if enabled
-        if settings.enable_widgets {
-            if let Some(widget) = widgets::detect_widget(&q, &st.client, &st.db).await {
-                context.insert("widget", &widget);
-            }
-        }
-
         let kind = params.k.unwrap_or_default();
         let query = searched::Query {
             provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
@@ -128,39 +137,47 @@ pub async fn search_results(
         };
 
         let search_start = std::time::Instant::now();
-        let mut results = if query.provider == "all" {
-            vec![] // TODO: Implement all-provider search
-        } else {
-            let mut results = st.eng.search(query.clone()).await;
 
-            // Clean and process results
-            for result in &mut results {
-                // Strip HTML from title and snippet
-                result.title = strip_html_tags(&result.title);
-                if let Some(general) = &mut result.general {
-                    if let Some(snippet) = &general.snippet {
-                        general.snippet = Some(strip_html_tags(snippet));
-                    }
-                }
+        // Run widget detection and search concurrently with proper Result handling
+        let (widget_result, search_results) = try_join!(
+            detect_widget_async(&q, &st.client, &st.db, settings.enable_widgets),
+            async {
+                Ok::<_, ()>(if query.provider == "all" {
+                    vec![] // TODO: Implement all-provider search
+                } else {
+                    st.eng.search(query.clone()).await
+                })
+            }
+        )
+        .unwrap_or((None, vec![]));
 
-                // Only highlight titles if enabled
-                if settings.bold_terms {
-                    result.title = highlight_text(&result.title, &q);
+        let mut search_results = search_results;
+
+        // Process search results
+        for result in &mut search_results {
+            result.title = strip_html_tags(&result.title);
+            if let Some(general) = &mut result.general {
+                if let Some(snippet) = &general.snippet {
+                    general.snippet = Some(strip_html_tags(snippet));
                 }
             }
 
-            results
-        };
+            if settings.bold_terms {
+                result.title = highlight_text(&result.title, &q);
+            }
 
-        // Clean tracking from URLs if enabled
-        if settings.remove_tracking {
-            for result in &mut results {
+            if settings.remove_tracking {
                 result.url = url_cleaner::clean_url(&result.url);
             }
         }
 
         let search_time = search_start.elapsed().as_millis();
         debug!("Search completed in {}ms", search_time);
+
+        // Add widget if detected
+        if let Some(widget) = widget_result {
+            context.insert("widget", &widget);
+        }
 
         // Use the Kind's string value for the template
         match kind {
@@ -176,7 +193,7 @@ pub async fn search_results(
         }
 
         context.insert("query", &query);
-        context.insert("results", &results);
+        context.insert("results", &search_results);
         context.insert("search_time", &search_time);
 
         let rendered = TERA.read().await.render("results.html", &context).unwrap();
