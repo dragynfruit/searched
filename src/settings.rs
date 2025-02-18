@@ -7,7 +7,7 @@ use axum::{
 };
 use axum_extra::extract::CookieJar;
 use base64::{engine::general_purpose, Engine as _};
-use log::{debug, info, warn};
+use log::{debug, warn};
 use searched::SafeSearch;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
@@ -215,7 +215,7 @@ pub async fn settings_middleware(jar: CookieJar, mut request: Request, next: Nex
 }
 
 pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> impl IntoResponse {
-    info!("Updating settings: {:?}", params);
+    debug!("Updating settings: {:?}", params);
     if params.contains_key("reset") {
         let settings = Settings::default();
         let cookie = settings.to_cookies();
