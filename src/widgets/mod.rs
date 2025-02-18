@@ -57,12 +57,12 @@ pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Optio
         return Some(Widget::QuickAccess(quick_access));
     }
 
-    if let Some(calculator) = Calculator::detect(query) {
-        return Some(Widget::Calculator(calculator));
-    }
-
     if let Some(converter) = UnitConverter::detect(query) {
         return Some(Widget::UnitConverter(converter));
+    }
+
+    if let Some(calculator) = Calculator::detect(query) {
+        return Some(Widget::Calculator(calculator));
     }
 
     if let Some(timer) = Timer::detect(query) {
@@ -101,11 +101,11 @@ pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Optio
         return Some(Widget::Password(passowrd));
     }
 
-    if let Some(xkcd) = Xkcd::detect(query, client).await {
+    if let Some(xkcd) = Xkcd::detect(query, client, db).await {
         return Some(Widget::Xkcd(xkcd));
     }
 
-    if let Some(wikipedia) = Wikipedia::detect(query, client).await {
+    if let Some(wikipedia) = Wikipedia::detect(query, client, db).await {
         return Some(Widget::Wikipedia(wikipedia));
     }
 
