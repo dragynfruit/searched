@@ -52,7 +52,7 @@ impl Joke {
 
     async fn fetch_joke(category: &str, client: &Client) -> Option<Self> {
         let url = format!(
-            "https://v2.jokeapi.dev/joke/{}?safe-mode&blacklistFlags=nsfw,religious,political,racist,sexist,explicit",
+            "https://v2.jokeapi.dev/joke/{}",
             category
         );
 
