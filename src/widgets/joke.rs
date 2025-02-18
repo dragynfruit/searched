@@ -51,10 +51,7 @@ impl Joke {
     }
 
     async fn fetch_joke(category: &str, client: &Client) -> Option<Self> {
-        let url = format!(
-            "https://v2.jokeapi.dev/joke/{}",
-            category
-        );
+        let url = format!("https://v2.jokeapi.dev/joke/{}", category);
 
         match client.get(&url).send().await {
             Ok(response) => {
