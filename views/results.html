@@ -199,9 +199,6 @@
                 {% if widget is containing("Calculator") %}
                     {% include "widgets/calculator.html" %}
                 {% endif %}
-                {% if widget is containing("UnitConverter") %}
-                    {% include "widgets/unit_converter.html" %}
-                {% endif %}
                 {% if widget is containing("Timer") and not settings.no_js %}
                     {% include "widgets/timer.html" %}
                 {% endif %}

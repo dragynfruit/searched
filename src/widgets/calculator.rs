@@ -1,85 +1,69 @@
-use html_entities::decode_html_entities;
-use meval::eval_str;
+extern crate fend_core;
+use fend_core::Context;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::Serialize;
 
-static CALCULATOR_RE: Lazy<Regex> =
-    Lazy::new(|| Regex::new(r"^(?i)(?:calc(?:ulator)?|=)\s*(?P<expr>.+)?$").unwrap());
+static CALC_RE: Lazy<Regex> = Lazy::new(|| {
+    Regex::new(r"(?i)^(?:(?P<prefix>calc(?:ulator)?|convert)\s+)?(?P<expr>.+)$").unwrap()
+});
 
 #[derive(Debug, Serialize)]
 pub struct Calculator {
     pub expression: String,
     pub result: String,
-    pub mode: CalcMode,
-}
-
-#[derive(Debug, Serialize)]
-pub enum CalcMode {
-    Expression, // Direct expression evaluation
-    Calculator, // Interactive calculator mode
 }
 
 impl Calculator {
     pub fn detect(query: &str) -> Option<Self> {
-        let query = query.trim();
-        // Skip if query is shorter than "="
-        if query.is_empty() {
+        let trimmed = query.trim();
+        if trimmed.is_empty() {
             return None;
         }
-        let query = decode_html_entities(query.trim()).ok()?;
-
-        // Check for calculator command patterns
-        if let Some(caps) = CALCULATOR_RE.captures(&query) {
-            if let Some(expr) = caps.name("expr") {
-                // Expression provided - evaluate it
-                return Some(Self::evaluate(expr.as_str().trim(), CalcMode::Expression));
-            } else {
-                // No expression - return empty calculator
-                return Some(Calculator {
-                    expression: String::new(),
-                    result: String::new(),
-                    mode: CalcMode::Calculator,
-                });
-            }
+        let lower = trimmed.to_lowercase();
+        // If the query is exactly "calc" or "calculator", open a blank calculator.
+        if lower == "calc" || lower == "calculator" {
+            return Some(Self {
+                expression: "".to_string(),
+                result: "".to_string(),
+            });
         }
-
-        // Check if the query starts with a number or math symbol
-        if query.starts_with(|c: char| c.is_ascii_digit() || "(-+.".contains(c)) {
-            return Some(Self::evaluate(&query, CalcMode::Expression));
+        // Use regex to parse query.
+        let caps = CALC_RE.captures(trimmed)?;
+        // Get the expression portion.
+        let expr = caps.name("expr")?.as_str().trim();
+        // If no expression is provided, return a blank calculator.
+        if expr.is_empty() {
+            return Some(Self {
+                expression: "".to_string(),
+                result: "".to_string(),
+            });
         }
-
-        None
+        let explicit_conversion = match caps.name("prefix") {
+            Some(m) if m.as_str().to_lowercase() == "convert" => true,
+            _ => false,
+        };
+        // Only accept if expression starts with a digit, math symbol, or contains "to"
+        let first = expr.chars().next()?;
+        if !first.is_ascii_digit() && !"(-+.".contains(first) && !expr.contains("to") {
+            return None;
+        }
+        let calc = Self::evaluate(expr);
+        if !explicit_conversion && calc.result == "Error" {
+            None
+        } else {
+            Some(calc)
+        }
     }
 
-    fn evaluate(expr: &str, mode: CalcMode) -> Self {
-        // Decode any HTML entities in the input expression
-        let decoded_expr = decode_html_entities(expr).unwrap_or_else(|_| expr.to_string());
-        let expression = decoded_expr.clone();
-
-        // Attempt to evaluate the expression
-        match eval_str(&decoded_expr) {
-            Ok(result) => {
-                let result_str = if result.fract() == 0.0 {
-                    result.to_string().trim_end_matches(".0").to_string()
-                } else {
-                    format!("{:.8}", result)
-                        .trim_end_matches('0')
-                        .trim_end_matches('.')
-                        .to_string()
-                };
-
-                Calculator {
-                    expression, // Use decoded expression for display
-                    result: result_str,
-                    mode,
-                }
-            }
-            Err(_) => Calculator {
-                expression, // Use decoded expression for display
-                result: "Error".to_string(),
-                mode,
-            },
+    pub fn evaluate(expr: &str) -> Self {
+        let mut context = Context::new();
+        let result = fend_core::evaluate(expr, &mut context)
+            .map(|r| r.get_main_result().to_string())
+            .unwrap_or_else(|_| "Error".to_string());
+        Calculator {
+            expression: expr.to_string(),
+            result,
         }
     }
 }

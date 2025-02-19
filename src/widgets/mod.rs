@@ -1,3 +1,4 @@
+use calculator::Calculator;
 use reqwest::Client;
 use serde::Serialize;
 
@@ -12,12 +13,10 @@ pub mod password;
 pub mod quick_access;
 pub mod time;
 pub mod timer;
-pub mod unit_converter;
 pub mod weather;
 pub mod wikipedia;
 pub mod xkcd;
 
-use calculator::Calculator;
 use color::Color;
 use dice::DiceRoll;
 use dictionary::Dictionary;
@@ -28,15 +27,13 @@ use password::Password;
 use quick_access::QuickAccess;
 use time::Time;
 use timer::Timer;
-use unit_converter::UnitConverter;
 use weather::Weather;
 use wikipedia::Wikipedia;
 use xkcd::Xkcd;
 
 #[derive(Debug, Serialize)]
 pub enum Widget {
-    Calculator(Calculator),
-    UnitConverter(UnitConverter),
+    Calculator(calculator::Calculator),
     Timer(Timer),
     Dictionary(Dictionary),
     Color(Color),
@@ -53,16 +50,12 @@ pub enum Widget {
 }
 
 pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Option<Widget> {
-    if let Some(quick_access) = QuickAccess::detect(query, client, db).await {
-        return Some(Widget::QuickAccess(quick_access));
-    }
-
-    if let Some(converter) = UnitConverter::detect(query) {
-        return Some(Widget::UnitConverter(converter));
-    }
-
     if let Some(calculator) = Calculator::detect(query) {
         return Some(Widget::Calculator(calculator));
+    }
+
+    if let Some(quick_access) = QuickAccess::detect(query, client, db).await {
+        return Some(Widget::QuickAccess(quick_access));
     }
 
     if let Some(timer) = Timer::detect(query) {

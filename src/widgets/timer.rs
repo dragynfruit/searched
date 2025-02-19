@@ -71,15 +71,15 @@ impl Timer {
     }
 }
 
-// New regex for combined time format.
+// Update regex for combined time format to allow spaces between number and unit.
 static COMBINED_TIME_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"^(?P<number>\d+)(?P<unit>h(?:r(?:s)?)?|hour(?:s)?|m(?:in(?:s)?)?|minute(?:s)?|s(?:ec(?:s)?)?|second(?:s)?|ms|millisecond(?:s)?)$")
+    Regex::new(r"^(?P<number>\d+)\s*(?P<unit>h(?:r(?:s)?)?|hour(?:s)?|m(?:in(?:s)?)?|minute(?:s)?|s(?:ec(?:s)?)?|second(?:s)?|ms|millisecond(?:s)?)$")
         .unwrap()
 });
 
-// New regex for tokenized time parts.
+// Update regex for tokenized time parts to allow spaced units.
 static TIME_TOKEN_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)(?P<number>\d+)(?P<unit>h(?:r(?:s)?)?|hour(?:s)?|m(?:in(?:s)?)?|minute(?:s)?|s(?:ec(?:s)?)?|second(?:s)?|ms|millisecond(?:s)?)")
+    Regex::new(r"(?i)(?P<number>\d+)\s*(?P<unit>h(?:r(?:s)?)?|hour(?:s)?|m(?:in(?:s)?)?|minute(?:s)?|s(?:ec(?:s)?)?|second(?:s)?|ms|millisecond(?:s)?)")
         .unwrap()
 });
 
