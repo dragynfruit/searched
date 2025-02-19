@@ -1,175 +1,153 @@
 {% include "widgets/common_style.html" %}
 
 <div class="widget time">
-    <div class="widget-content">
-        <h3 class="widget-title">Current Time</h3>
-        {% if settings.no_js %}
-            {% set start_hour = ((widget.Time.hour % 12) * 30 + (widget.Time.minute * 0.5)) | round %}
-            {% set start_minute = widget.Time.minute * 6 %}
-            {% set start_second = widget.Time.second * 6 %}
-            {# Set CSS variables on the analog-clock element #}
-            <div class="analog-clock" style="--start-hour: {{ start_hour - 90 }}deg; --start-minute: {{ start_minute - 90 }}deg; --start-second: {{ start_second - 90 }}deg;">
-                <div class="clock-face">
-                    <!-- New hour markings container -->
-                    <div class="hour-markings">
-                        <div class="hour-number" style="transform: rotate(-90deg) translate(80px) rotate(90deg) translate(-50%, -50%);">12</div>
-                        <div class="hour-number" style="transform: rotate(-60deg) translate(80px) rotate(60deg) translate(-50%, -50%);">1</div>
-                        <div class="hour-number" style="transform: rotate(-30deg) translate(80px) rotate(30deg) translate(-50%, -50%);">2</div>
-                        <div class="hour-number" style="transform: rotate(0deg) translate(80px) rotate(0deg) translate(-50%, -50%);">3</div>
-                        <div class="hour-number" style="transform: rotate(30deg) translate(80px) rotate(-30deg) translate(-50%, -50%);">4</div>
-                        <div class="hour-number" style="transform: rotate(60deg) translate(80px) rotate(-60deg) translate(-50%, -50%);">5</div>
-                        <div class="hour-number" style="transform: rotate(90deg) translate(80px) rotate(-90deg) translate(-50%, -50%);">6</div>
-                        <div class="hour-number" style="transform: rotate(120deg) translate(80px) rotate(-120deg) translate(-50%, -50%);">7</div>
-                        <div class="hour-number" style="transform: rotate(150deg) translate(80px) rotate(-150deg) translate(-50%, -50%);">8</div>
-                        <div class="hour-number" style="transform: rotate(180deg) translate(80px) rotate(-180deg) translate(-50%, -50%);">9</div>
-                        <div class="hour-number" style="transform: rotate(-150deg) translate(80px) rotate(150deg) translate(-50%, -50%);">10</div>
-                        <div class="hour-number" style="transform: rotate(-120deg) translate(80px) rotate(120deg) translate(-50%, -50%);">11</div>
-                    </div>
-                    <div class="hand hour-hand"></div>
-                    <div class="hand minute-hand"></div>
-                    <div class="hand second-hand"></div>
-                </div>
+    <div class="widget-content" style="padding: 16px; text-align: center;">
+        <div id="clock-container">
+            <span id="clock">
+                <span id="h0">12</span>
+                <span id="h1">&nbsp;1</span>
+                <span id="h2">&nbsp;2</span>
+                <span id="h3">&nbsp;3</span>
+                <span id="h4">&nbsp;4</span>
+                <span id="h5">&nbsp;5</span>
+                <span id="h6">&nbsp;6</span>
+                <span id="h7">&nbsp;7</span>
+                <span id="h8">&nbsp;8</span>
+                <span id="h9">&nbsp;9</span>
+                <span id="h10">10</span>
+                <span id="h11">11</span>
+
+                <span class="colon">:</span>
+
+                <span id="mh0">0</span>
+                <span id="mh1">1</span>
+                <span id="mh2">2</span>
+                <span id="mh3">3</span>
+                <span id="mh4">4</span>
+                <span id="mh5">5</span>
+
+                <span id="ml0">0</span>
+                <span id="ml1">1</span>
+                <span id="ml2">2</span>
+                <span id="ml3">3</span>
+                <span id="ml4">4</span>
+                <span id="ml5">5</span>
+                <span id="ml6">6</span>
+                <span id="ml7">7</span>
+                <span id="ml8">8</span>
+                <span id="ml9">9</span>
+
+                <span class="colon">:</span>
+
+                <span id="sh0">0</span>
+                <span id="sh1">1</span>
+                <span id="sh2">2</span>
+                <span id="sh3">3</span>
+                <span id="sh4">4</span>
+                <span id="sh5">5</span>
+
+                <span id="sl0">0</span>
+                <span id="sl1">1</span>
+                <span id="sl2">2</span>
+                <span id="sl3">3</span>
+                <span id="sl4">4</span>
+                <span id="sl5">5</span>
+                <span id="sl6">6</span>
+                <span id="sl7">7</span>
+                <span id="sl8">8</span>
+                <span id="sl9">9</span>
+            </span>
+            <br>
+            <div style="margin-top: 16px; color: var(--text-secondary); font-size: 0.9em; text-align: center;">
+                <div>{{ widget.Time.current_date }}</div>
+                <div>{{ widget.Time.current_time }} {{ widget.Time.timezone }}</div>
             </div>
-            <!-- Display server-calculated date/time -->
-            <div class="server-time" style="text-align: center; margin-top: 12px; font-size: 0.9em; color: var(--text-secondary);">
-                Server time: {{ widget.Time.current_date }} {{ widget.Time.current_time }}
-            </div>
-        {% else %}
-            <!-- Digital clock version -->
-            <div class="time-display">
-                <div class="time" id="current-time">{{ widget.Time.current_time }}</div>
-                <div class="date" id="current-date">{{ widget.Time.current_date }}</div>
-                <div class="timezone">{{ widget.Time.timezone }}</div>
-            </div>
-        {% endif %}
+        </div>
+        <div class="widget-footer">
+            Powered by <a href="https://github.com/chronotope/chrono" target="_blank">chrono</a>
+        </div>
     </div>
 </div>
 
 <style>
-    .time .time-display {
-        text-align: center;
-        padding: 20px;
-        background: var(--bg-tertiary);
-        border-radius: 12px;
+    :root {
+        --anim-font-size: 100px;
     }
-
-    .time .time {
-        font-size: 3em;
-        font-weight: bold;
+    #clock {
+        font-size: 0;
+        font-family: monospace;
         color: var(--accent-primary);
-        font-variant-numeric: tabular-nums;
-        line-height: 1.2;
+        display: inline-block;
+        text-align: center;
+    }
+    span.colon {
+        font-size: var(--anim-font-size);
+    }
+    /* Seconds styling */
+    span#sl0 { animation: ten 10s linear infinite; }
+    span#sl1 { animation: ten 10s linear infinite 1s; }
+    span#sl2 { animation: ten 10s linear infinite 2s; }
+    span#sl3 { animation: ten 10s linear infinite 3s; }
+    span#sl4 { animation: ten 10s linear infinite 4s; }
+    span#sl5 { animation: ten 10s linear infinite 5s; }
+    span#sl6 { animation: ten 10s linear infinite 6s; }
+    span#sl7 { animation: ten 10s linear infinite 7s; }
+    span#sl8 { animation: ten 10s linear infinite 8s; }
+    span#sl9 { animation: ten 10s linear infinite 9s; }
+    /* Minutes tens */
+    span#mh0 { animation: six 3600s linear infinite; }
+    span#mh1 { animation: six 3600s linear infinite 600s; }
+    span#mh2 { animation: six 3600s linear infinite 1200s; }
+    span#mh3 { animation: six 3600s linear infinite 1800s; }
+    span#mh4 { animation: six 3600s linear infinite 2400s; }
+    span#mh5 { animation: six 3600s linear infinite 3000s; }
+    /* Minutes ones */
+    span#ml0 { animation: ten 600s linear infinite; }
+    span#ml1 { animation: ten 600s linear infinite 60s; }
+    span#ml2 { animation: ten 600s linear infinite 120s; }
+    span#ml3 { animation: ten 600s linear infinite 180s; }
+    span#ml4 { animation: ten 600s linear infinite 240s; }
+    span#ml5 { animation: ten 600s linear infinite 300s; }
+    span#ml6 { animation: ten 600s linear infinite 360s; }
+    span#ml7 { animation: ten 600s linear infinite 420s; }
+    span#ml8 { animation: ten 600s linear infinite 480s; }
+    span#ml9 { animation: ten 600s linear infinite 540s; }
+    /* Seconds tens */
+    span#sh0 { animation: six 60s linear infinite; }
+    span#sh1 { animation: six 60s linear infinite 10s; }
+    span#sh2 { animation: six 60s linear infinite 20s; }
+    span#sh3 { animation: six 60s linear infinite 30s; }
+    span#sh4 { animation: six 60s linear infinite 40s; }
+    span#sh5 { animation: six 60s linear infinite 50s; }
+    /* Hours */
+    span#h0 { animation: twelve 43200s linear infinite; }
+    span#h1 { animation: twelve 43200s linear infinite 3600s; }
+    span#h2 { animation: twelve 43200s linear infinite 7200s; }
+    span#h3 { animation: twelve 43200s linear infinite 10800s; }
+    span#h4 { animation: twelve 43200s linear infinite 14400s; }
+    span#h5 { animation: twelve 43200s linear infinite 18000s; }
+    span#h6 { animation: twelve 43200s linear infinite 21600s; }
+    span#h7 { animation: twelve 43200s linear infinite 25200s; }
+    span#h8 { animation: twelve 43200s linear infinite 28800s; }
+    span#h9 { animation: twelve 43200s linear infinite 32400s; }
+    span#h10 { animation: twelve 43200s linear infinite 36000s; }
+    span#h11 { animation: twelve 43200s linear infinite 39600s; }
+
+    @keyframes ten { 
+        0%, 9.9999% { font-size: var(--anim-font-size); } 
+        10%, 100% { font-size: 0; } 
+    }
+    @keyframes six { 
+        0%, 16.6666% { font-size: var(--anim-font-size); } 
+        16.6667%, 100% { font-size: 0; } 
+    }
+    @keyframes twelve { 
+        0%, 8.33332% { font-size: var(--anim-font-size); } 
+        8.33333%, 100% { font-size: 0; } 
     }
 
-    .time .date {
-        color: var(--text-primary);
-        font-size: 1.2em;
-        margin: 8px 0;
-    }
-
-    .time .timezone {
-        color: var(--text-secondary);
-        font-size: 0.9em;
-    }
-
-    /* Analog clock styles for no-js mode */
-    .analog-clock {
-        position: relative;
-        width: 200px;
-        height: 200px;
-        border: 8px solid var(--bg-input);
-        border-radius: 50%;
-        margin: 0 auto;
-        background: white;
-    }
-    .clock-face {
-        position: relative;
-        width: 100%;
-        height: 100%;
-    }
-    .hand {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform-origin: 0% 50%;
-        border-radius: 6px;
-    }
-    .hour-hand {
-        width: 30%;
-        height: 8px;
-        background: var(--text-primary);
-        transform: rotate(var(--start-hour));
-        animation: rotate-hour 43200s linear infinite;
-    }
-    .minute-hand {
-        width: 40%;
-        height: 6px;
-        background: var(--accent-primary);
-        transform: rotate(var(--start-minute));
-        animation: rotate-minute 3600s linear infinite;
-    }
-    .second-hand {
-        width: 45%;
-        height: 4px;
-        background: var(--text-secondary);
-        transform: rotate(var(--start-second));
-        animation: rotate-second 60s steps(60, end) infinite;
-    }
-    @keyframes rotate-hour {
-        from { transform: rotate(var(--start-hour)); }
-        to { transform: rotate(calc(var(--start-hour) + 360deg)); }
-    }
-    @keyframes rotate-minute {
-        from { transform: rotate(var(--start-minute)); }
-        to { transform: rotate(calc(var(--start-minute) + 360deg)); }
-    }
-    @keyframes rotate-second {
-        from { transform: rotate(var(--start-second)); }
-        to { transform: rotate(calc(var(--start-second) + 360deg)); }
-    }
-    .hour-markings {
-        position: absolute;
-        width: 100%;
-        height: 100%;
-        top: 0;
-        left: 0;
-    }
-    .hour-number {
-        position: absolute;
-        top: 50%;
-        left: 50%;
-        transform-origin: center;
-        font-size: 1em;
-        color: var(--text-primary);
+    @media screen and (max-width: 540px) {
+        :root { --anim-font-size: 50px; }
+        span.colon { font-size: var(--anim-font-size); }
     }
 </style>
-
-{% if not settings.no_js %}
-<script>
-    function updateTime() {
-        const now = new Date();
-        const timeElement = document.getElementById('current-time');
-        const dateElement = document.getElementById('current-date');
-        
-        // Update time
-        timeElement.textContent = now.toLocaleTimeString('en-US', {
-            hour12: false,
-            hour: '2-digit',
-            minute: '2-digit',
-            second: '2-digit'
-        });
-        
-        // Update date
-        dateElement.textContent = now.toLocaleDateString('en-US', {
-            weekday: 'long',
-            year: 'numeric',
-            month: 'long',
-            day: 'numeric'
-        });
-    }
-
-    // Update immediately and then every second
-    updateTime();
-    setInterval(updateTime, 1000);
-</script>
-{% endif %}
