@@ -69,8 +69,15 @@ pub struct HourlyForecast {
 }
 
 #[derive(Debug, Serialize)]
+pub struct LocationDisplay {
+    pub city: String,
+    pub region: String,
+    pub country: String,
+}
+
+#[derive(Debug, Serialize)]
 pub struct Weather {
-    pub location: String,
+    pub location: LocationDisplay, // Changed from String to LocationDisplay
     pub temperature: f64,
     pub feels_like: f64,
     pub humidity: i32,
@@ -87,7 +94,73 @@ pub struct Weather {
 struct CachedCoords {
     lat: f64,
     lon: f64,
+    display_name: String,
     timestamp: u64,
+}
+
+impl LocationDisplay {
+    fn from_display_name(display_name: &str) -> Self {
+        let parts: Vec<&str> = display_name.split(", ").collect();
+
+        // Check if it's likely an address (first part contains numbers)
+        let has_number = parts
+            .first()
+            .map(|p| p.chars().any(char::is_numeric))
+            .unwrap_or(false);
+
+        if has_number && parts.len() > 1 {
+            // If it's an address, use the city part (usually the second or third component)
+            // Try to find the first part that's not a number and not a street/road/etc
+            let city_part = parts
+                .iter()
+                .skip(1) // Skip the street number/name
+                .find(|&p| {
+                    !p.chars().any(char::is_numeric)
+                        && !p.to_lowercase().contains("street")
+                        && !p.to_lowercase().contains("road")
+                        && !p.to_lowercase().contains("avenue")
+                        && !p.to_lowercase().contains("drive")
+                })
+                .unwrap_or(&parts[1]); // Fallback to second part if no city found
+
+            // Find the country (usually last part)
+            let country = parts.last().unwrap_or(&"").to_string();
+
+            // Region is everything between city and country
+            let region_start = parts.iter().position(|&p| p == *city_part).unwrap_or(1) + 1;
+            let region_end = parts.len() - 1;
+            let region = if region_start < region_end {
+                parts[region_start..region_end].join(", ")
+            } else {
+                String::new()
+            };
+
+            LocationDisplay {
+                city: city_part.to_string(),
+                region,
+                country,
+            }
+        } else {
+            // Original logic for non-address locations
+            let len = parts.len();
+            let (city, region, country) = match len {
+                0 => ("Unknown".to_string(), "".to_string(), "".to_string()),
+                1 => (parts[0].to_string(), "".to_string(), "".to_string()),
+                2 => (parts[0].to_string(), "".to_string(), parts[1].to_string()),
+                _ => (
+                    parts[0].to_string(),
+                    parts[1..len - 1].join(", "),
+                    parts[len - 1].to_string(),
+                ),
+            };
+
+            LocationDisplay {
+                city,
+                region,
+                country,
+            }
+        }
+    }
 }
 
 impl Weather {
@@ -106,7 +179,7 @@ impl Weather {
         // Fallback: if a generic weather query is detected, use a default place or return dummy data.
         if WEATHER_QUERY_RE.is_match(query) {
             return Some(Weather {
-                location: "Default Location".to_string(),
+                location: LocationDisplay::from_display_name("Default Location"),
                 temperature: 25.0,
                 feels_like: 25.0,
                 humidity: 50,
@@ -124,10 +197,10 @@ impl Weather {
 
     async fn fetch_weather(location: &str, client: &Client, db: &sled::Db) -> Option<Self> {
         // Get coordinates with caching
-        let coords = Self::get_coordinates(location, client, db).await?;
+        let (lat, lon, display_name) = Self::get_coordinates(location, client, db).await?;
         let weather_cache = db.open_tree("weather").ok()?;
 
-        let cache_key = format!("{}_{}", coords.0, coords.1);
+        let cache_key = format!("{}_{}", lat, lon);
 
         // Check weather cache first
         if let Ok(Some(cached)) = weather_cache.get(cache_key.as_bytes()) {
@@ -138,14 +211,14 @@ impl Weather {
                     .as_secs();
                 // Use cache if less than 1 hour old
                 if now - cached_weather.timestamp < 60 * 60 {
-                    return Self::build_weather_response(location, &cached_weather.weather);
+                    return Self::build_weather_response(&display_name, &cached_weather.weather);
                 }
             }
         }
 
         let url = format!(
             "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
-            coords.0, coords.1
+            lat, lon
         );
 
         match client.get(&url).send().await {
@@ -170,16 +243,16 @@ impl Weather {
                             Some(())
                         });
 
-                        return Self::build_weather_response(location, &weather);
+                        return Self::build_weather_response(&display_name, &weather);
                     }
                 }
                 Some(Weather::error_response(
-                    location,
+                    &display_name,
                     "Failed to fetch weather data",
                 ))
             }
             Err(_) => Some(Weather::error_response(
-                location,
+                &display_name,
                 "Failed to connect to weather service",
             )),
         }
@@ -210,7 +283,7 @@ impl Weather {
             .collect();
 
         Some(Weather {
-            location: location.to_string(),
+            location: LocationDisplay::from_display_name(location),
             temperature: weather.current.temperature_2m,
             feels_like: weather.current.apparent_temperature,
             humidity: weather.current.relative_humidity_2m,
@@ -224,7 +297,11 @@ impl Weather {
         })
     }
 
-    async fn get_coordinates(location: &str, client: &Client, db: &sled::Db) -> Option<(f64, f64)> {
+    async fn get_coordinates(
+        location: &str,
+        client: &Client,
+        db: &sled::Db,
+    ) -> Option<(f64, f64, String)> {
         let locations = db.open_tree("locations").ok()?;
         let location_key = location.to_lowercase();
 
@@ -237,7 +314,7 @@ impl Weather {
                     .ok()?
                     .as_secs();
                 if now - coords.timestamp < 24 * 60 * 60 {
-                    return Some((coords.lat, coords.lon));
+                    return Some((coords.lat, coords.lon, coords.display_name));
                 }
             }
         }
@@ -251,6 +328,7 @@ impl Weather {
         struct NominatimResponse {
             lat: String,
             lon: String,
+            display_name: String,
         }
 
         // Fetch fresh coordinates
@@ -264,6 +342,8 @@ impl Weather {
                 if let Ok(loc_results) = response.json::<Vec<NominatimResponse>>().await {
                     if let Some(loc) = loc_results.first() {
                         if let (Ok(lat), Ok(lon)) = (loc.lat.parse(), loc.lon.parse()) {
+                            let display_name = loc.display_name.clone();
+
                             // Cache the coordinates asynchronously
                             let locations = locations.clone();
                             let location_key = location_key.clone();
@@ -271,6 +351,7 @@ impl Weather {
                                 let cached = CachedCoords {
                                     lat,
                                     lon,
+                                    display_name,
                                     timestamp: std::time::SystemTime::now()
                                         .duration_since(std::time::UNIX_EPOCH)
                                         .ok()?
@@ -282,7 +363,7 @@ impl Weather {
                                 Some(())
                             });
 
-                            return Some((lat, lon));
+                            return Some((lat, lon, loc.display_name.clone()));
                         }
                     }
                 }
@@ -294,7 +375,7 @@ impl Weather {
 
     fn error_response(location: &str, error: &str) -> Self {
         Weather {
-            location: location.to_string(),
+            location: LocationDisplay::from_display_name(location),
             temperature: 0.0,
             feels_like: 0.0,
             humidity: 0,

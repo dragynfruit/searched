@@ -2,15 +2,18 @@
 
 <div class="widget weather">
     <div class="widget-content">
-        <h3 class="widget-title">Weather</h3>
         {% if widget.Weather.error %}
             <div class="error">{{ widget.Weather.error }}</div>
         {% else %}
             <div class="weather-main-section">
-                <!-- Location and main weather -->
+                <!-- Main weather display -->
                 <div class="weather-primary">
                     <div class="location-info">
-                        <h2 class="location">{{ widget.Weather.location }}</h2>
+                        <h2 class="city">{{ widget.Weather.location.city }}</h2>
+                        {% if widget.Weather.location.region != "" %}
+                            <div class="region">{{ widget.Weather.location.region }}</div>
+                        {% endif %}
+                        <div class="country">{{ widget.Weather.location.country }}</div>
                         <div class="weather-condition">
                             {% if widget.Weather.weather_code == 0 %}Clear sky
                             {% elif widget.Weather.weather_code == 1 %}Mainly clear
@@ -55,8 +58,8 @@
                                 {% endif %}
                             {% endif %}
                         </div>
-                        <div class="temperature">{{ widget.Weather.temperature | round }}°</div>
-                        <div class="feels-like">Feels like {{ widget.Weather.feels_like | round }}°</div>
+                        <div class="temperature">{{ widget.Weather.temperature | round }}°F</div>
+                        <div class="feels-like">Feels like {{ widget.Weather.feels_like | round }}°F</div>
                     </div>
                 </div>
 
@@ -114,31 +117,34 @@
 </div>
 
 <style>
-    .weather .weather-main-section {
-        background: var(--bg-tertiary);
-        border-radius: 12px;
-        padding: 20px;
-        margin-bottom: 16px;
-    }
-
     .weather .weather-primary {
         display: flex;
         justify-content: space-between;
-        align-items: flex-start;
+        align-items: center;
         margin-bottom: 24px;
     }
 
-    .weather .location {
+    .weather .location-info {
+        text-align: left;
+    }
+
+    .weather .city {
         font-size: 1.8em;
         margin: 0;
         color: var(--text-primary);
         font-weight: 600;
     }
 
+    .weather .region,
+    .weather .country {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+
     .weather .weather-condition {
         color: var(--text-secondary);
         font-size: 1.1em;
-        margin-top: 4px;
+        margin-top: 8px;
     }
 
     .weather .current-weather {
@@ -447,5 +453,45 @@
 
     .weather .weather-footer a:hover {
         text-decoration: underline;
+    }
+
+    .widget.weather .location-container {
+        text-align: center;
+        margin-bottom: 1rem;
+    }
+    .widget.weather .city {
+        font-size: 1.5em;
+        font-weight: bold;
+        color: var(--text-primary);
+    }
+    .widget.weather .region {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+    }
+    .widget.weather .country {
+        font-size: 0.9em;
+        color: var(--text-secondary);
+    }
+    .widget.weather .weather-main {
+        text-align: center;
+        margin: 1rem 0;
+    }
+    .widget.weather .temperature {
+        font-size: 2.5em;
+        font-weight: bold;
+        color: var(--accent-primary);
+    }
+    .widget.weather .feels-like {
+        font-size: 1.1em;
+        color: var(--text-secondary);
+    }
+    .widget.weather .conditions {
+        margin-top: 1rem;
+        color: var(--text-secondary);
+    }
+    .widget.weather .error {
+        color: var(--error);
+        text-align: center;
+        margin: 1rem 0;
     }
 </style>
