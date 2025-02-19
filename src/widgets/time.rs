@@ -1,4 +1,4 @@
-use chrono::{DateTime, Local};
+use chrono::{DateTime, Local, Timelike};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::Serialize;
@@ -13,6 +13,9 @@ pub struct Time {
     pub current_time: String,
     pub current_date: String,
     pub timezone: String,
+    pub hour: u32,
+    pub minute: u32,
+    pub second: u32,
 }
 
 impl Time {
@@ -25,6 +28,9 @@ impl Time {
             current_time: now.format("%H:%M:%S").to_string(),
             current_date: now.format("%A, %B %d, %Y").to_string(),
             timezone: now.format("%Z").to_string(),
+            hour: now.hour(),
+            minute: now.minute(),
+            second: now.second(),
         })
     }
 }

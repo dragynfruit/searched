@@ -3,11 +3,45 @@
 <div class="widget time">
     <div class="widget-content">
         <h3 class="widget-title">Current Time</h3>
-        <div class="time-display">
-            <div class="time" id="current-time">{{ widget.Time.current_time }}</div>
-            <div class="date" id="current-date">{{ widget.Time.current_date }}</div>
-            <div class="timezone">{{ widget.Time.timezone }}</div>
-        </div>
+        {% if settings.no_js %}
+            {% set start_hour = ((widget.Time.hour % 12) * 30 + (widget.Time.minute * 0.5)) | round %}
+            {% set start_minute = widget.Time.minute * 6 %}
+            {% set start_second = widget.Time.second * 6 %}
+            {# Set CSS variables on the analog-clock element #}
+            <div class="analog-clock" style="--start-hour: {{ start_hour - 90 }}deg; --start-minute: {{ start_minute - 90 }}deg; --start-second: {{ start_second - 90 }}deg;">
+                <div class="clock-face">
+                    <!-- New hour markings container -->
+                    <div class="hour-markings">
+                        <div class="hour-number" style="transform: rotate(-90deg) translate(80px) rotate(90deg) translate(-50%, -50%);">12</div>
+                        <div class="hour-number" style="transform: rotate(-60deg) translate(80px) rotate(60deg) translate(-50%, -50%);">1</div>
+                        <div class="hour-number" style="transform: rotate(-30deg) translate(80px) rotate(30deg) translate(-50%, -50%);">2</div>
+                        <div class="hour-number" style="transform: rotate(0deg) translate(80px) rotate(0deg) translate(-50%, -50%);">3</div>
+                        <div class="hour-number" style="transform: rotate(30deg) translate(80px) rotate(-30deg) translate(-50%, -50%);">4</div>
+                        <div class="hour-number" style="transform: rotate(60deg) translate(80px) rotate(-60deg) translate(-50%, -50%);">5</div>
+                        <div class="hour-number" style="transform: rotate(90deg) translate(80px) rotate(-90deg) translate(-50%, -50%);">6</div>
+                        <div class="hour-number" style="transform: rotate(120deg) translate(80px) rotate(-120deg) translate(-50%, -50%);">7</div>
+                        <div class="hour-number" style="transform: rotate(150deg) translate(80px) rotate(-150deg) translate(-50%, -50%);">8</div>
+                        <div class="hour-number" style="transform: rotate(180deg) translate(80px) rotate(-180deg) translate(-50%, -50%);">9</div>
+                        <div class="hour-number" style="transform: rotate(-150deg) translate(80px) rotate(150deg) translate(-50%, -50%);">10</div>
+                        <div class="hour-number" style="transform: rotate(-120deg) translate(80px) rotate(120deg) translate(-50%, -50%);">11</div>
+                    </div>
+                    <div class="hand hour-hand"></div>
+                    <div class="hand minute-hand"></div>
+                    <div class="hand second-hand"></div>
+                </div>
+            </div>
+            <!-- Display server-calculated date/time -->
+            <div class="server-time" style="text-align: center; margin-top: 12px; font-size: 0.9em; color: var(--text-secondary);">
+                Server time: {{ widget.Time.current_date }} {{ widget.Time.current_time }}
+            </div>
+        {% else %}
+            <!-- Digital clock version -->
+            <div class="time-display">
+                <div class="time" id="current-time">{{ widget.Time.current_time }}</div>
+                <div class="date" id="current-date">{{ widget.Time.current_date }}</div>
+                <div class="timezone">{{ widget.Time.timezone }}</div>
+            </div>
+        {% endif %}
     </div>
 </div>
 
@@ -36,6 +70,77 @@
     .time .timezone {
         color: var(--text-secondary);
         font-size: 0.9em;
+    }
+
+    /* Analog clock styles for no-js mode */
+    .analog-clock {
+        position: relative;
+        width: 200px;
+        height: 200px;
+        border: 8px solid var(--bg-input);
+        border-radius: 50%;
+        margin: 0 auto;
+        background: white;
+    }
+    .clock-face {
+        position: relative;
+        width: 100%;
+        height: 100%;
+    }
+    .hand {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: 0% 50%;
+        border-radius: 6px;
+    }
+    .hour-hand {
+        width: 30%;
+        height: 8px;
+        background: var(--text-primary);
+        transform: rotate(var(--start-hour));
+        animation: rotate-hour 43200s linear infinite;
+    }
+    .minute-hand {
+        width: 40%;
+        height: 6px;
+        background: var(--accent-primary);
+        transform: rotate(var(--start-minute));
+        animation: rotate-minute 3600s linear infinite;
+    }
+    .second-hand {
+        width: 45%;
+        height: 4px;
+        background: var(--text-secondary);
+        transform: rotate(var(--start-second));
+        animation: rotate-second 60s steps(60, end) infinite;
+    }
+    @keyframes rotate-hour {
+        from { transform: rotate(var(--start-hour)); }
+        to { transform: rotate(calc(var(--start-hour) + 360deg)); }
+    }
+    @keyframes rotate-minute {
+        from { transform: rotate(var(--start-minute)); }
+        to { transform: rotate(calc(var(--start-minute) + 360deg)); }
+    }
+    @keyframes rotate-second {
+        from { transform: rotate(var(--start-second)); }
+        to { transform: rotate(calc(var(--start-second) + 360deg)); }
+    }
+    .hour-markings {
+        position: absolute;
+        width: 100%;
+        height: 100%;
+        top: 0;
+        left: 0;
+    }
+    .hour-number {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform-origin: center;
+        font-size: 1em;
+        color: var(--text-primary);
     }
 </style>
 
