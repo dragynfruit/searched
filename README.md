@@ -14,3 +14,4 @@ _ definition (not working)
 switch to ril
 css animation timer and clock
 Make current time work
+Add opensearch xml specefication
