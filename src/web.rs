@@ -93,7 +93,7 @@ pub async fn index(Extension(settings): Extension<Settings>) -> impl IntoRespons
     context.insert("settings", &settings);
     context.insert("motd", get_motd());
 
-    let rendered = TERA.read().await.render("index.html", &context).unwrap();
+    let rendered = TERA.read().await.render("index.tera", &context).unwrap();
     Html(rendered).into_response()
 }
 
@@ -196,7 +196,7 @@ pub async fn search_results(
         context.insert("results", &search_results);
         context.insert("search_time", &search_time);
 
-        let rendered = TERA.read().await.render("results.html", &context).unwrap();
+        let rendered = TERA.read().await.render("results.tera", &context).unwrap();
         Html(rendered).into_response()
     } else {
         Redirect::to("/").into_response()
@@ -207,14 +207,14 @@ pub async fn settings_page(Extension(settings): Extension<Settings>) -> impl Int
     let mut context = Context::new();
     context.insert("settings", &settings);
 
-    let rendered = TERA.read().await.render("settings.html", &context).unwrap();
+    let rendered = TERA.read().await.render("settings.tera", &context).unwrap();
     Html(rendered).into_response()
 }
 
 pub async fn about_page(Extension(settings): Extension<Settings>) -> impl IntoResponse {
     let mut context = Context::new();
     context.insert("settings", &settings);
-    let rendered = TERA.read().await.render("about.html", &context).unwrap();
+    let rendered = TERA.read().await.render("about.tera", &context).unwrap();
     Html(rendered).into_response()
 }
 

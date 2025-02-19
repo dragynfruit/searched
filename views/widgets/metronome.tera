@@ -1,4 +1,4 @@
-{% include "widgets/common_style.html" %}
+{% include "widgets/common_style.tera" %}
 
 {% if settings.no_js %}
 <div class="widget metronome">

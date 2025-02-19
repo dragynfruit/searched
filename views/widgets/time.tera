@@ -1,4 +1,4 @@
-{% include "widgets/common_style.html" %}
+{% include "widgets/common_style.tera" %}
 
 <div class="widget time">
     <div class="widget-content" style="padding: 16px; text-align: center;">

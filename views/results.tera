@@ -1,6 +1,6 @@
-{% import "components/search_bar.html" as search_bar %}
-{% import "components/result_view.html" as result_view %}
-{% extends "template.html" %}
+{% import "components/search_bar.tera" as search_bar %}
+{% import "components/result_view.tera" as result_view %}
+{% extends "template.tera" %}
 
 {% block title %}{% if settings.show_query_title %}{{ query.query }} | {% endif %}Searched{% endblock title %}
 
@@ -197,46 +197,46 @@
         {% if settings.enable_widgets and widget %}
             <div id="widget-container">
                 {% if widget is containing("Calculator") %}
-                    {% include "widgets/calculator.html" %}
+                    {% include "widgets/calculator.tera" %}
                 {% endif %}
                 {% if widget is containing("Timer") and not settings.no_js %}
-                    {% include "widgets/timer.html" %}
+                    {% include "widgets/timer.tera" %}
                 {% endif %}
                 {% if widget is containing("Dictionary") %}
-                    {% include "widgets/dictionary.html" %}
+                    {% include "widgets/dictionary.tera" %}
                 {% endif %}
                 {% if widget is containing("Color") %}
-                    {% include "widgets/color.html" %}
+                    {% include "widgets/color.tera" %}
                 {% endif %}
 				{% if widget is containing("DiceRoll") %}
-					{% include "widgets/dice.html" %}
+					{% include "widgets/dice.tera" %}
 				{% endif %}
 				{% if widget is containing("Weather") %}
-					{% include "widgets/weather.html" %}
+					{% include "widgets/weather.tera" %}
 				{% endif %}
 				{% if widget is containing("Time") %}
-					{% include "widgets/time.html" %}
+					{% include "widgets/time.tera" %}
 				{% endif %}
 				{% if widget is containing("Metronome") %}
-                    {% include "widgets/metronome.html" %}
+                    {% include "widgets/metronome.tera" %}
                 {% endif %}
                 {% if widget is containing("Formula") %}
-                    {% include "widgets/formula.html" %}
+                    {% include "widgets/formula.tera" %}
                 {% endif %}
                 {% if widget is containing("Password") %}
-                    {% include "widgets/password.html" %}
+                    {% include "widgets/password.tera" %}
                 {% endif %}
                 {% if widget is containing("Wikipedia") %}
-                    {% include "widgets/wikipedia.html" %}
+                    {% include "widgets/wikipedia.tera" %}
                 {% endif %}
                 {% if widget is containing("Joke") %}
-                    {% include "widgets/joke.html" %}
+                    {% include "widgets/joke.tera" %}
                 {% endif %}
 				{% if widget is containing("Xkcd") %}
-					{% include "widgets/xkcd.html" %}
+					{% include "widgets/xkcd.tera" %}
 				{% endif %}
 				{% if widget is containing("QuickAccess") %}
-					{% include "widgets/quick_access.html" %}
+					{% include "widgets/quick_access.tera" %}
 				{% endif %}
             </div>
         {% endif %}

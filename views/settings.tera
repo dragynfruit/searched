@@ -1,4 +1,4 @@
-{% extends "template.html" %}
+{% extends "template.tera" %}
 
 {% block title %}Settings | Searched{% endblock title %}
 {% block right_header %}{% endblock right_header %}
@@ -188,7 +188,7 @@
 
 {% block left_header %}
     {% set header_title = "Searched Settings" %}
-    {% include "components/common_header.html" %}
+    {% include "components/common_header.tera" %}
 {% endblock left_header %}
 
 {% block content %}

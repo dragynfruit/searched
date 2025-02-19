@@ -1,5 +1,5 @@
-{% import "components/search_bar.html" as search_bar %}
-{% extends "base.html" %}
+{% import "components/search_bar.tera" as search_bar %}
+{% extends "base.tera" %}
 
 {% block head %}
 {{ super() }}

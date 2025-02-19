@@ -1,4 +1,4 @@
-{% include "widgets/common_style.html" %}
+{% include "widgets/common_style.tera" %}
 
 <div class="widget timer">
     <div class="widget-content">
