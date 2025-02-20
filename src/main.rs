@@ -13,6 +13,7 @@ mod widgets;
 
 mod modules {
     pub mod favicon;
+    pub mod image_proxy;
     pub mod text_matcher;
     pub mod url_cleaner;
 }

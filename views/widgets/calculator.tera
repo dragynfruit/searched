@@ -64,7 +64,7 @@
             </div>
         </div>
         <div class="widget-footer">
-            Powered by <a href="https://github.com/fend-rs/fend_core" target="_blank">fend</a>
+            Powered by <a href="https://github.com/printfn/fend" target="_blank">fend</a>
         </div>
     </div>
 </div>
@@ -72,7 +72,7 @@
 <style>
     /* Minimal combined widget styling */
     .calculator .calc-container {
-        width: 400px; /* fixed width */
+        width: 400px;
         background: var(--bg-tertiary);
         border-radius: 8px;
         padding: 16px;

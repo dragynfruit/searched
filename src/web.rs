@@ -1,5 +1,5 @@
 use log::{debug, error, info};
-use reqwest::Client; // Add this import
+use reqwest::Client;
 use std::{path::PathBuf, process, sync::Arc};
 
 use axum::{
@@ -18,8 +18,10 @@ use tokio::sync::RwLock;
 use tokio::try_join;
 use tower_http::services::ServeDir;
 
+use crate::modules::favicon::favicon;
+use crate::modules::image_proxy::proxy_image;
 use crate::{
-    modules::{self, text_matcher::highlight_text, url_cleaner},
+    modules::{text_matcher::highlight_text, url_cleaner},
     settings::{
         export_settings, import_settings, import_settings_form, settings_middleware,
         update_settings, Settings,
@@ -229,7 +231,8 @@ pub fn router() -> Router<AppState> {
         .route("/settings/import", post(import_settings))
         .route("/settings/import_form", post(import_settings_form))
         .route("/about", get(about_page))
-        .route("/favicon", get(modules::favicon::favicon))
+        .route("/favicon", get(favicon))
+        .route("/image", get(proxy_image))
         .fallback_service(ServeDir::new(PathBuf::from("static")))
         .layer(middleware::from_fn(settings_middleware))
 }
