@@ -1,6 +1,6 @@
 {% include "widgets/common_style.tera" %}
 
-<div class="widget timer">
+<div class="widget timer {% if settings.no_js %}no-js{% endif %}">
     <div class="widget-content">
         <div class="widget-header">
             <div class="title-with-mode">
@@ -36,6 +36,27 @@
             <div class="lap-list"></div>
         </div>
     </div>
+    {% if settings.no_js %}
+        <div class="widget-content no-js-timer">
+            <div class="widget-header">
+                <h3 class="widget-title">Timer</h3>
+            </div>
+            <div class="widget-display">
+                {% if widget.Timer.mode == "stopwatch" %}
+                    <div class="unsupported-message">
+                        Stopwatch requires JavaScript to be enabled
+                    </div>
+                {% else %}
+                    {% if widget.Timer.initial_time %}
+                        <div class="progress-bar">
+                            <div class="progress" style="animation-duration: {{ widget.Timer.initial_time }}ms"></div>
+                        </div>
+                        <span class="timer-text">{{ widget.Timer.initial_time / 1000 }}s</span>
+                    {% endif %}
+                {% endif %}
+            </div>
+        </div>
+    {% endif %}
 </div>
 
 <style>
@@ -217,8 +238,77 @@
         from { transform: rotate(0deg); }
         to { transform: rotate(360deg); }
     }
+
+    /* No-JS Timer Styles */
+    .timer.no-js .widget-content:not(.no-js-timer) {
+        display: none;
+    }
+
+    .timer .no-js-timer .widget-display {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .timer .progress-bar {
+        width: 100%;
+        height: 4px;
+        background: var(--bg-tertiary);
+        border-radius: 2px;
+        position: relative;
+    }
+
+    .timer .progress {
+        position: absolute;
+        right: 0;
+        top: 0;
+        width: 100%;
+        height: 100%;
+        background: var(--accent-primary);
+        transform-origin: right center;
+        animation: progress linear forwards;
+        animation-duration: inherit;
+    }
+
+    @keyframes progress {
+        0% { 
+            transform: scaleX(1);
+            opacity: 1;
+        }
+        99% { 
+            transform: scaleX(0);
+            opacity: 1;
+        }
+        100% { 
+            transform: scaleX(0);
+            opacity: 0.5;
+            animation: blink 0.5s step-end infinite alternate;
+        }
+    }
+
+    @keyframes blink {
+        50% { opacity: 1; }
+        100% { opacity: 0.5; }
+    }
+
+    .timer .timer-text {
+        font-size: 2.5em;
+        font-family: monospace;
+        color: var(--accent-primary);
+    }
+
+    .timer .unsupported-message {
+        color: var(--text-secondary);
+        font-size: 1rem;
+        text-align: center;
+        padding: 20px;
+        background: var(--bg-tertiary);
+        border-radius: 4px;
+    }
 </style>
 
+{% if not settings.no_js %}
 <script>
     class TimerWidget {
         constructor() {
@@ -534,3 +624,4 @@
 
     new TimerWidget();
 </script>
+{% endif %}

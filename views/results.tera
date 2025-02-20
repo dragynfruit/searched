@@ -199,7 +199,7 @@
                 {% if widget is containing("Calculator") %}
                     {% include "widgets/calculator.tera" %}
                 {% endif %}
-                {% if widget is containing("Timer") and not settings.no_js %}
+                {% if widget is containing("Timer") %}
                     {% include "widgets/timer.tera" %}
                 {% endif %}
                 {% if widget is containing("Dictionary") %}
