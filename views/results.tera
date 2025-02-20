@@ -238,6 +238,9 @@
 				{% if widget is containing("QuickAccess") %}
 					{% include "widgets/quick_access.tera" %}
 				{% endif %}
+				{% if widget is containing("Game") and not settings.no_js %}
+					{% include "widgets/games.tera" %}
+				{% endif %}
             </div>
         {% endif %}
         <div id="results" class="{% if settings.compact_view %}compact-view{% endif %}">

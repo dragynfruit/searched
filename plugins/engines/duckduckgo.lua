@@ -31,7 +31,7 @@ add_engine('duckduckgo', function(client, query, _)
         }
     end
 
-    local doc = client:req("POST", 'https://lite.duckduckgo.com/lite/')
+    local doc = client:req("POST", 'https://html.duckduckgo.com/html')
         :headers({
             ['Content-Type'] = 'application/x-www-form-urlencoded',
             ['Referer'] = 'https://lite.duckduckgo.com/'
@@ -39,12 +39,8 @@ add_engine('duckduckgo', function(client, query, _)
         :form(form_data)
         :html()
 
-    local links = doc:select('a.result-link')
-    local snippets = doc:select('td.result-snippet')
-
-    if not links or not snippets then
-        error("Failed to retrieve search results; links or snippets are nil")
-    end
+    local links = doc:select('a.result__a')
+    local snippets = doc:select('a.result__snippet')
 
     assert(#links == #snippets, 'snippets broken')
 

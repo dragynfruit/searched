@@ -1,0 +1,13 @@
+{% include "widgets/common_style.tera" %}
+
+<div class="widget game-widget">
+    <h3 class="widget-title">Games</h3>
+    <div class="widget-content">
+        {% if widget.Game is containing("Snake") %}
+            {% include "widgets/games/snake.tera" %}
+        {% endif %}
+        {% if widget.Game is containing("AsteroidLander") %}
+            {% include "widgets/games/asteroid_lander.tera" %}
+        {% endif %}
+    </div>
+</div>

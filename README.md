@@ -14,3 +14,5 @@ css animation timer and clock
 Make current time work
 Settings per engine
 CLEAN CODE
+Widget only search
+2048 game

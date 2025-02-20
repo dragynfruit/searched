@@ -1,0 +1,303 @@
+{% include "widgets/games/common_style.tera" %}
+
+<div class="game-container">
+    <div class="game-info">
+        <div class="stats">
+            <div class="stat">Velocity: <span id="velocity">0.0</span> m/s</div>
+            <div class="stat">Fuel: <span id="fuel">100</span>%</div>
+            <div class="stat">Angle: <span id="angle">0</span>°</div>
+        </div>
+        <button class="start-btn" id="lander-start">Start Game</button>
+    </div>
+    <div class="game-board" tabindex="0">
+        <svg id="game-svg" viewBox="0 0 400 400" preserveAspectRatio="xMidYMid meet">
+            <defs>
+                <radialGradient id="thrust" cx="0.5" cy="0" r="0.5">
+                    <stop offset="0%" stop-color="yellow" />
+                    <stop offset="100%" stop-color="transparent" />
+                </radialGradient>
+            </defs>
+            <!-- Terrain will be generated here -->
+            <path id="terrain" fill="none" stroke="var(--accent-primary)" stroke-width="2"></path>
+            <!-- Lander -->
+            <g id="lander" transform="translate(200,50)">
+                <polygon class="ship-body" points="-10,0 10,0 5,10 -5,10" 
+                    fill="var(--text-primary)" stroke="var(--accent-primary)" stroke-width="1"/>
+                <rect class="ship-legs" x="-12" y="10" width="24" height="2" 
+                    fill="var(--text-primary)" stroke="var(--accent-primary)" stroke-width="1"/>
+                <path id="thrust-flame" d="M-3,10 L0,20 L3,10" 
+                    fill="url(#thrust)" stroke="yellow" stroke-width="1" opacity="0"/>
+            </g>
+        </svg>
+        <div id="game-over" class="game-over" style="display: none;">
+            <h2>Game Over</h2>
+            <p class="message"></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    .game-board svg {
+        width: 100%;
+        height: 100%;
+        background: var(--bg-tertiary);
+    }
+
+    .stats {
+        display: flex;
+        gap: 16px;
+        font-family: monospace;
+    }
+
+    .stat {
+        color: var(--text-secondary);
+    }
+
+    .stat span {
+        color: var(--text-primary);
+        font-weight: bold;
+    }
+
+    #game-over .message.success {
+        color: var(--accent-primary);
+    }
+
+    #game-over .message.failure {
+        color: var(--accent-secondary);
+    }
+
+    .game-board:focus {
+        outline: 2px solid var(--accent-primary);
+        outline-offset: 2px;
+    }
+</style>
+
+<script>
+    class AsteroidLander {
+        constructor(config) {
+            this.config = config;
+            this.gameBoard = document.querySelector('.game-board');
+            this.svg = document.getElementById('game-svg');
+            this.lander = document.getElementById('lander');
+            this.terrain = document.getElementById('terrain');
+            this.thrustFlame = document.getElementById('thrust-flame');
+            this.startButton = document.getElementById('lander-start');
+            this.gameOverScreen = document.getElementById('game-over');
+            this.gameOverMessage = this.gameOverScreen.querySelector('.message');
+            
+            this.velocity = { x: 0, y: 0 };
+            this.position = { x: 200, y: 50 };
+            this.angle = 0;
+            this.fuel = 100;
+            this.thrusting = false;
+            this.keys = {
+                left: false,
+                right: false,
+                thrust: false
+            };
+            
+            this.setupControls();
+            this.generateTerrain();
+            this.startButton.addEventListener('click', () => this.startGame());
+        }
+
+        generateTerrain() {
+            this.terrainPoints = [];
+            const numPoints = 40;
+            const width = 400;
+            const minHeight = 350;
+            const maxHeight = 150;
+            const padWidth = 6;
+            const padStart = Math.floor((numPoints - padWidth) / 2);
+            const padEnd = padStart + padWidth;
+            const padHeight = 300;
+
+            // Generate terrain points
+            for (let i = 0; i < numPoints; i++) {
+                const x = (width / (numPoints - 1)) * i;
+                let y;
+                
+                if (i >= padStart && i <= padEnd) {
+                    y = padHeight;
+                } else {
+                    const noise = Math.cos(i * 0.5) * Math.cos(i * 0.3) * Math.sin(i * 0.2);
+                    y = (maxHeight + minHeight) / 2 + noise * (minHeight - maxHeight) / 4;
+                    
+                    if (i === padStart - 1 || i === padEnd + 1) {
+                        y = (y + padHeight) / 2;
+                    }
+                }
+                this.terrainPoints.push({x, y});
+            }
+
+            // Create SVG path
+            const pathD = `M${this.terrainPoints.map(p => `${p.x},${p.y}`).join(' L')} L400,400 L0,400 Z`;
+            this.terrain.setAttribute('d', pathD);
+            this.terrain.setAttribute('fill', 'var(--bg-secondary)');
+            this.landingPadY = padHeight;
+            this.padStart = padStart;
+            this.padEnd = padEnd;
+            this.padWidth = padWidth;
+        }
+
+        checkTerrainCollision(x, y) {
+            // Find the two closest terrain points
+            const segment = this.terrainPoints.reduce((prev, curr, i) => {
+                if (i === 0) return null;
+                if (x >= this.terrainPoints[i-1].x && x <= curr.x) {
+                    return { p1: this.terrainPoints[i-1], p2: curr };
+                }
+                return prev;
+            }, null);
+
+            if (!segment) return false;
+
+            // Interpolate terrain height at this x position
+            const ratio = (x - segment.p1.x) / (segment.p2.x - segment.p1.x);
+            const terrainHeight = segment.p1.y + (segment.p2.y - segment.p1.y) * ratio;
+
+            return y >= terrainHeight;
+        }
+
+        setupControls() {
+            document.addEventListener('keydown', (e) => {
+                if (!this.gameActive || !document.activeElement.classList.contains('game-board')) return;
+                
+                switch(e.key) {
+                    case 'ArrowUp':
+                    case 'w':
+                        e.preventDefault();
+                        if (this.fuel > 0) {
+                            this.keys.thrust = true;
+                            this.thrusting = true;
+                            this.thrustFlame.style.opacity = '1';
+                        }
+                        break;
+                    case 'ArrowLeft':
+                    case 'a':
+                        e.preventDefault();
+                        this.keys.left = true;
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        e.preventDefault();
+                        this.keys.right = true;
+                        break;
+                }
+            });
+
+            document.addEventListener('keyup', (e) => {
+                switch(e.key) {
+                    case 'ArrowUp':
+                    case 'w':
+                        this.keys.thrust = false;
+                        this.thrusting = false;
+                        this.thrustFlame.style.opacity = '0';
+                        break;
+                    case 'ArrowLeft':
+                    case 'a':
+                        this.keys.left = false;
+                        break;
+                    case 'ArrowRight':
+                    case 'd':
+                        this.keys.right = false;
+                        break;
+                }
+            });
+        }
+
+        startGame() {
+            this.gameBoard.focus();
+            this.gameActive = true;
+            this.position = { x: 200, y: 50 };
+            this.velocity = { x: 0, y: 0 };
+            this.angle = 0;
+            this.fuel = 100;
+            this.thrusting = false;
+            this.gameOverScreen.style.display = 'none';
+            this.startButton.disabled = true;
+            this.thrustFlame.style.opacity = '0';
+            this.updateStats();
+            this.gameLoop();
+        }
+
+        updateStats() {
+            const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+            document.getElementById('velocity').textContent = speed.toFixed(1);
+            document.getElementById('fuel').textContent = Math.round(this.fuel);
+            document.getElementById('angle').textContent = Math.round(this.angle);
+        }
+
+        gameLoop() {
+            if (!this.gameActive) return;
+
+            // Handle rotation
+            const rotationSpeed = 2;
+            if (this.keys.left) this.angle -= rotationSpeed;
+            if (this.keys.right) this.angle += rotationSpeed;
+
+            // Apply thrust and gravity
+            if (this.thrusting && this.fuel > 0) {
+                const thrustAngle = (this.angle - 90) * (Math.PI / 180);
+                this.velocity.x += this.config.thrustPower * Math.cos(thrustAngle);
+                this.velocity.y += this.config.thrustPower * Math.sin(thrustAngle);
+                this.fuel -= 0.5;
+                if (this.fuel <= 0) {
+                    this.thrusting = false;
+                    this.thrustFlame.style.opacity = '0';
+                }
+            }
+
+            this.velocity.y += this.config.gravity;
+
+            // Update position
+            const newX = this.position.x + this.velocity.x;
+            const newY = this.position.y + this.velocity.y;
+
+            // Handle horizontal wrapping
+            this.position.x = ((newX % 400) + 400) % 400;
+            this.position.y = newY;
+
+            // Check for terrain collision
+            if (this.checkTerrainCollision(this.position.x, this.position.y)) {
+                const speed = Math.sqrt(this.velocity.x ** 2 + this.velocity.y ** 2);
+                const pointsPerSegment = 400 / (this.terrainPoints.length - 1);
+                const segmentIndex = Math.floor(this.position.x / pointsPerSegment);
+                const isOnPad = segmentIndex >= this.padStart && segmentIndex <= this.padEnd;
+                
+                if (isOnPad && 
+                    speed <= this.config.maxLandingSpeed && 
+                    Math.abs(this.angle) <= this.config.maxLandingAngle) {
+                    this.endGame(true);
+                } else {
+                    this.endGame(false);
+                }
+                return;
+            }
+
+            // Update lander position and stats
+            this.lander.setAttribute('transform', 
+                `translate(${this.position.x},${this.position.y}) rotate(${this.angle})`);
+
+            this.updateStats();
+            requestAnimationFrame(() => this.gameLoop());
+        }
+
+        endGame(success) {
+            this.gameActive = false;
+            this.gameOverScreen.style.display = 'block';
+            this.gameOverMessage.className = 'message ' + (success ? 'success' : 'failure');
+            this.gameOverMessage.textContent = success ? 
+                'Successful landing!' : 
+                'Crash! Watch your speed and angle!';
+            this.startButton.disabled = false;
+        }
+    }
+
+    new AsteroidLander({
+        gravity: {{ widget.Game.AsteroidLander.gravity }},
+        thrustPower: {{ widget.Game.AsteroidLander.thrust_power }},
+        maxLandingSpeed: {{ widget.Game.AsteroidLander.max_landing_speed }},
+        maxLandingAngle: {{ widget.Game.AsteroidLander.max_landing_angle }}
+    });
+</script>

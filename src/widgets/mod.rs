@@ -7,6 +7,7 @@ pub mod color;
 pub mod dice;
 pub mod dictionary;
 pub mod formula;
+pub mod games;
 pub mod joke;
 pub mod metronome;
 pub mod password;
@@ -21,6 +22,7 @@ use color::Color;
 use dice::DiceRoll;
 use dictionary::Dictionary;
 use formula::Formula;
+use games::Game;
 use joke::Joke;
 use metronome::Metronome;
 use password::Password;
@@ -47,6 +49,7 @@ pub enum Widget {
     Wikipedia(Wikipedia),
     Xkcd(Xkcd),
     QuickAccess(QuickAccess),
+    Game(Game),
 }
 
 pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Option<Widget> {
@@ -104,6 +107,10 @@ pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Optio
 
     if let Some(dictionary) = Dictionary::detect(query, client, db).await {
         return Some(Widget::Dictionary(dictionary));
+    }
+
+    if let Some(game) = Game::detect(query) {
+        return Some(Widget::Game(game));
     }
 
     None
