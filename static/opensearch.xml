@@ -4,7 +4,7 @@
   <Description>A privacy-focused meta search engine</Description>
   <InputEncoding>UTF-8</InputEncoding>
   <Image width="16" height="16" type="image/png">/assets/logo.png</Image>
-  <Url rel="results" type="text/html" method="GET" template="https://searxng.drakeerv.com/search?q={searchTerms}"/>
+  <Url rel="results" type="text/html" method="GET" template="/search?q={searchTerms}"/>
   <Url rel="self" type="application/opensearchdescription+xml" method="GET" template="/opensearch.xml"/>
   <moz:SearchForm>/search</moz:SearchForm>
 </OpenSearchDescription>

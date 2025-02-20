@@ -8,10 +8,10 @@
                     <div class="calc-history" id="calc-history"></div>
                     <div class="calc-io">
                         <div class="calc-input-line">
-                            <input type="text" class="calc-input-field" id="calc-expression" autocomplete="off" spellcheck="false">
+                            <input type="text" class="calc-input-field" id="calc-expression" autocomplete="off" spellcheck="false" value="{{ widget.Calculator.expression }}">
                         </div>
                         <div class="calc-output-line">
-                            <span class="calc-result" id="calc-result"></span>
+                            <span class="calc-result" id="calc-result">{{ widget.Calculator.result }}</span>
                         </div>
                     </div>
                 </div>
@@ -47,15 +47,19 @@
                 <div class="button-row">
                     <button class="calc-btn number">0</button>
                     <button class="calc-btn number" data-action="decimal">.</button>
-                    <button class="calc-btn function" data-action="percent">%</button>
                     <button class="calc-btn equals" data-action="equals">=</button>
                 </div>
             </div>
             <div class="scientific-buttons">
+                <div class="cursor-group">
+                    <button class="calc-btn function half" data-action="move-left">←</button>
+                    <button class="calc-btn function half" data-action="move-right">→</button>
+                </div>
                 <button class="calc-btn function" data-action="sin">sin</button>
                 <button class="calc-btn function" data-action="cos">cos</button>
                 <button class="calc-btn function" data-action="tan">tan</button>
                 <button class="calc-btn function" data-action="sqrt">√</button>
+                
                 <button class="calc-btn function" data-action="power">^</button>
                 <button class="calc-btn function" data-action="log">log</button>
                 <button class="calc-btn function" data-action="ln">ln</button>
@@ -70,7 +74,6 @@
 </div>
 
 <style>
-    /* Minimal combined widget styling */
     .calculator .calc-container {
         width: 400px;
         background: var(--bg-tertiary);
@@ -89,41 +92,80 @@
         padding: 16px;
         margin-bottom: 16px;
     }
-    .calculator .calc-history,
-    .calculator .calc-history-header,
-    .calculator .clear-history-btn {
-        display: none;
-    }
     .calculator .calc-history {
+        display: block !important;
+        flex: 1;
+        height: 100px;
+        min-height: 100px;
+        max-height: 100px;
+        overflow-y: auto;
+        margin-bottom: 8px;
+        padding-bottom: 8px;
+        border-bottom: 1px solid var(--border-color);
         color: var(--text-secondary);
         font-size: 0.9em;
-        margin-bottom: 8px;
-        overflow-y: auto;
-        scrollbar-width: thin;
-        scrollbar-color: var(--text-secondary) transparent;
+        opacity: 0.8;
     }
     .calculator .calc-history::-webkit-scrollbar {
-        width: 6px;
+        width: 4px;
     }
     .calculator .calc-history::-webkit-scrollbar-track {
         background: transparent;
     }
     .calculator .calc-history::-webkit-scrollbar-thumb {
-        background-color: var(--text-secondary);
-        border-radius: 3px;
+        background-color: var(--border-color);
+        border-radius: 2px;
     }
-    .calculator .calc-input {
-        display: none;
+    .calculator .calc-screen {
+        min-height: 64px;
+        display: flex;
+        flex-direction: column;
+        height: 180px;
+        font-family: monospace;
+        cursor: text;
+        gap: 8px;
+        justify-content: flex-end;
+    }
+    .calculator .calc-io {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+        min-height: 64px;
+        justify-content: flex-end;
+    }
+    .calculator .calc-input-line {
+        display: flex;
+        align-items: center;
+        min-height: 24px;
+    }
+    .calculator .calc-output-line {
+        display: flex;
+        justify-content: flex-end;
+        min-height: 32px;
+        align-items: center;
+    }
+    .calculator .calc-input-field {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.2em;
+        font-family: monospace;
+        outline: none;
+        padding: 4px 0;
     }
     .calculator .calc-expression {
         color: var(--text-primary);
         font-size: 1.2em;
-        min-height: 24px;
+        line-height: 1.2;
+        word-break: break-all;
+        white-space: pre-wrap;
     }
     .calculator .calc-result {
         color: var(--accent-primary);
         font-size: 1.5em;
         font-weight: bold;
+        line-height: 1.2;
     }
     .calculator .calc-buttons {
         display: grid;
@@ -141,6 +183,7 @@
         margin-top: 8px;
         padding-top: 8px;
         border-top: 1px solid var(--border-color);
+        grid-template-rows: auto auto;
     }
     .calculator .calc-btn {
         padding: 12px;
@@ -175,128 +218,28 @@
     }
     .calculator .calc-btn.constant {
         background: var(--bg-input);
-        color: var (--text-secondary);
+        color: var(--text-secondary);
         font-style: italic;
     }
-    .calculator .no-js-message {
-        text-align: center;
-        padding: 20px;
-        color: var(--text-secondary);
-        background: var(--bg-tertiary);
-        border-radius: 8px;
-        font-style: italic;
+    .calculator .calc-btn.half {
+        padding: 12px 6px;
+        font-size: 1em;
     }
-    .calculator .calc-display.static {
-        background: var(--bg-tertiary);
-        border-radius: 8px;
-        padding: 16px;
-        text-align: center;
+    .calculator .cursor-group,
+    .calculator .brackets-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
     }
-    .calculator .calc-display.static .calc-input {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
+
+    .calculator .calc-btn[data-action^="move-"] {
         font-size: 1.2em;
-    }
-    .calculator .calc-display.static .equals {
-        color: var(--text-secondary);
-    }
-    .calculator .calc-display.static .calc-result {
-        color: var(--accent-primary);
-        font-weight: bold;
-    }
-    .calculator .calc-screen {
-        min-height: 64px;
-        display: flex;
-        flex-direction: column;
-        justify-content: flex-end;
-        gap: 8px;
-        cursor: text;
-    }
-    .calculator .calc-work {
-        display: flex;
-        align-items: center;
-        min-height: 24px;
-        color: var(--text-primary);
-        font-size: 1.2em;
-    }
-    @keyframes blink {
-        50% { opacity: 0; }
-    }
-    .calculator .calc-answer {
-        display: flex;
-        justify-content: flex-end;
-        font-size: 1.5em;
-        font-weight: bold;
+        line-height: 1;
+        padding: 12px 6px;
+        background: var(--bg-input);
         color: var(--accent-primary);
     }
-    .calculator .calc-screen {
-        display: flex;
-        flex-direction: column;
-        height: 180px;
-        font-family: monospace;
-    }
-    .calculator .calc-history {
-        flex: 1;
-        height: 100px;
-        min-height: 100px;
-        max-height: 100px;
-        overflow-y: auto;
-        margin-bottom: 8px;
-        padding-bottom: 8px;
-        border-bottom: 1px solid var(--border-color);
-        color: var(--text-secondary);
-        font-size: 0.9em;
-        opacity: 0.8;
-    }
-    .calculator .calc-history::-webkit-scrollbar {
-        width: 4px;
-    }
-    .calculator .calc-history::-webkit-scrollbar-track {
-        background: transparent;
-    }
-    .calculator .calc-history::-webkit-scrollbar-thumb {
-        background-color: var(--border-color);
-        border-radius: 2px;
-    }
-    .calculator .calc-io {
-        display: flex;
-        flex-direction: column;
-        gap: 8px;
-        min-height: 64px;
-        justify-content: flex-end;
-    }
-    .calculator .calc-input-line {
-        display: flex;
-        align-items: center;
-        min-height: 24px;
-        color: var(--text-primary);
-        font-size: 1.2em;
-    }
-    .calculator .calc-output-line {
-        display: flex;
-        justify-content: flex-end;
-        min-height: 32px;
-        align-items: center;
-    }
-    .calculator .calc-expression {
-        color: var(--text-primary);
-        font-size: 1.2em;
-        line-height: 1.2;
-        word-break: break-all;
-        white-space: pre-wrap;
-    }
-    .calculator .calc-result {
-        color: var(--accent-primary);
-        font-size: 1.5em;
-        font-weight: bold;
-        line-height: 1.2;
-    }
-    .calculator .calc-history div {
-        margin: 4px 0;
-        line-height: 1.2;
-    }
+
     .calculator .calc-input,
     .calculator .calc-history-wrapper,
     .calculator .calc-history-header,
@@ -305,43 +248,36 @@
     .calculator .calc-answer {
         display: none;
     }
-    .calculator .calc-display.static .calc-line {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        gap: 8px;
-        font-size: 1.2em;
-        flex-wrap: wrap;
-    }
-    .calculator .calc-display.static .calc-expression {
-        font-family: monospace;
-        word-break: break-all;
-        white-space: pre-wrap;
-    }
-    /* Override any rules that hide the history container */
-    .calculator .calc-history {
-        display: block !important;
-    }
-    .calculator .brackets-group {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 2px;
+
+    .calculator .calc-history div {
+        padding: 4px 8px;
+        cursor: pointer;
+        border-radius: 4px;
+        transition: background-color 0.2s;
     }
     
-    .calculator .calc-btn.half {
-        padding: 12px 6px;
-        font-size: 1em;
+    .calculator .calc-history div:hover {
+        background: var(--bg-secondary);
     }
-
-    .calculator .calc-input-field {
-        width: 100%;
-        background: transparent;
-        border: none;
-        color: var(--text-primary);
-        font-size: 1.2em;
-        font-family: monospace;
-        outline: none;
-        padding: 4px 0;
+    
+    .calculator .calc-history .history-entry {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 8px;
+    }
+    
+    .calculator .calc-history .history-expr {
+        color: var(--text-secondary);
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+    
+    .calculator .calc-history .history-result {
+        color: var(--accent-primary);
+        font-weight: bold;
+        white-space: nowrap;
     }
 </style>
 
@@ -351,326 +287,210 @@
     
     class Calculator {
         constructor() {
-            // Decode HTML entities in the expression
-            const tempDiv = document.createElement('div');
-            tempDiv.innerHTML = "{{ widget.Calculator.expression }}";
-            this.expression = tempDiv.textContent;
+            Object.assign(this, {
+                history: [],
+                lastAnswer: null,
+                elements: {
+                    expr: document.getElementById('calc-expression'),
+                    result: document.getElementById('calc-result'),
+                    history: document.getElementById('calc-history')
+                }
+            });
             
-            tempDiv.innerHTML = "{{ widget.Calculator.result }}";
-            this.result = tempDiv.textContent;
-            
-            this.history = [];
-            this.lastOperation = null;
-            
-            this.expressionElement = document.getElementById('calc-expression');
-            this.resultElement = document.getElementById('calc-result');
-            this.historyElement = document.getElementById('calc-history');
-            this.container = document.getElementById('calculator-container');
-            this.input = document.querySelector('.calc-input-field');
-            
-            // Set initial values
-            this.input.value = this.expression;
-            this.resultElement.textContent = this.result;
-            
-            this.isFocused = false;
-            this.lastClearClick = 0;
-            this.debounceTimer = null;
-            
-            this.setupEventListeners();
-            
-            // Trigger initial evaluation if there's an expression
-            if (this.expression) {
-                this.liveEvaluate();
-            }
+            this.setupListeners();
         }
 
-        setupEventListeners() {
-            document.querySelectorAll('.calc-btn').forEach(button => {
-                button.addEventListener('click', () => {
-                    const action = button.dataset.action;
-                    if (action) {
-                        this.handleAction(action);
-                    } else {
-                        // Insert at cursor position
-                        const pos = this.input.selectionStart;
-                        const text = this.input.value;
-                        this.input.value = text.slice(0, pos) + button.textContent + text.slice(pos);
-                        // Move cursor after inserted text
-                        this.input.selectionStart = this.input.selectionEnd = pos + button.textContent.length;
-                        this.input.focus();
-                        this.expression = this.input.value;
-                        this.liveEvaluate();
+        setupListeners() {
+            const handlers = {
+                click: e => this.handleInput(e.target),
+                input: () => this.evaluate(this.elements.expr.value.trim()),
+                keydown: e => {
+                    if (e.key === 'Enter') {
+                        e.preventDefault();
+                        this.calculate();
+                        return;
                     }
-                });
+                    
+                    const ops = {'+':'+', '-':'-', '*':'*', '/':'/', '%':'%', '^':'^'};
+                    if (ops[e.key]) {
+                        e.preventDefault();
+                        this.insertOperator(ops[e.key], false);
+                    }
+                }
+            };
+
+            Object.entries(handlers).forEach(([event, handler]) => {
+                const target = event === 'click' ? '.calc-btn' : '#calc-expression';
+                document.querySelectorAll(target).forEach(el => 
+                    el.addEventListener(event, handler));
             });
 
-            // Input field events
-            this.input.addEventListener('input', () => {
-                this.expression = this.input.value;
-                if (this.expression.trim()) {
-                    this.liveEvaluate();
+            this.elements.history.addEventListener('click', e => {
+                const entry = e.target.closest('.history-entry');
+                if (entry) {
+                    this.insert(entry.querySelector('.history-result').textContent);
+                }
+            });
+        }
+
+        handleInput(button) {
+            if (!button?.classList?.contains('calc-btn')) return;
+            
+            const action = button.dataset.action;
+            if (!action) return this.insert(button.textContent);
+
+            const actions = {
+                clear: () => this.clear(true),
+                backspace: () => this.backspace(),
+                equals: () => this.calculate(),
+                decimal: () => !this.getCurrentNumber().includes('.') && this.insert('.'),
+                'open-bracket': '(',
+                'close-bracket': ')',
+                add: '+',
+                subtract: '-',
+                multiply: '*',
+                divide: '/',
+                percent: '%',
+                power: '^',
+                sqrt: 'sqrt(',
+                sin: 'sin(',
+                cos: 'cos(',
+                tan: 'tan(',
+                log: 'log(',
+                ln: 'ln(',
+                pi: 'pi',
+                e: 'e',
+                'move-left': () => this.moveCursor(-1),
+                'move-right': () => this.moveCursor(1)
+            };
+
+            const handler = actions[action];
+            if (typeof handler === 'function') handler();
+            else if (typeof handler === 'string') {
+                if (['+','-','*','/','%','^'].includes(handler)) {
+                    this.insertOperator(handler, true);
                 } else {
-                    this.resultElement.textContent = '';
+                    this.insert(handler);
                 }
-            });
-
-            this.input.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') {
-                    e.preventDefault();
-                    this.calculate();
-                }
-            });
-
-            // Remove old keypress handler since we're using the input now
-        }
-
-        // Updated keypress handler to disable space scrolling and ignore letter keys with ctrl or alt held
-        handleKeypress(e) {
-            // Disable space scrolling
-            if (e.key === ' ') {
-                e.preventDefault();
-            }
-            // Ignore letter keys if control or alt is held
-            if ((e.ctrlKey || e.altKey) && e.key.match(/^[a-zA-Z]$/)) {
-                e.preventDefault();
-                return;
-            }
-            if (e.key === 'Backspace') {
-                this.backspace();
-            } else if (e.key === 'Enter' || e.key === '=') {
-                e.preventDefault();
-                this.calculate();
-            } else if (e.key.length === 1) {
-                // Append any single character key raw to the expression
-                this.expression += e.key;
-                this.updateDisplay();
             }
         }
 
-        handleAction(action) {
-            switch(action) {
-                case 'clear':
-                    if (this.expression || !this.result) {
-                        this.clear();
-                    } else {
-                        this.clear();
-                        this.history = [];
-                        this.updateHistoryDisplay();
-                    }
-                    break;
-                case 'backspace':
-                    this.backspace();
-                    break;
-                case 'equals':
-                    this.calculate();
-                    break;
-                case 'decimal':
-                    this.appendDecimal();
-                    break;
-                case 'open-bracket':
-                    this.appendExpression('(');
-                    break;
-                case 'close-bracket':
-                    this.appendExpression(')');
-                    break;
-                case 'add':
-                    this.appendOperator('+');
-                    break;
-                case 'subtract':
-                    this.appendOperator('-');
-                    break;
-                case 'multiply':
-                    this.appendOperator('×');
-                    break;
-                case 'divide':
-                    this.appendOperator('÷');
-                    break;
-                case 'percent':
-                    this.appendOperator('%');
-                    break;
-                case 'power':
-                    this.appendOperator('^');
-                    break;
-                case 'sqrt':
-                    this.appendFunction('sqrt');
-                    break;
-                case 'sin':
-                    this.appendFunction('sin');
-                    break;
-                case 'cos':
-                    this.appendFunction('cos');
-                    break;
-                case 'tan':
-                    this.appendFunction('tan');
-                    break;
-                case 'log':
-                    this.appendFunction('log');
-                    break;
-                case 'ln':
-                    this.appendFunction('ln');
-                    break;
-                case 'pi':
-                    this.appendConstant('π');
-                    break;
-                case 'e':
-                    this.appendConstant('e');
-                    break;
+        moveCursor(direction) {
+            const input = this.elements.expr;
+            const newPos = input.selectionStart + direction;
+            if (newPos >= 0 && newPos <= input.value.length) {
+                input.selectionStart = input.selectionEnd = newPos;
+                input.focus();
             }
         }
 
-        appendNumber(number) {
-            if (this.result && !this.expression) {
-                this.clear();
-            }
-            this.expression += number;
-            this.updateDisplay();
-        }
-
-        appendOperator(operator) {
-            // Convert symbols for evaluation
-            const evalOp = operator === '×' ? '*' : (operator === '÷' ? '/' : operator);
+        insertOperator(op, addSpaces = true) {
+            const pos = this.elements.expr.selectionStart;
+            const value = this.elements.expr.value.trim();
             
-            const pos = this.input.selectionStart;
-            const text = this.input.value;
-            const insert = ` ${evalOp} `;
-            this.input.value = text.slice(0, pos) + insert + text.slice(pos);
-            this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
-            this.input.focus();
-            this.expression = this.input.value;
-            this.liveEvaluate();
-        }
-
-        appendFunction(func) {
-            const pos = this.input.selectionStart;
-            const text = this.input.value;
-            const insert = `${func}(`;
-            this.input.value = text.slice(0, pos) + insert + text.slice(pos);
-            this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
-            this.input.focus();
-            this.expression = this.input.value;
-            this.liveEvaluate();
-        }
-
-        appendConstant(constant) {
-            const pos = this.input.selectionStart;
-            const text = this.input.value;
-            this.input.value = text.slice(0, pos) + constant + text.slice(pos);
-            this.input.selectionStart = this.input.selectionEnd = pos + constant.length;
-            this.input.focus();
-            this.expression = this.input.value;
-            this.liveEvaluate();
-        }
-
-        appendDecimal() {
-            const pos = this.input.selectionStart;
-            const text = this.input.value;
-            
-            // Get the part of the number we're currently editing
-            const beforeCursor = text.slice(0, pos).split(/[\s()*/+-]/).pop();
-            
-            // Only add decimal if there isn't one in the current number
-            if (!beforeCursor || !beforeCursor.includes('.')) {
-                const insert = beforeCursor ? '.' : '0.';
-                this.input.value = text.slice(0, pos) + insert + text.slice(pos);
-                this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
-                this.input.focus();
-                this.expression = this.input.value;
-                this.liveEvaluate();
+            if ((pos === 0 || value === '') && this.lastAnswer) {
+                this.insert(this.lastAnswer + (addSpaces ? ` ${op} ` : op));
+            } else if (value) {
+                this.insert(addSpaces ? ` ${op} ` : op);
             }
         }
 
-        appendExpression(text) {
-            const pos = this.input.selectionStart;
-            const value = this.input.value;
-            this.input.value = value.slice(0, pos) + text + value.slice(pos);
-            this.input.selectionStart = this.input.selectionEnd = pos + text.length;
-            this.input.focus();
-            this.expression = this.input.value;
-            this.liveEvaluate();
-        }
-
-        clear() {
-            this.input.value = '';
-            this.expression = '';
-            this.result = '';
-            this.input.focus();
-            this.updateDisplay();
+        insert(text, start = this.elements.expr.selectionStart, end = start) {
+            const input = this.elements.expr;
+            input.value = input.value.slice(0, start) + text + input.value.slice(end);
+            input.selectionStart = input.selectionEnd = start + text.length;
+            input.focus();
+            this.evaluate(input.value);
         }
 
         backspace() {
-            const pos = this.input.selectionStart;
-            const text = this.input.value;
-            if (text.slice(pos - 3, pos) === ' * ' || text.slice(pos - 3, pos) === ' + ' || 
-                text.slice(pos - 3, pos) === ' - ' || text.slice(pos - 3, pos) === ' / ' ||
-                text.slice(pos - 3, pos) === ' % ' || text.slice(pos - 3, pos) === ' ^ ') {
-                this.input.value = text.slice(0, pos - 3) + text.slice(pos);
-                this.input.selectionStart = this.input.selectionEnd = pos - 3;
+            const input = this.elements.expr;
+            const start = input.selectionStart;
+            const end = input.selectionEnd;
+            
+            if (start === end && start > 0) {
+                const text = input.value;
+                const before = text.slice(0, start);
+                
+                const ops = [' + ', ' - ', ' * ', ' / ', ' % ', ' ^ '];
+                const funcs = ['sqrt(', 'sin(', 'cos(', 'tan(', 'log(', 'ln('];
+                
+                const opMatch = ops.find(op => before.endsWith(op));
+                const funcMatch = funcs.find(f => before.endsWith(f));
+                
+                const len = opMatch?.length || (funcMatch?.length || 1);
+                this.insert('', start - len, start);
             } else {
-                this.input.value = text.slice(0, pos - 1) + text.slice(pos);
-                this.input.selectionStart = this.input.selectionEnd = pos - 1;
+                this.insert('', start, end);
             }
-            this.input.focus();
-            this.expression = this.input.value;
-            this.liveEvaluate();
+        }
+
+        getCurrentNumber() {
+            const pos = this.elements.expr.selectionStart;
+            return this.elements.expr.value.slice(0, pos).split(/[\s()*/+-]/).pop() || '';
+        }
+
+        clear(clearHistory = false) {
+            Object.assign(this.elements.expr, {value: ''});
+            this.elements.result.textContent = '';
+            if (clearHistory) {
+                this.history = [];
+                this.lastAnswer = null;
+                this.updateHistory();
+            }
+            this.elements.expr.focus();
         }
 
         async calculate() {
-            if (!this.expression) return;
+            const expr = this.elements.expr.value;
+            if (!expr) return;
+
             try {
-                const res = await evaluateFendWithTimeout(this.expression, 1000);
-                this.addToHistory(this.expression, res);
-                this.result = res.includes('Error') ? 'Error' : res;
-                this.expression = '';
-                this.updateDisplay();
-            } catch (_) {
-                this.result = 'Error';
-                this.updateDisplay();
+                const result = await evaluateFendWithTimeout(expr, 1000);
+                if (!result.includes('Error')) {
+                    const formattedResult = this.formatResult(result);
+                    this.lastAnswer = formattedResult;
+                    this.history.unshift({
+                        expr,
+                        result: formattedResult,
+                        timestamp: new Date().toLocaleTimeString()
+                    });
+                    this.updateHistory();
+                    this.clear();
+                }
+            } catch {
+                this.elements.result.textContent = 'Error';
+            }
+        }
+
+        async evaluate(expr) {
+            this.elements.result.textContent = expr ? await this.getResult(expr) : '';
+        }
+
+        async getResult(expr) {
+            try {
+                const result = await evaluateFendWithTimeout(expr, 1000);
+                return result.includes('Error') ? 'Error' : this.formatResult(result);
+            } catch {
+                return 'Error';
             }
         }
 
         formatResult(result) {
-            if (typeof result === 'number') {
-                return Number.isInteger(result)
-                    ? result.toString()
-                    : result.toFixed(8).replace(/\.?0+$/, '');
-            } else {
-                return result.toString();
-            }
+            return typeof result === 'number' 
+                ? (Number.isInteger(result) ? String(result) 
+                    : Number(result).toFixed(8).replace(/\.?0+$/, ''))
+                : String(result);
         }
 
-        addToHistory(expr, result) {
-            this.history.unshift({
-                expression: expr,
-                result: this.formatResult(result)
-            });
-            this.updateHistoryDisplay();
-        }
-
-        updateHistoryDisplay() {
-            this.historyElement.innerHTML = this.history
-                .map(item => `<div>${item.expression} = ${item.result}</div>`)
-                .join('');
-        }
-
-        updateDisplay() {
-            // Only update result now, input is handled directly
-            this.resultElement.textContent = this.result;
-            if(this.expression.trim() !== "") {
-                this.liveEvaluate();
-            }
-        }
-        
-        async liveEvaluate() {
-            if (this.debounceTimer) clearTimeout(this.debounceTimer);
-            this.debounceTimer = setTimeout(async () => {
-                try {
-                    const res = await evaluateFendWithTimeout(this.expression, 1000);
-                    this.result = res.includes('Error') ? 'Error' : this.formatResult(res);
-                    this.resultElement.textContent = this.result;
-                } catch (_) {
-                    this.resultElement.textContent = "Error";
-                }
-            }, 300);
+        updateHistory() {
+            this.elements.history.innerHTML = this.history
+                .map(({expr, result}) => `
+                    <div class="history-entry" title="Click to insert result">
+                        <div class="history-expr">${expr}</div>
+                        <div class="history-result">${result}</div>
+                    </div>`
+                ).join('');
         }
     }
 

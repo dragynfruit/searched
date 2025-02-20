@@ -5,10 +5,11 @@ use std::{path::PathBuf, process, sync::Arc};
 use axum::{
     extract::{Extension, Query, State},
     middleware,
-    response::{Html, IntoResponse, Redirect},
+    response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
     Router,
 };
+use axum::http::{header, StatusCode};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use searched::Kind;
@@ -220,6 +221,15 @@ pub async fn about_page(Extension(settings): Extension<Settings>) -> impl IntoRe
     Html(rendered).into_response()
 }
 
+pub async fn opensearch() -> impl IntoResponse {
+    let xml = include_str!("../static/opensearch.xml");
+    Response::builder()
+        .status(StatusCode::OK)
+        .header(header::CONTENT_TYPE, "application/opensearchdescription+xml")
+        .body(xml.to_string())
+        .unwrap()
+}
+
 // Router configuration
 pub fn router() -> Router<AppState> {
     Router::new()
@@ -233,6 +243,7 @@ pub fn router() -> Router<AppState> {
         .route("/about", get(about_page))
         .route("/favicon", get(favicon))
         .route("/image", get(proxy_image))
+        .route("/opensearch.xml", get(opensearch))
         .fallback_service(ServeDir::new(PathBuf::from("static")))
         .layer(middleware::from_fn(settings_middleware))
 }
