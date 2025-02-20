@@ -38,6 +38,9 @@
         {% else %}
         <button class="reroll-btn">Roll Again</button>
         {% endif %}
+        <div class="widget-footer">
+            Powered by <a href="https://github.com/smol-rs/fastrand" target="_blank">fastrand</a>
+        </div>
     </div>
 </div>
 

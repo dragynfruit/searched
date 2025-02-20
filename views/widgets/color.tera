@@ -7,17 +7,19 @@
         {% if settings.no_js %}
             <!-- Static color viewer for no-js -->
             <div class="color-static">
-                <div class="color-preview" style="background-color: {{ widget.Color.hex }}">
-                    <div class="color-value">{{ widget.Color.hex }}</div>
-                </div>
+                <input type="color" value="{{ widget.Color.hex }}" class="color-picker-input">
                 <div class="color-details">
                     <div class="color-format">
+                        <span class="format-label">HEX:</span>
+                        <span class="format-value">{{ widget.Color.hex }}</span>
+                    </div>
+                    <div class="color-format">
                         <span class="format-label">RGB:</span>
-                        <span class="format-value">{{ widget.Color.rgb.0 }}, {{ widget.Color.rgb.1 }}, {{ widget.Color.rgb.2 }}</span>
+                        <span class="format-value">rgb({{ widget.Color.rgb.0 }}, {{ widget.Color.rgb.1 }}, {{ widget.Color.rgb.2 }})</span>
                     </div>
                     <div class="color-format">
                         <span class="format-label">HSL:</span>
-                        <span class="format-value">{{ widget.Color.hsl.0 | round }}°, {{ widget.Color.hsl.1 | round }}%, {{ widget.Color.hsl.2 | round }}%</span>
+                        <span class="format-value">hsl({{ widget.Color.hsl.0 | round }}°, {{ widget.Color.hsl.1 | round }}%, {{ widget.Color.hsl.2 | round }}%)</span>
                     </div>
                     <div class="color-info-text">
                         {% if widget.Color.is_dark %}
@@ -34,6 +36,7 @@
                 <div class="color-main">
                     <div class="color-preview" style="background-color: {{ widget.Color.hex }}">
                         <div class="color-value">{{ widget.Color.hex }}</div>
+                        <input type="color" class="color-picker-overlay" value="{{ widget.Color.hex }}">
                     </div>
                     <div class="color-sliders">
                         <div class="slider-group">
@@ -71,19 +74,31 @@
                 <div class="color-info">
                     <div class="format">
                         <div class="format-label">HEX</div>
-                        <input type="text" class="hex-input" value="{{ widget.Color.hex }}">
+                        <div class="format-group">
+                            <input type="text" class="hex-input" value="{{ widget.Color.hex }}">
+                            <button class="copy-btn" data-target="hex">Copy</button>
+                        </div>
                     </div>
                     <div class="format">
                         <div class="format-label">RGB</div>
-                        <input type="text" class="rgb-text" readonly value="rgb({{ widget.Color.rgb.0 }}, {{ widget.Color.rgb.1 }}, {{ widget.Color.rgb.2 }})">
+                        <div class="format-group">
+                            <input type="text" class="rgb-text" readonly value="rgb({{ widget.Color.rgb.0 }}, {{ widget.Color.rgb.1 }}, {{ widget.Color.rgb.2 }})">
+                            <button class="copy-btn" data-target="rgb">Copy</button>
+                        </div>
                     </div>
                     <div class="format">
                         <div class="format-label">HSL</div>
-                        <input type="text" class="hsl-text" readonly value="hsl({{ widget.Color.hsl.0 | round }}, {{ widget.Color.hsl.1 | round }}%, {{ widget.Color.hsl.2 | round }}%)">
+                        <div class="format-group">
+                            <input type="text" class="hsl-text" readonly value="hsl({{ widget.Color.hsl.0 | round }}, {{ widget.Color.hsl.1 | round }}%, {{ widget.Color.hsl.2 | round }}%)">
+                            <button class="copy-btn" data-target="hsl">Copy</button>
+                        </div>
                     </div>
                 </div>
             </div>
         {% endif %}
+        <div class="widget-footer">
+            Powered by <a href="https://github.com/mazznoer/csscolorparser-rs" target="_blank">csscolorparser</a>
+        </div>
     </div>
 </div>
 
@@ -98,15 +113,18 @@
     .color-widget .color-main {
         display: flex;
         gap: 16px;
+        margin-bottom: 16px;
     }
 
     .color-widget .color-preview {
-        width: 100px;
-        height: 100px;
+        width: 190px;
+        height: 190px;
+        min-height: unset;
         border-radius: 8px;
         position: relative;
         flex-shrink: 0;
         border: 1px solid var(--border-color);
+        overflow: hidden;
     }
 
     .color-widget .color-value {
@@ -284,7 +302,7 @@
 
         .color-widget .color-preview {
             width: 100%;
-            height: 60px;
+            height: 230px; /* Keep it square even on mobile */
         }
     }
 
@@ -342,6 +360,79 @@
         height: 120px;
         margin-bottom: 16px;
     }
+
+    .color-widget .format-group {
+        display: flex;
+        gap: 8px;
+        flex: 1;
+    }
+
+    .color-widget .copy-btn {
+        padding: 4px 8px;
+        border: 1px solid var(--border-color);
+        border-radius: 4px;
+        background: var(--bg-input);
+        color: var(--text-primary);
+        cursor: pointer;
+        font-size: 0.9em;
+        transition: all 0.2s;
+    }
+
+    .color-widget .copy-btn:hover {
+        background: var(--bg-secondary);
+    }
+
+    .color-widget .copy-btn.copied {
+        background: var(--accent-primary);
+        color: var(--bg-primary);
+    }
+
+    .color-widget .color-picker-input {
+        width: 100%;
+        height: 200px;
+        padding: 0;
+        border: 1px solid var(--border-color);
+        border-radius: 8px;
+        cursor: pointer;
+        background-color: transparent;
+    }
+
+    .color-widget .color-picker-input::-webkit-color-swatch-wrapper {
+        padding: 0;
+    }
+
+    .color-widget .color-picker-input::-webkit-color-swatch {
+        border: none;
+        border-radius: 8px;
+    }
+
+    /* Add this to make the form take full width */
+    .color-widget .color-static form {
+        width: 100%;
+    }
+
+    .color-widget .color-picker-overlay {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        opacity: 0;
+        cursor: pointer;
+    }
+
+    .color-widget .color-preview:hover::after {
+        content: "Click to use color picker";
+        position: absolute;
+        bottom: 35px;
+        left: 8px;
+        background: rgba(0, 0, 0, 0.6);
+        color: white;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 0.9em;
+        pointer-events: none;
+    }
 </style>
 
 {% if not settings.no_js %}
@@ -370,7 +461,14 @@
             this.sSlider = document.querySelector('.s-slider');
             this.lSlider = document.querySelector('.l-slider');
             
+            this.colorPickerInput = document.querySelector('.color-picker-overlay');
+            
             this.setupEventListeners();
+
+            // Add copy button functionality
+            document.querySelectorAll('.copy-btn').forEach(btn => {
+                btn.addEventListener('click', () => this.copyFormat(btn));
+            });
         }
 
         setupEventListeners() {
@@ -392,6 +490,11 @@
 
             // HEX input
             this.hexInput.addEventListener('change', () => this.updateFromHex());
+
+            // Color picker overlay
+            this.colorPickerInput.addEventListener('input', (e) => {
+                this.updateColor(e.target.value);
+            });
         }
 
         updateFromRGB() {
@@ -437,6 +540,7 @@
             this.preview.style.backgroundColor = hex;
             this.colorValue.textContent = hex;
             this.hexInput.value = hex;
+            this.colorPickerInput.value = hex;
             
             // Update RGB
             this.rSlider.value = rgb.r;
@@ -455,15 +559,34 @@
             this.sInput.value = hsl.s;
             this.lInput.value = hsl.l;
             this.hslText.value = `hsl(${hsl.h}, ${hsl.s}%, ${hsl.l}%)`;
+        }
 
-            // Update URL
-            const currentUrl = new URL(window.location.href);
-            currentUrl.searchParams.set('q', hex);
-            window.history.replaceState({}, '', currentUrl.toString());
+        async copyFormat(btn) {
+            const target = btn.dataset.target;
+            let text = '';
             
-            // Trigger search update
-            if (typeof performSearch === 'function') {
-                performSearch(hex);
+            switch(target) {
+                case 'hex':
+                    text = this.hexInput.value;
+                    break;
+                case 'rgb':
+                    text = this.rgbText.value;
+                    break;
+                case 'hsl':
+                    text = this.hslText.value;
+                    break;
+            }
+
+            try {
+                await navigator.clipboard.writeText(text);
+                btn.textContent = 'Copied!';
+                btn.classList.add('copied');
+                setTimeout(() => {
+                    btn.textContent = 'Copy';
+                    btn.classList.remove('copied');
+                }, 1500);
+            } catch (err) {
+                console.error('Failed to copy:', err);
             }
         }
 
