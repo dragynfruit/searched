@@ -9,14 +9,10 @@
             <div class="joke-content">
                 <p class="joke-text">{{ widget.Joke.first_part }}</p>
                 {% if widget.Joke.is_two_part %}
-                    {% if not settings.no_js %}
-                        <details class="punchline">
-                            <summary>Show punchline</summary>
-                            <p class="joke-text">{{ widget.Joke.second_part }}</p>
-                        </details>
-                    {% else %}
-                        <p class="joke-text punchline">{{ widget.Joke.second_part }}</p>
-                    {% endif %}
+                    <details class="punchline">
+                        <summary>Show punchline</summary>
+                        <p class="joke-text">{{ widget.Joke.second_part }}</p>
+                    </details>
                 {% endif %}
             </div>
             <div class="widget-footer">
