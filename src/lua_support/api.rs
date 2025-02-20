@@ -92,57 +92,159 @@ impl LuaUserData for UrlWrapper {
 
 /// Lua wrapper for [reqwest::Client]
 pub struct ClientWrapper(pub Client);
-impl ClientWrapper {
-    async fn get(
-        _: Lua,
-        this: LuaUserDataRef<Self>,
-        (url, headers): (String, LuaTable),
-    ) -> LuaResult<String> {
-        let mut req = this.0.get(url);
 
-        for ent in headers.pairs::<String, String>() {
-            if let Ok((k, v)) = ent {
-                req = req.header(k, v);
-            }
+#[derive(Clone)]
+pub struct RequestBuilder {
+    client: Client,
+    method: String,
+    url: String,
+    headers: HashMap<String, String>,
+    form: Option<HashMap<String, String>>,
+    json: Option<serde_json::Value>,
+}
+
+impl RequestBuilder {
+    pub fn new(client: Client, method: String, url: String) -> Self {
+        Self {
+            client,
+            method,
+            url,
+            headers: HashMap::new(),
+            form: None,
+            json: None,
         }
-
-        Ok(req.send().await.unwrap().text().await.unwrap())
-    }
-
-    async fn post(
-        _: Lua,
-        this: LuaUserDataRef<Self>,
-        (url, headers, form): (String, LuaTable, LuaTable),
-    ) -> LuaResult<String> {
-        let mut form_: HashMap<String, String> = HashMap::new();
-        let mut req = this.0.post(url);
-
-        for ent in form.pairs::<String, String>() {
-            if let Ok((k, v)) = ent {
-                form_.insert(k, v);
-            }
-        }
-        for ent in headers.pairs::<String, String>() {
-            if let Ok((k, v)) = ent {
-                req = req.header(k, v);
-            }
-        }
-
-        req = req.form(&form_);
-
-        Ok(req
-            .send()
-            .await
-            .map_err(|err| err.into_lua_err())?
-            .text()
-            .await
-            .map_err(|err| err.into_lua_err())?)
     }
 }
+
+impl LuaUserData for RequestBuilder {
+    fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
+        methods.add_method_mut("headers", |_, this, headers: LuaTable| {
+            let mut map = HashMap::new();
+            for pair in headers.pairs::<String, String>() {
+                let (k, v) = pair.unwrap();
+                map.insert(k, v);
+            }
+            this.headers = map;
+            Ok(this.clone())
+        });
+
+        methods.add_method_mut("form", |_, this, form: LuaTable| {
+            let mut map = HashMap::new();
+            for pair in form.pairs::<String, String>() {
+                let (k, v) = pair.unwrap();
+                map.insert(k, v);
+            }
+            this.form = Some(map);
+            Ok(this.clone())
+        });
+
+        methods.add_method_mut("json", |_lua, this, value: LuaValue| {
+            // Convert Lua value to JSON
+            let json = match value {
+                LuaValue::Table(t) => {
+                    // Convert table to HashMap
+                    let mut map = HashMap::new();
+                    for pair in t.pairs::<String, LuaValue>() {
+                        if let Ok((k, v)) = pair {
+                            // Convert LuaValue to String or keep as JSON value
+                            let value = match v {
+                                LuaValue::String(s) => {
+                                    serde_json::Value::String(s.to_str()?.to_string())
+                                }
+                                LuaValue::Number(n) => serde_json::Value::Number(
+                                    serde_json::Number::from_f64(n).unwrap(),
+                                ),
+                                LuaValue::Boolean(b) => serde_json::Value::Bool(b),
+                                LuaValue::Nil => serde_json::Value::Null,
+                                _ => continue, // Skip other types
+                            };
+                            map.insert(k, value);
+                        }
+                    }
+                    serde_json::Value::Object(serde_json::Map::from_iter(map))
+                }
+                LuaValue::String(s) => serde_json::from_str(&s.to_str()?.to_string())
+                    .unwrap_or(serde_json::Value::Null),
+                _ => serde_json::Value::Null,
+            };
+
+            this.json = Some(json);
+            Ok(this.clone())
+        });
+
+        methods.add_async_method("send", |_, this, _: ()| async move {
+            let mut req = this.client.request(
+                reqwest::Method::from_bytes(this.method.as_bytes()).unwrap(),
+                &this.url,
+            );
+
+            // Use references to avoid moves
+            for (k, v) in &this.headers {
+                req = req.header(k, v);
+            }
+
+            if let Some(form) = &this.form {
+                req = req.form(form);
+            }
+
+            if let Some(json) = &this.json {
+                req = req.json(json);
+            }
+
+            match req.send().await {
+                Ok(res) => match res.text().await {
+                    Ok(text) => Ok(text),
+                    Err(e) => Err(LuaError::RuntimeError(format!(
+                        "Failed to read response: {}",
+                        e
+                    ))),
+                },
+                Err(e) => Err(LuaError::RuntimeError(format!("Request failed: {}", e))),
+            }
+        });
+
+        methods.add_async_method("html", |_, this, _: ()| async move {
+            let mut req = this.client.request(
+                reqwest::Method::from_bytes(this.method.as_bytes()).unwrap(),
+                &this.url,
+            );
+
+            // Add headers
+            for (k, v) in &this.headers {
+                req = req.header(k, v);
+            }
+
+            if let Some(form) = &this.form {
+                req = req.form(form);
+            }
+
+            if let Some(json) = &this.json {
+                req = req.json(json);
+            }
+
+            match req.send().await {
+                Ok(res) => match res.text().await {
+                    Ok(text) => {
+                        let html = Html::parse_document(&text);
+                        Ok(Scraper(Arc::new(Mutex::new(html))))
+                    }
+                    Err(e) => Err(LuaError::RuntimeError(format!(
+                        "Failed to read response: {}",
+                        e
+                    ))),
+                },
+                Err(e) => Err(LuaError::RuntimeError(format!("Request failed: {}", e))),
+            }
+        });
+    }
+}
+
 impl LuaUserData for ClientWrapper {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_async_method("get", Self::get);
-        methods.add_async_method("post", Self::post);
+        // Only keep the builder method
+        methods.add_method("req", |_, this, (method, url): (String, String)| {
+            Ok(RequestBuilder::new(this.0.clone(), method, url))
+        });
     }
 }
 
@@ -150,10 +252,11 @@ impl LuaUserData for ClientWrapper {
 pub struct Scraper(Arc<Mutex<Html>>);
 impl LuaUserData for Scraper {
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
-        methods.add_function("new", |_, raw_html: String| {
+        methods.add_function("from_string", |_, raw_html: String| {
             let html = Html::parse_document(&raw_html);
             Ok(Self(Arc::new(Mutex::new(html))))
         });
+
         async fn select(
             lua: Lua,
             this: LuaUserDataRef<Scraper>,
@@ -182,7 +285,7 @@ impl LuaUserData for ElementWrapper {
     }
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("attr", |_, this, value: String| {
-            Ok(this.1.attr(&value).unwrap().to_string())
+            Ok(this.1.attr(&value).map(|x| x.to_string()))
         });
     }
 }

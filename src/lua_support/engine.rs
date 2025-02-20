@@ -40,7 +40,7 @@ impl PluginEngine {
         lua.globals()
             .set("Client", lua.create_proxy::<ClientWrapper>()?)?;
         lua.globals()
-            .set("Scraper", lua.create_proxy::<Scraper>()?)?;
+            .set("HtmlDocument", lua.create_proxy::<Scraper>()?)?; // Add this line
         lua.globals()
             .set("Element", lua.create_proxy::<ElementWrapper>()?)?;
 
@@ -120,7 +120,7 @@ impl PluginEngine {
                 .get::<LuaTable>("__searched_engines__")
                 .unwrap()
                 .get::<LuaFunction>(engine)
-                .unwrap();
+                .expect("engine should be loaded");
 
             // Run engine for query
             let results = eng_impl

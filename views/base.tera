@@ -15,6 +15,10 @@
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 
         <link rel="shortcut icon" type="image/png" href="/assets/logo.png">
+        <link rel="search" 
+              type="application/opensearchdescription+xml" 
+              title="searched" 
+              href="/opensearch.xml">
 
         <title>{% block title %}Searched{% endblock title %}</title>
         {% endblock head %}

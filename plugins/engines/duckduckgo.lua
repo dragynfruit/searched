@@ -4,78 +4,68 @@
 
 --- Checks if a URL is an advertisement
 --- @param url string
---- 
 --- @return boolean
 local function is_ad_url(url)
-	return string.match(url, "duckduckgo.com.*ad*") ~= nil
+    return string.match(url, "duckduckgo.com.*ad*") ~= nil
 end
 
 add_engine('duckduckgo', function(client, query, _)
-	local offset
-	if query.page == 2 then
-		offset = (query.page - 1) * 20
-	elseif query.page > 2 then
-		offset = 20 + (query.page - 2) * 50
-	end
+    local offset
+    if query.page == 2 then
+        offset = (query.page - 1) * 20
+    elseif query.page > 2 then
+        offset = 20 + (query.page - 2) * 50
+    end
 
-	local headers = { q = query.query }
-	if query.page > 1 then
-		headers = {
-			s = tostring(offset),
-			nextParams = '',
-			v = 'l',
-			o = 'json',
-			dc = tostring(offset + 1),
-			api = 'd.js',
-			vqd = '',
-			kl = 'wt-wt',
-		}
-	end
+    local form_data = { q = query.query }
+    if query.page > 1 then
+        form_data = {
+            s = tostring(offset),
+            nextParams = '',
+            v = 'l',
+            o = 'json',
+            dc = tostring(offset + 1),
+            api = 'd.js',
+            vqd = '',
+            kl = 'wt-wt',
+        }
+    end
 
-	local res = client:post('https://lite.duckduckgo.com/lite/', {
-		['Content-Type'] = 'application/x-www-form-urlencoded',
-		['Referer'] = 'https://lite.duckduckgo.com/',
-	}, headers)
+    local doc = client:req("POST", 'https://lite.duckduckgo.com/lite/')
+        :headers({
+            ['Content-Type'] = 'application/x-www-form-urlencoded',
+            ['Referer'] = 'https://lite.duckduckgo.com/'
+        })
+        :form(form_data)
+        :html()
 
-	if not res then
-		error("Failed to get response from DuckDuckGo")
-	end
-
-	local scr = Scraper.new(res)
-	if not scr then
-		error("Failed to create scraper from response")
-	end
-
-	-- TODO: need to add vqd handling
-
-	local links = scr:select('a.result-link')
-	local snippets = scr:select('td.result-snippet')
+    local links = doc:select('a.result-link')
+    local snippets = doc:select('td.result-snippet')
 
     if not links or not snippets then
         error("Failed to retrieve search results; links or snippets are nil")
     end
 
-	assert(table.pack(links).n == table.pack(snippets).n, 'snippets bronken')
+    assert(#links == #snippets, 'snippets broken')
 
-	--- @type [Result]
-	local ret = {}
+    local results = {}
+    for i, link in ipairs(links) do
+        local url = link:attr('href')
+        if not is_ad_url(url) then
+            local title = link.inner_html
+            local result = {
+                url = url,
+                title = title,
+            }
+            
+            local snippet_item = snippets[i]
+            if snippet_item then
+                result.general = { snippet = snippet_item.inner_html }
+            end
 
-	for i, link in ipairs(links) do
-		local url = link:attr('href')
-		if not is_ad_url(url) then
-			local title = link.inner_html
-			local ret_item = {
-				url = url,
-				title = title,
-			}
-			local snippet_item = snippets[i]
-			if snippet_item then
-				ret_item.general = { snippet = snippet_item.inner_html }
-			end
+            table.insert(results, result)
+        end
+    end
 
-			table.insert(ret, ret_item)
-		end
-	end
-
-	return ret
+    return results
 end)

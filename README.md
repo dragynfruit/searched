@@ -9,9 +9,6 @@ A blazingly fast metasearch engine written in Rust
 config table for providers.toml to configure the engine <br/>
 No js metronome by generating audio on the backend <br/>
 cache responses from providers
-_ meaning
-_ definition (not working)
 switch to ril
 css animation timer and clock
 Make current time work
-Add opensearch xml specefication

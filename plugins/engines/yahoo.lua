@@ -4,7 +4,6 @@
 
 --- Unquote the url
 --- @param url string
---- 
 --- @return string
 local function unquote(url)
     return url:gsub('%%(%x%x)', function(hex)
@@ -14,7 +13,6 @@ end
 
 --- Converts the yahoo tracking url to a normal url
 --- @param url_string string
---- 
 --- @return string
 local function remove_tracking(url_string)
     local start = url_string:find('RU=') + 3
@@ -25,32 +23,31 @@ local function remove_tracking(url_string)
 end
 
 add_engine('yahoo', function(client, query, opts)
-	local offset = query.page * 7 + 1
+    local offset = query.page * 7 + 1
 
-	local url = Url.from_template(
-		tostring(
-			'https://search.yahoo.com/search?ei=UTF-8&o=json&p={query}&b={offset}'
-		),
-		{
-			query = query.query,
-			offset = tostring(offset),
-		}
-	):string()
+    local url = Url.from_template(
+        'https://search.yahoo.com/search?ei=UTF-8&o=json&p={query}&b={offset}',
+        {
+            query = query.query,
+            offset = tostring(offset),
+        }
+    ):string()
 
-	local res = client:get(url, {
-		['Referer'] = 'https://yahoo.com/',
-	})
-    local data = parse_json(res)
-	local scr = Scraper.new(data.body)
-	assert(scr ~= nil)
+    local data = client:req("GET", url)
+        :headers({
+            ['Referer'] = 'https://yahoo.com/'
+        })
+        :send()
+
+    local doc = HtmlDocument.from_string(parse_json(data).body)
     
-	local links = scr:select('.title>a')
-	local snippets = scr:select('.compText>p')
+    local links = doc:select('.title>a')
+    local snippets = doc:select('.compText>p')
 
-	assert(table.pack(links).n == table.pack(snippets).n, 'snippets broken')
+    assert(#links == #snippets, 'snippets broken')
 
-	local results = {}
-	for i, _ in ipairs(links) do
+    local results = {}
+    for i, _ in ipairs(links) do
         local result_url = remove_tracking(links[i]:attr('href'))
 
         if result_url ~= nil then
@@ -62,7 +59,7 @@ add_engine('yahoo', function(client, query, opts)
                 },
             }
         end
-	end
+    end
 
-	return results
+    return results
 end)

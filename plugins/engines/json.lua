@@ -45,18 +45,22 @@ add_engine('json', function(client, query, opts)
 		page = tostring(query.page),
 	}):string()
 
-	local res = client:get(url, {})
-	local data = parse_json(res)
+	local data = client:req("GET", url)
+		:headers({
+			['Accept'] = 'application/json'
+		})
+		:send()
+
+	local json = parse_json(data)
 
 	if opts.results_key then
-		data = get_key(data, opts.results_key)
+		json = get_key(json, opts.results_key)
 	end
 
-	--- @type [Result]
 	local results = {}
-	for i = 1, #data do
-		if data[i] ~= nil then
-			local result = data[i]
+	for i = 1, #json do
+		if json[i] ~= nil then
+			local result = json[i]
 			local result_url = get_key(result, opts.url_key)
 
 			if result_url ~= nil then

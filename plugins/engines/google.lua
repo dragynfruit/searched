@@ -3,45 +3,48 @@
 -- (c) 2024 Dragynfruit
 
 add_engine('google', function(client, query, _)
-	local offset = query.page * 10
+    local offset = query.page * 10
 
-	local url = Url.parse_with_params(
-		'https://google.com/search',
-		{
-			filter = '0',
-			asearch = 'arc',
-			oe = 'utf8',
-			async = 'use_ac:true,_fmt:prog',
-			start = tostring(offset),
-			q = query.query,
-		}
-	):string()
+    local url = Url.parse_with_params(
+        'https://google.com/search',
+        {
+            filter = '0',
+            asearch = 'arc',
+            oe = 'utf8',
+            async = 'use_ac:true,_fmt:prog',
+            start = tostring(offset),
+            q = query.query,
+        }
+    ):string()
 
-	local res = client:get(url, {
-		['Referer'] = 'https://google.com/',
-	})
-	local scr = Scraper.new(res)
-	assert(scr ~= nil)
+    local doc = client:req("GET", url)
+        :headers({
+            ['Referer'] = 'https://google.com/',
+            ['User-Agent'] = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
+        })
+        :html()
 
-	local links = scr:select('a[jsname=UWckNb]')
-	local titles = scr:select('a[jsname=UWckNb]>h3')
-	local snippets = scr:select('.VwiC3b')
+    local links = doc:select('a[jsname=UWckNb]')
+    local titles = doc:select('a[jsname=UWckNb]>h3')
+    local snippets = doc:select('.VwiC3b')
 
-	assert(#links == #titles, 'titles broken')
-	assert(#links == #snippets, 'snippets broken')
+    if not links or not titles or not snippets then
+        error("Failed to retrieve search results")
+    end
 
-	--- @type [Result]
-	local ret = {}
+    assert(#links == #titles, 'titles broken')
+    assert(#links == #snippets, 'snippets broken')
 
-	for i, _ in ipairs(links) do
-		ret[i] = {
-			url = links[i]:attr('href'),
-			title = titles[i].inner_html,
-			general = {
-				snippet = snippets[i].inner_html,
-			},
-		}
-	end
+    local results = {}
+    for i, _ in ipairs(links) do
+        results[i] = {
+            url = links[i]:attr('href'),
+            title = titles[i].inner_html,
+            general = {
+                snippet = snippets[i].inner_html,
+            },
+        }
+    end
 
-	return ret
+    return results
 end)

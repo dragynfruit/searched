@@ -59,22 +59,69 @@ function Element:attr(attr) end
 --- An HTTP client
 Client = {}
 
---- Make a GET request
+--- Start building a request
 ---
+--- @param method string HTTP method (GET, POST etc)
 --- @param url string
---- @param headers table<string, string>
----
---- @return string
-function Client:get(url, headers) end
+--- @return RequestBuilder
+function Client:req(method, url) end
 
---- Make a POST request
+--- @class RequestBuilder
+--- A request builder
+RequestBuilder = {}
+
+--- Set request headers
 ---
---- @param url string
 --- @param headers table<string, string>
---- @param form table<string, string>
+--- @return RequestBuilder
+function RequestBuilder:headers(headers) end
+
+--- Set form data
 ---
---- @return string
-function Client:post(url, headers, form) end
+--- @param form table<string, string>
+--- @return RequestBuilder
+function RequestBuilder:form(form) end
+
+--- Set JSON body
+---
+--- @param body table
+--- @return RequestBuilder
+function RequestBuilder:json(body) end
+
+--- Execute the request
+---
+--- @return Response
+function RequestBuilder:send() end
+
+--- @class Response
+--- A response from a request
+Response = {}
+
+--- Convert response to HTML document
+--- @return HtmlDocument
+function Response:html() end
+
+--- Parse response as JSON
+--- @return table
+function Response:json() end
+
+--- Convert response to HTML document
+--- @return HtmlDocument
+function RequestBuilder:html() end
+
+--- @class HtmlDocument
+--- Raw HTML document
+HtmlDocument = {}
+
+--- Create new document from string
+--- @param html string Raw HTML content
+--- @return HtmlDocument
+function HtmlDocument.from_string(html) end
+
+--- Select elements from document
+--- @param selector string CSS selector
+--- @return [Element]
+function HtmlDocument:select(selector) end
 
 --- @class Scraper
 --- An HTML scraper

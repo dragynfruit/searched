@@ -159,3 +159,52 @@ kinds = ["sear"]
 	[yahoo.features]
 	pagination = "1"
 	safe_search = "multilevel"
+
+[stract]
+name = "Stract"
+description = "A search engine"
+kinds = ["sear"]
+	[stract.features]
+	pagination = "1"
+	safe_search = "yes"
+
+[rightdao]
+name = "Right Dao"
+description = "A search engine"
+kinds = ["sear"]
+	[rightdao.features]
+	pagination = "1"
+	safe_search = "no"
+
+# VVVVV Implemented correctly BUT FUCKED
+[ask]
+name = "Ask.com"
+description = "A search engine"
+kinds = ["sear"]
+	[ask.features]
+	pagination = "1"
+	safe_search = "no"
+
+[dogpile]
+name = "Dogpile"
+description = "A search engine"
+kinds = ["sear"]
+	[dogpile.features]
+	pagination = "1"
+	safe_search = "no"
+
+[mojeek]
+name = "Mojeek"
+description = "A search engine"
+kinds = ["sear"]
+	[mojeek.features]
+	pagination = "1"
+	safe_search = "no"
+
+[startpage]
+name = "Startpage"
+description = "A search engine"
+kinds = ["sear"]
+	[startpage.features]
+	pagination = "1"
+	safe_search = "yes"

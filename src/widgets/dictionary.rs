@@ -47,6 +47,7 @@ pub struct Dictionary {
     pub word: String,
     pub entries: Option<Vec<DictionaryEntry>>,
     pub error: Option<String>,
+    pub query_type: String, // Add this field
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -55,24 +56,42 @@ struct CachedDictionary {
     timestamp: u64,
 }
 
-// Update the regex to be more strict
+// Update the regex to match more patterns
 static DICTIONARY_RE: Lazy<Regex> = Lazy::new(|| {
-    Regex::new(r"(?i)^(?:(?:define|definition(?:\s+of)?)\s+)?(?P<word>\w+)$").unwrap()
+    Regex::new(r"(?i)^(?:(?:define|definition(?:\s+of)?|meaning(?:\s+of)?|(?:syn|ant)onyms?(?:\s+of)?)\s+)?(?P<word>\w+)(?:\s+(?:meaning|definition|(?:syn|ant)onyms?))?$").unwrap()
 });
 
 impl Dictionary {
     pub async fn detect(query: &str, client: &Client, db: &sled::Db) -> Option<Self> {
-        let query = query.trim();
-        // Skip if query is shorter than "define"
-        if query.len() < 6 {
+        let query = query.trim().to_lowercase();
+
+        // Skip if query is too short
+        if query.len() < 3 {
             return None;
         }
-        let query = query.to_lowercase();
+
         let caps = DICTIONARY_RE.captures(&query)?;
         let word = caps.name("word")?.as_str();
 
-        // Only trigger for explicit commands or long single words
-        let is_explicit = query.starts_with("define") || query.starts_with("definition");
+        // Determine query type
+        let query_type = if query.contains("synonym") {
+            "synonyms"
+        } else if query.contains("antonym") {
+            "antonyms"
+        } else if query.contains("meaning") {
+            "meaning"
+        } else if query.contains("definition") {
+            "definition"
+        } else {
+            "definition" // default
+        };
+
+        // Only trigger for explicit commands or single words with qualifying terms
+        let is_explicit = query.starts_with("define")
+            || query.contains("meaning")
+            || query.contains("definition")
+            || query.contains("synonym")
+            || query.contains("antonym");
         let is_long_word = !query.contains(' ') && query.len() > 6;
 
         if !is_explicit && !is_long_word {
@@ -94,6 +113,7 @@ impl Dictionary {
                 None
             },
             entries,
+            query_type: query_type.to_string(),
         })
     }
 
