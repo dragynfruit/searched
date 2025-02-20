@@ -12,3 +12,5 @@ cache responses from providers
 switch to ril
 css animation timer and clock
 Make current time work
+Settings per engine
+CLEAN CODE

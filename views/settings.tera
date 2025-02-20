@@ -10,16 +10,100 @@
 
 <style>
     #settings-container {
-        padding: 30px;
-        max-width: 600px;
-        margin: 40px auto;
+        padding: 20px;
+        max-width: 800px;
+        margin: 20px auto;
         background-color: var(--bg-secondary);
         border-radius: 12px;
         box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     }
 
+    /* Updated Tabs Navigation */
+    .tabs {
+        position: relative;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 4px;
+        background: var(--bg-tertiary);
+        padding: 5px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+
+    .tab-input {
+        display: none;
+    }
+
+    .tabs > .tab-label {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 500;
+        color: var(--text-secondary);
+        cursor: pointer;
+        transition: all 0.2s ease;
+        border-radius: 6px;
+        background-color: transparent;
+        opacity: 0.8;
+    }
+
+    .tabs > .tab-label:hover {
+        opacity: 1;
+        color: var(--text-primary);
+        background-color: var(--bg-input);
+    }
+
+    #tab1:checked ~ .tabs label[for="tab1"] {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+        opacity: 1;
+    }
+
+    #tab2:checked ~ .tabs label[for="tab2"] {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+        opacity: 1;
+    }
+
+    #tab3:checked ~ .tabs label[for="tab3"] {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+        opacity: 1;
+    }
+
+    #tab4:checked ~ .tabs label[for="tab4"] {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+        opacity: 1;
+    }
+
+    .tab-input:checked + .tab-label {
+        display: none;
+    }
+
+    .tab-content {
+        display: none;
+        width: 100%;
+        margin-top: 20px;
+        opacity: 0;
+        transform: translateY(10px);
+        transition: opacity 0.3s ease, transform 0.3s ease;
+    }
+
+    /* Simplified selector */
+    #tab1:checked ~ .tab-content#content1,
+    #tab2:checked ~ .tab-content#content2,
+    #tab3:checked ~ .tab-content#content3,
+    #tab4:checked ~ .tab-content#content4 {
+        display: block;
+        opacity: 1;
+        transform: translateY(0);
+    }
+
     .settings-section {
-        margin-bottom: 40px;
+        margin-bottom: 20px;
     }
 
     .settings-section h2 {
@@ -165,6 +249,12 @@
         .settings-group {
             padding: 15px;
         }
+
+        .tabs > .tab-label {
+            padding: 8px 12px;
+            font-size: 13px;
+            margin-right: 2px;
+        }
     }
 
     .cookie-disclaimer {
@@ -194,78 +284,100 @@
 {% block content %}
 <div id="settings-container">
     <form method="post" action="/settings/update">
-        <div class="settings-section">
-            <h2>Appearance</h2>
-            <div class="settings-group">
-                <label for="favicons">Show website icons</label>
-                <input type="hidden" name="favicons" value="false">
-                <input type="checkbox" id="favicons" name="favicons" {% if settings.favicons %}checked{% endif %} value="true">
-            </div>
-            <div class="settings-group">
-                <label for="compact_view">Use compact view</label>
-                <input type="hidden" name="compact_view" value="false">
-                <input type="checkbox" id="compact_view" name="compact_view" {% if settings.compact_view %}checked{% endif %} value="true">
-            </div>
-            <div class="settings-group">
-                <label for="bold_terms">Bold matching terms</label>
-                <input type="hidden" name="bold_terms" value="false">
-                <input type="checkbox" id="bold_terms" name="bold_terms" {% if settings.bold_terms %}checked{% endif %} value="true">
-            </div>
-            <div class="settings-group">
-                <label for="theme">Theme</label>
-                <select id="theme" name="theme">
-                    <option value="auto" {% if settings.theme == "auto" or not settings.theme %}selected{% endif %}>System</option>
-                    <option value="dark" {% if settings.theme == "dark" %}selected{% endif %}>Dark</option>
-                    <option value="light" {% if settings.theme == "light" %}selected{% endif %}>Light</option>
-                </select>
+        <!-- Move radio inputs outside tabs div -->
+        <input type="radio" name="tabs" id="tab1" class="tab-input" checked>
+        <input type="radio" name="tabs" id="tab2" class="tab-input">
+        <input type="radio" name="tabs" id="tab3" class="tab-input">
+        <input type="radio" name="tabs" id="tab4" class="tab-input">
+
+        <div class="tabs">
+            <label for="tab1" class="tab-label">Appearance</label>
+            <label for="tab2" class="tab-label">Privacy</label>
+            <label for="tab3" class="tab-label">Results</label>
+            <label for="tab4" class="tab-label">Search Engines</label>
+        </div>
+
+        <!-- Move tab content to be siblings of the radio inputs -->
+        <div id="content1" class="tab-content">
+            <div class="settings-section">
+                <h2>Appearance</h2>
+                <div class="settings-group">
+                    <label for="favicons">Show website icons</label>
+                    <input type="hidden" name="favicons" value="false">
+                    <input type="checkbox" id="favicons" name="favicons" {% if settings.favicons %}checked{% endif %} value="true">
+                </div>
+                <div class="settings-group">
+                    <label for="compact_view">Use compact view</label>
+                    <input type="hidden" name="compact_view" value="false">
+                    <input type="checkbox" id="compact_view" name="compact_view" {% if settings.compact_view %}checked{% endif %} value="true">
+                </div>
+                <div class="settings-group">
+                    <label for="bold_terms">Bold matching terms</label>
+                    <input type="hidden" name="bold_terms" value="false">
+                    <input type="checkbox" id="bold_terms" name="bold_terms" {% if settings.bold_terms %}checked{% endif %} value="true">
+                </div>
+                <div class="settings-group">
+                    <label for="theme">Theme</label>
+                    <select id="theme" name="theme">
+                        <option value="auto" {% if settings.theme == "auto" or not settings.theme %}selected{% endif %}>System</option>
+                        <option value="dark" {% if settings.theme == "dark" %}selected{% endif %}>Dark</option>
+                        <option value="light" {% if settings.theme == "light" %}selected{% endif %}>Light</option>
+                    </select>
+                </div>
             </div>
         </div>
 
-        <div class="settings-section">
-            <h2>Privacy</h2>
-            <div class="settings-group">
-                <label for="show_query_title">Show search query in title</label>
-                <input type="hidden" name="show_query_title" value="false">
-                <input type="checkbox" id="show_query_title" name="show_query_title" {% if settings.show_query_title %}checked{% endif %} value="true">
-            </div>
-            <div class="settings-group">
-                <label for="no_js">Disable JavaScript</label>
-                <input type="hidden" name="no_js" value="false">
-                <input type="checkbox" id="no_js" name="no_js" {% if settings.no_js %}checked{% endif %} value="true">
-            </div>
-            <div class="settings-group">
-                <label for="remove_tracking">Remove Tracking</label>
-                <input type="hidden" name="remove_tracking" value="false">
-                <input type="checkbox" id="remove_tracking" name="remove_tracking" {% if settings.remove_tracking %}checked{% endif %} value="true">
-            </div>
-        </div>
-
-        <div class="settings-section">
-            <h2>Results</h2>
-            <div class="settings-group">
-                <label for="show_full_path">Show full URL path</label>
-                <input type="hidden" name="show_full_path" value="false">
-                <input type="checkbox" id="show_full_path" name="show_full_path" {% if settings.show_full_path %}checked{% endif %} value="true">
-            </div>
-            <div class="settings-group">
-                <label for="safesearch">SafeSearch</label>
-                <select id="safesearch" name="safesearch">
-                    <option value="strict" {% if settings.safesearch == "strict" %}selected{% endif %}>Strict</option>
-                    <option value="moderate" {% if settings.safesearch == "moderate" %}selected{% endif %}>Moderate</option>
-                    <option value="off" {% if settings.safesearch == "off" %}selected{% endif %}>Off</option>
-                </select>
-            </div>
-            <div class="settings-group">
-                <label for="enable_widgets">Enable Widgets</label>
-                <input type="hidden" name="enable_widgets" value="false">
-                <input type="checkbox" id="enable_widgets" name="enable_widgets" {% if settings.enable_widgets %}checked{% endif %} value="true">
+        <div id="content2" class="tab-content">
+            <div class="settings-section">
+                <h2>Privacy</h2>
+                <div class="settings-group">
+                    <label for="show_query_title">Show search query in title</label>
+                    <input type="hidden" name="show_query_title" value="false">
+                    <input type="checkbox" id="show_query_title" name="show_query_title" {% if settings.show_query_title %}checked{% endif %} value="true">
+                </div>
+                <div class="settings-group">
+                    <label for="no_js">Disable JavaScript</label>
+                    <input type="hidden" name="no_js" value="false">
+                    <input type="checkbox" id="no_js" name="no_js" {% if settings.no_js %}checked{% endif %} value="true">
+                </div>
+                <div class="settings-group">
+                    <label for="remove_tracking">Remove Tracking</label>
+                    <input type="hidden" name="remove_tracking" value="false">
+                    <input type="checkbox" id="remove_tracking" name="remove_tracking" {% if settings.remove_tracking %}checked{% endif %} value="true">
+                </div>
             </div>
         </div>
 
-        <div class="settings-section">
-            <h2>Search Engines</h2>
-            <div class="settings-group">
-                <p style="color: #999; text-align: center; width: 100%; margin: 0;">No engine settings available yet</p>
+        <div id="content3" class="tab-content">
+            <div class="settings-section">
+                <h2>Results</h2>
+                <div class="settings-group">
+                    <label for="show_full_path">Show full URL path</label>
+                    <input type="hidden" name="show_full_path" value="false">
+                    <input type="checkbox" id="show_full_path" name="show_full_path" {% if settings.show_full_path %}checked{% endif %} value="true">
+                </div>
+                <div class="settings-group">
+                    <label for="safesearch">SafeSearch</label>
+                    <select id="safesearch" name="safesearch">
+                        <option value="strict" {% if settings.safesearch == "strict" %}selected{% endif %}>Strict</option>
+                        <option value="moderate" {% if settings.safesearch == "moderate" %}selected{% endif %}>Moderate</option>
+                        <option value="off" {% if settings.safesearch == "off" %}selected{% endif %}>Off</option>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <label for="enable_widgets">Enable Widgets</label>
+                    <input type="hidden" name="enable_widgets" value="false">
+                    <input type="checkbox" id="enable_widgets" name="enable_widgets" {% if settings.enable_widgets %}checked{% endif %} value="true">
+                </div>
+            </div>
+        </div>
+
+        <div id="content4" class="tab-content">
+            <div class="settings-section">
+                <h2>Search Engines</h2>
+                <div class="settings-group">
+                    <p style="color: #999; text-align: center; width: 100%; margin: 0;">No engine settings available yet</p>
+                </div>
             </div>
         </div>
 
