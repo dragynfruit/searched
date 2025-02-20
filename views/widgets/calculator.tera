@@ -2,430 +2,70 @@
 <div class="widget calculator">
     <div class="widget-content">
         <h3 class="widget-title">Calculator</h3>
-        {% if settings.no_js %}
-            <!-- Static version for no-js -->
-            <div class="calc-container">
-                <div class="calc-display static">
-                    <div class="calc-input">
-                        <div class="calc-line">
-                            <span class="calc-expression">{{ widget.Calculator.expression | safe }}</span>
-                            {% if widget.Calculator.result != "Error" %}
-                                <span class="equals">=</span>
-                            {% endif %}
-                            <span class="calc-result">{{ widget.Calculator.result }}</span>
+        <div class="calc-container" tabindex="0" id="calculator-container">
+            <div class="calc-display">
+                <div class="calc-screen">
+                    <div class="calc-history" id="calc-history"></div>
+                    <div class="calc-io">
+                        <div class="calc-input-line">
+                            <input type="text" class="calc-input-field" id="calc-expression" autocomplete="off" spellcheck="false">
+                        </div>
+                        <div class="calc-output-line">
+                            <span class="calc-result" id="calc-result"></span>
                         </div>
                     </div>
-                </div>
-                <div class="widget-footer">
-                    Powered by <a href="https://github.com/fend-rs/fend_core" target="_blank">fend</a>
                 </div>
             </div>
-        {% else %}
-            <!-- Interactive calculator interface -->
-            <div class="calc-container" tabindex="0" id="calculator-container">
-                <!-- Display-only version for expressions without JS (initial state) -->
-                {% if widget.Calculator.mode.Expression %}
-                    <div class="calc-display static">
-                        <div class="calc-input">
-                            <div class="calc-line">
-                                <span class="calc-expression">{{ widget.Calculator.expression | safe }}</span>
-                                {% if widget.Calculator.result != "Error" %}
-                                    <span class="equals">=</span>
-                                {% endif %}
-                                <span class="calc-result">{{ widget.Calculator.result }}</span>
-                            </div>
-                        </div>
+            <div class="calc-buttons">
+                <div class="button-row">
+                    <button class="calc-btn function" data-action="clear">C</button>
+                    <button class="calc-btn function" data-action="backspace">⌫</button>
+                    <div class="brackets-group">
+                        <button class="calc-btn function half" data-action="open-bracket">(</button>
+                        <button class="calc-btn function half" data-action="close-bracket">)</button>
                     </div>
-                {% endif %}
-                <!-- Dynamic interactive interface -->
-                <div class="calc-display">
-                    <div class="calc-screen">
-                        <div class="calc-history" id="calc-history"></div>
-                        <div class="calc-io">
-                            <div class="calc-input-line">
-                                <input type="text" class="calc-input-field" id="calc-expression" autocomplete="off" spellcheck="false">
-                            </div>
-                            <div class="calc-output-line">
-                                <span class="calc-result" id="calc-result"></span>
-                            </div>
-                        </div>
-                    </div>
+                    <button class="calc-btn operator" data-action="divide">÷</button>
                 </div>
-                <div class="calc-buttons">
-                    <div class="button-row">
-                        <button class="calc-btn function" data-action="clear">C</button>
-                        <button class="calc-btn function" data-action="backspace">⌫</button>
-                        <div class="brackets-group">
-                            <button class="calc-btn function half" data-action="open-bracket">(</button>
-                            <button class="calc-btn function half" data-action="close-bracket">)</button>
-                        </div>
-                        <button class="calc-btn operator" data-action="divide">÷</button>
-                    </div>
-                    <div class="button-row">
-                        <button class="calc-btn number">7</button>
-                        <button class="calc-btn number">8</button>
-                        <button class="calc-btn number">9</button>
-                        <button class="calc-btn operator" data-action="multiply">×</button>
-                    </div>
-                    <div class="button-row">
-                        <button class="calc-btn number">4</button>
-                        <button class="calc-btn number">5</button>
-                        <button class="calc-btn number">6</button>
-                        <button class="calc-btn operator" data-action="subtract">−</button>
-                    </div>
-                    <div class="button-row">
-                        <button class="calc-btn number">1</button>
-                        <button class="calc-btn number">2</button>
-                        <button class="calc-btn number">3</button>
-                        <button class="calc-btn operator" data-action="add">+</button>
-                    </div>
-                    <div class="button-row">
-                        <button class="calc-btn number">0</button>
-                        <button class="calc-btn number" data-action="decimal">.</button>
-                        <button class="calc-btn function" data-action="percent">%</button>
-                        <button class="calc-btn equals" data-action="equals">=</button>
-                    </div>
+                <div class="button-row">
+                    <button class="calc-btn number">7</button>
+                    <button class="calc-btn number">8</button>
+                    <button class="calc-btn number">9</button>
+                    <button class="calc-btn operator" data-action="multiply">×</button>
                 </div>
-                <div class="scientific-buttons">
-                    <button class="calc-btn function" data-action="sin">sin</button>
-                    <button class="calc-btn function" data-action="cos">cos</button>
-                    <button class="calc-btn function" data-action="tan">tan</button>
-                    <button class="calc-btn function" data-action="sqrt">√</button>
-                    <button class="calc-btn function" data-action="power">^</button>
-                    <button class="calc-btn function" data-action="log">log</button>
-                    <button class="calc-btn function" data-action="ln">ln</button>
-                    <button class="calc-btn constant" data-action="pi">π</button>
-                    <button class="calc-btn constant" data-action="e">e</button>
+                <div class="button-row">
+                    <button class="calc-btn number">4</button>
+                    <button class="calc-btn number">5</button>
+                    <button class="calc-btn number">6</button>
+                    <button class="calc-btn operator" data-action="subtract">−</button>
+                </div>
+                <div class="button-row">
+                    <button class="calc-btn number">1</button>
+                    <button class="calc-btn number">2</button>
+                    <button class="calc-btn number">3</button>
+                    <button class="calc-btn operator" data-action="add">+</button>
+                </div>
+                <div class="button-row">
+                    <button class="calc-btn number">0</button>
+                    <button class="calc-btn number" data-action="decimal">.</button>
+                    <button class="calc-btn function" data-action="percent">%</button>
+                    <button class="calc-btn equals" data-action="equals">=</button>
                 </div>
             </div>
-            <div class="widget-footer">
-                Powered by <a href="https://github.com/fend-rs/fend_core" target="_blank">fend</a>
+            <div class="scientific-buttons">
+                <button class="calc-btn function" data-action="sin">sin</button>
+                <button class="calc-btn function" data-action="cos">cos</button>
+                <button class="calc-btn function" data-action="tan">tan</button>
+                <button class="calc-btn function" data-action="sqrt">√</button>
+                <button class="calc-btn function" data-action="power">^</button>
+                <button class="calc-btn function" data-action="log">log</button>
+                <button class="calc-btn function" data-action="ln">ln</button>
+                <button class="calc-btn constant" data-action="pi">π</button>
+                <button class="calc-btn constant" data-action="e">e</button>
             </div>
-            <script type="module">
-              import init, { evaluateFendWithTimeout } from "/js/fend/fend.esm.js";
-              await init();
-              
-              class Calculator {
-                  constructor() {
-                      // Decode HTML entities in the expression
-                      const tempDiv = document.createElement('div');
-                      tempDiv.innerHTML = "{{ widget.Calculator.expression }}";
-                      this.expression = tempDiv.textContent;
-                      
-                      tempDiv.innerHTML = "{{ widget.Calculator.result }}";
-                      this.result = tempDiv.textContent;
-                      
-                      this.history = [];
-                      this.lastOperation = null;
-                      
-                      this.expressionElement = document.getElementById('calc-expression');
-                      this.resultElement = document.getElementById('calc-result');
-                      this.historyElement = document.getElementById('calc-history');
-                      this.container = document.getElementById('calculator-container');
-                      this.isFocused = false;
-                      this.lastClearClick = 0;
-                      this.debounceTimer = null;
-                      
-                      this.input = document.querySelector('.calc-input-field');
-                      this.expression = this.input.value;
-                      
-                      this.setupEventListeners();
-                      this.updateDisplay();
-                  }
-
-                  setupEventListeners() {
-                      document.querySelectorAll('.calc-btn').forEach(button => {
-                          button.addEventListener('click', () => {
-                              const action = button.dataset.action;
-                              if (action) {
-                                  this.handleAction(action);
-                              } else {
-                                  // Insert at cursor position
-                                  const pos = this.input.selectionStart;
-                                  const text = this.input.value;
-                                  this.input.value = text.slice(0, pos) + button.textContent + text.slice(pos);
-                                  // Move cursor after inserted text
-                                  this.input.selectionStart = this.input.selectionEnd = pos + button.textContent.length;
-                                  this.input.focus();
-                                  this.expression = this.input.value;
-                                  this.liveEvaluate();
-                              }
-                          });
-                      });
-
-                      // Input field events
-                      this.input.addEventListener('input', () => {
-                          this.expression = this.input.value;
-                          if (this.expression.trim()) {
-                              this.liveEvaluate();
-                          } else {
-                              this.resultElement.textContent = '';
-                          }
-                      });
-
-                      this.input.addEventListener('keydown', (e) => {
-                          if (e.key === 'Enter') {
-                              e.preventDefault();
-                              this.calculate();
-                          }
-                      });
-
-                      // Remove old keypress handler since we're using the input now
-                  }
-
-                  // Updated keypress handler to disable space scrolling and ignore letter keys with ctrl or alt held
-                  handleKeypress(e) {
-                      // Disable space scrolling
-                      if (e.key === ' ') {
-                          e.preventDefault();
-                      }
-                      // Ignore letter keys if control or alt is held
-                      if ((e.ctrlKey || e.altKey) && e.key.match(/^[a-zA-Z]$/)) {
-                          e.preventDefault();
-                          return;
-                      }
-                      if (e.key === 'Backspace') {
-                          this.backspace();
-                      } else if (e.key === 'Enter' || e.key === '=') {
-                          e.preventDefault();
-                          this.calculate();
-                      } else if (e.key.length === 1) {
-                          // Append any single character key raw to the expression
-                          this.expression += e.key;
-                          this.updateDisplay();
-                      }
-                  }
-
-                  handleAction(action) {
-                      switch(action) {
-                          case 'clear':
-                              if (this.expression || !this.result) {
-                                  this.clear();
-                              } else {
-                                  this.clear();
-                                  this.history = [];
-                                  this.updateHistoryDisplay();
-                              }
-                              break;
-                          case 'backspace':
-                              this.backspace();
-                              break;
-                          case 'equals':
-                              this.calculate();
-                              break;
-                          case 'decimal':
-                              this.appendDecimal();
-                              break;
-                          case 'open-bracket':
-                              this.appendExpression('(');
-                              break;
-                          case 'close-bracket':
-                              this.appendExpression(')');
-                              break;
-                          case 'add':
-                              this.appendOperator('+');
-                              break;
-                          case 'subtract':
-                              this.appendOperator('-');
-                              break;
-                          case 'multiply':
-                              this.appendOperator('×');
-                              break;
-                          case 'divide':
-                              this.appendOperator('÷');
-                              break;
-                          case 'percent':
-                              this.appendOperator('%');
-                              break;
-                          case 'power':
-                              this.appendOperator('^');
-                              break;
-                          case 'sqrt':
-                              this.appendFunction('sqrt');
-                              break;
-                          case 'sin':
-                              this.appendFunction('sin');
-                              break;
-                          case 'cos':
-                              this.appendFunction('cos');
-                              break;
-                          case 'tan':
-                              this.appendFunction('tan');
-                              break;
-                          case 'log':
-                              this.appendFunction('log');
-                              break;
-                          case 'ln':
-                              this.appendFunction('ln');
-                              break;
-                          case 'pi':
-                              this.appendConstant('π');
-                              break;
-                          case 'e':
-                              this.appendConstant('e');
-                              break;
-                      }
-                  }
-
-                  appendNumber(number) {
-                      if (this.result && !this.expression) {
-                          this.clear();
-                      }
-                      this.expression += number;
-                      this.updateDisplay();
-                  }
-
-                  appendOperator(operator) {
-                      // Convert symbols for evaluation
-                      const evalOp = operator === '×' ? '*' : (operator === '÷' ? '/' : operator);
-                      
-                      const pos = this.input.selectionStart;
-                      const text = this.input.value;
-                      const insert = ` ${evalOp} `;
-                      this.input.value = text.slice(0, pos) + insert + text.slice(pos);
-                      this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
-                      this.input.focus();
-                      this.expression = this.input.value;
-                      this.liveEvaluate();
-                  }
-
-                  appendFunction(func) {
-                      const pos = this.input.selectionStart;
-                      const text = this.input.value;
-                      const insert = `${func}(`;
-                      this.input.value = text.slice(0, pos) + insert + text.slice(pos);
-                      this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
-                      this.input.focus();
-                      this.expression = this.input.value;
-                      this.liveEvaluate();
-                  }
-
-                  appendConstant(constant) {
-                      const pos = this.input.selectionStart;
-                      const text = this.input.value;
-                      this.input.value = text.slice(0, pos) + constant + text.slice(pos);
-                      this.input.selectionStart = this.input.selectionEnd = pos + constant.length;
-                      this.input.focus();
-                      this.expression = this.input.value;
-                      this.liveEvaluate();
-                  }
-
-                  appendDecimal() {
-                      const pos = this.input.selectionStart;
-                      const text = this.input.value;
-                      
-                      // Get the part of the number we're currently editing
-                      const beforeCursor = text.slice(0, pos).split(/[\s()*/+-]/).pop();
-                      
-                      // Only add decimal if there isn't one in the current number
-                      if (!beforeCursor || !beforeCursor.includes('.')) {
-                          const insert = beforeCursor ? '.' : '0.';
-                          this.input.value = text.slice(0, pos) + insert + text.slice(pos);
-                          this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
-                          this.input.focus();
-                          this.expression = this.input.value;
-                          this.liveEvaluate();
-                      }
-                  }
-
-                  appendExpression(text) {
-                      const pos = this.input.selectionStart;
-                      const value = this.input.value;
-                      this.input.value = value.slice(0, pos) + text + value.slice(pos);
-                      this.input.selectionStart = this.input.selectionEnd = pos + text.length;
-                      this.input.focus();
-                      this.expression = this.input.value;
-                      this.liveEvaluate();
-                  }
-
-                  clear() {
-                      this.input.value = '';
-                      this.expression = '';
-                      this.result = '';
-                      this.input.focus();
-                      this.updateDisplay();
-                  }
-
-                  backspace() {
-                      const pos = this.input.selectionStart;
-                      const text = this.input.value;
-                      if (text.slice(pos - 3, pos) === ' * ' || text.slice(pos - 3, pos) === ' + ' || 
-                          text.slice(pos - 3, pos) === ' - ' || text.slice(pos - 3, pos) === ' / ' ||
-                          text.slice(pos - 3, pos) === ' % ' || text.slice(pos - 3, pos) === ' ^ ') {
-                          this.input.value = text.slice(0, pos - 3) + text.slice(pos);
-                          this.input.selectionStart = this.input.selectionEnd = pos - 3;
-                      } else {
-                          this.input.value = text.slice(0, pos - 1) + text.slice(pos);
-                          this.input.selectionStart = this.input.selectionEnd = pos - 1;
-                      }
-                      this.input.focus();
-                      this.expression = this.input.value;
-                      this.liveEvaluate();
-                  }
-
-                  async calculate() {
-                      if (!this.expression) return;
-                      try {
-                          const res = await evaluateFendWithTimeout(this.expression, 1000);
-                          this.addToHistory(this.expression, res);
-                          this.result = res.includes('Error') ? 'Error' : res;
-                          this.expression = '';
-                          this.updateDisplay();
-                      } catch (_) {
-                          this.result = 'Error';
-                          this.updateDisplay();
-                      }
-                  }
-
-                  formatResult(result) {
-                      if (typeof result === 'number') {
-                          return Number.isInteger(result)
-                              ? result.toString()
-                              : result.toFixed(8).replace(/\.?0+$/, '');
-                      } else {
-                          return result.toString();
-                      }
-                  }
-
-                  addToHistory(expr, result) {
-                      this.history.unshift({
-                          expression: expr,
-                          result: this.formatResult(result)
-                      });
-                      this.updateHistoryDisplay();
-                  }
-
-                  updateHistoryDisplay() {
-                      this.historyElement.innerHTML = this.history
-                          .map(item => `<div>${item.expression} = ${item.result}</div>`)
-                          .join('');
-                  }
-
-                  updateDisplay() {
-                      // Only update result now, input is handled directly
-                      this.resultElement.textContent = this.result;
-                      if(this.expression.trim() !== "") {
-                          this.liveEvaluate();
-                      }
-                  }
-                  
-                  async liveEvaluate() {
-                      if (this.debounceTimer) clearTimeout(this.debounceTimer);
-                      this.debounceTimer = setTimeout(async () => {
-                          try {
-                              const res = await evaluateFendWithTimeout(this.expression, 1000);
-                              this.result = res.includes('Error') ? 'Error' : this.formatResult(res);
-                              this.resultElement.textContent = this.result;
-                          } catch (_) {
-                              this.resultElement.textContent = "Error";
-                          }
-                      }, 300);
-                  }
-              }
-
-              const thisCalculator = new Calculator();
-            </script>
-        {% endif %}
+        </div>
+        <div class="widget-footer">
+            Powered by <a href="https://github.com/fend-rs/fend_core" target="_blank">fend</a>
+        </div>
     </div>
 </div>
 
@@ -704,3 +344,335 @@
         padding: 4px 0;
     }
 </style>
+
+<script type="module">
+    import init, { evaluateFendWithTimeout } from "/js/fend/fend.esm.js";
+    await init();
+    
+    class Calculator {
+        constructor() {
+            // Decode HTML entities in the expression
+            const tempDiv = document.createElement('div');
+            tempDiv.innerHTML = "{{ widget.Calculator.expression }}";
+            this.expression = tempDiv.textContent;
+            
+            tempDiv.innerHTML = "{{ widget.Calculator.result }}";
+            this.result = tempDiv.textContent;
+            
+            this.history = [];
+            this.lastOperation = null;
+            
+            this.expressionElement = document.getElementById('calc-expression');
+            this.resultElement = document.getElementById('calc-result');
+            this.historyElement = document.getElementById('calc-history');
+            this.container = document.getElementById('calculator-container');
+            this.input = document.querySelector('.calc-input-field');
+            
+            // Set initial values
+            this.input.value = this.expression;
+            this.resultElement.textContent = this.result;
+            
+            this.isFocused = false;
+            this.lastClearClick = 0;
+            this.debounceTimer = null;
+            
+            this.setupEventListeners();
+            
+            // Trigger initial evaluation if there's an expression
+            if (this.expression) {
+                this.liveEvaluate();
+            }
+        }
+
+        setupEventListeners() {
+            document.querySelectorAll('.calc-btn').forEach(button => {
+                button.addEventListener('click', () => {
+                    const action = button.dataset.action;
+                    if (action) {
+                        this.handleAction(action);
+                    } else {
+                        // Insert at cursor position
+                        const pos = this.input.selectionStart;
+                        const text = this.input.value;
+                        this.input.value = text.slice(0, pos) + button.textContent + text.slice(pos);
+                        // Move cursor after inserted text
+                        this.input.selectionStart = this.input.selectionEnd = pos + button.textContent.length;
+                        this.input.focus();
+                        this.expression = this.input.value;
+                        this.liveEvaluate();
+                    }
+                });
+            });
+
+            // Input field events
+            this.input.addEventListener('input', () => {
+                this.expression = this.input.value;
+                if (this.expression.trim()) {
+                    this.liveEvaluate();
+                } else {
+                    this.resultElement.textContent = '';
+                }
+            });
+
+            this.input.addEventListener('keydown', (e) => {
+                if (e.key === 'Enter') {
+                    e.preventDefault();
+                    this.calculate();
+                }
+            });
+
+            // Remove old keypress handler since we're using the input now
+        }
+
+        // Updated keypress handler to disable space scrolling and ignore letter keys with ctrl or alt held
+        handleKeypress(e) {
+            // Disable space scrolling
+            if (e.key === ' ') {
+                e.preventDefault();
+            }
+            // Ignore letter keys if control or alt is held
+            if ((e.ctrlKey || e.altKey) && e.key.match(/^[a-zA-Z]$/)) {
+                e.preventDefault();
+                return;
+            }
+            if (e.key === 'Backspace') {
+                this.backspace();
+            } else if (e.key === 'Enter' || e.key === '=') {
+                e.preventDefault();
+                this.calculate();
+            } else if (e.key.length === 1) {
+                // Append any single character key raw to the expression
+                this.expression += e.key;
+                this.updateDisplay();
+            }
+        }
+
+        handleAction(action) {
+            switch(action) {
+                case 'clear':
+                    if (this.expression || !this.result) {
+                        this.clear();
+                    } else {
+                        this.clear();
+                        this.history = [];
+                        this.updateHistoryDisplay();
+                    }
+                    break;
+                case 'backspace':
+                    this.backspace();
+                    break;
+                case 'equals':
+                    this.calculate();
+                    break;
+                case 'decimal':
+                    this.appendDecimal();
+                    break;
+                case 'open-bracket':
+                    this.appendExpression('(');
+                    break;
+                case 'close-bracket':
+                    this.appendExpression(')');
+                    break;
+                case 'add':
+                    this.appendOperator('+');
+                    break;
+                case 'subtract':
+                    this.appendOperator('-');
+                    break;
+                case 'multiply':
+                    this.appendOperator('×');
+                    break;
+                case 'divide':
+                    this.appendOperator('÷');
+                    break;
+                case 'percent':
+                    this.appendOperator('%');
+                    break;
+                case 'power':
+                    this.appendOperator('^');
+                    break;
+                case 'sqrt':
+                    this.appendFunction('sqrt');
+                    break;
+                case 'sin':
+                    this.appendFunction('sin');
+                    break;
+                case 'cos':
+                    this.appendFunction('cos');
+                    break;
+                case 'tan':
+                    this.appendFunction('tan');
+                    break;
+                case 'log':
+                    this.appendFunction('log');
+                    break;
+                case 'ln':
+                    this.appendFunction('ln');
+                    break;
+                case 'pi':
+                    this.appendConstant('π');
+                    break;
+                case 'e':
+                    this.appendConstant('e');
+                    break;
+            }
+        }
+
+        appendNumber(number) {
+            if (this.result && !this.expression) {
+                this.clear();
+            }
+            this.expression += number;
+            this.updateDisplay();
+        }
+
+        appendOperator(operator) {
+            // Convert symbols for evaluation
+            const evalOp = operator === '×' ? '*' : (operator === '÷' ? '/' : operator);
+            
+            const pos = this.input.selectionStart;
+            const text = this.input.value;
+            const insert = ` ${evalOp} `;
+            this.input.value = text.slice(0, pos) + insert + text.slice(pos);
+            this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
+            this.input.focus();
+            this.expression = this.input.value;
+            this.liveEvaluate();
+        }
+
+        appendFunction(func) {
+            const pos = this.input.selectionStart;
+            const text = this.input.value;
+            const insert = `${func}(`;
+            this.input.value = text.slice(0, pos) + insert + text.slice(pos);
+            this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
+            this.input.focus();
+            this.expression = this.input.value;
+            this.liveEvaluate();
+        }
+
+        appendConstant(constant) {
+            const pos = this.input.selectionStart;
+            const text = this.input.value;
+            this.input.value = text.slice(0, pos) + constant + text.slice(pos);
+            this.input.selectionStart = this.input.selectionEnd = pos + constant.length;
+            this.input.focus();
+            this.expression = this.input.value;
+            this.liveEvaluate();
+        }
+
+        appendDecimal() {
+            const pos = this.input.selectionStart;
+            const text = this.input.value;
+            
+            // Get the part of the number we're currently editing
+            const beforeCursor = text.slice(0, pos).split(/[\s()*/+-]/).pop();
+            
+            // Only add decimal if there isn't one in the current number
+            if (!beforeCursor || !beforeCursor.includes('.')) {
+                const insert = beforeCursor ? '.' : '0.';
+                this.input.value = text.slice(0, pos) + insert + text.slice(pos);
+                this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
+                this.input.focus();
+                this.expression = this.input.value;
+                this.liveEvaluate();
+            }
+        }
+
+        appendExpression(text) {
+            const pos = this.input.selectionStart;
+            const value = this.input.value;
+            this.input.value = value.slice(0, pos) + text + value.slice(pos);
+            this.input.selectionStart = this.input.selectionEnd = pos + text.length;
+            this.input.focus();
+            this.expression = this.input.value;
+            this.liveEvaluate();
+        }
+
+        clear() {
+            this.input.value = '';
+            this.expression = '';
+            this.result = '';
+            this.input.focus();
+            this.updateDisplay();
+        }
+
+        backspace() {
+            const pos = this.input.selectionStart;
+            const text = this.input.value;
+            if (text.slice(pos - 3, pos) === ' * ' || text.slice(pos - 3, pos) === ' + ' || 
+                text.slice(pos - 3, pos) === ' - ' || text.slice(pos - 3, pos) === ' / ' ||
+                text.slice(pos - 3, pos) === ' % ' || text.slice(pos - 3, pos) === ' ^ ') {
+                this.input.value = text.slice(0, pos - 3) + text.slice(pos);
+                this.input.selectionStart = this.input.selectionEnd = pos - 3;
+            } else {
+                this.input.value = text.slice(0, pos - 1) + text.slice(pos);
+                this.input.selectionStart = this.input.selectionEnd = pos - 1;
+            }
+            this.input.focus();
+            this.expression = this.input.value;
+            this.liveEvaluate();
+        }
+
+        async calculate() {
+            if (!this.expression) return;
+            try {
+                const res = await evaluateFendWithTimeout(this.expression, 1000);
+                this.addToHistory(this.expression, res);
+                this.result = res.includes('Error') ? 'Error' : res;
+                this.expression = '';
+                this.updateDisplay();
+            } catch (_) {
+                this.result = 'Error';
+                this.updateDisplay();
+            }
+        }
+
+        formatResult(result) {
+            if (typeof result === 'number') {
+                return Number.isInteger(result)
+                    ? result.toString()
+                    : result.toFixed(8).replace(/\.?0+$/, '');
+            } else {
+                return result.toString();
+            }
+        }
+
+        addToHistory(expr, result) {
+            this.history.unshift({
+                expression: expr,
+                result: this.formatResult(result)
+            });
+            this.updateHistoryDisplay();
+        }
+
+        updateHistoryDisplay() {
+            this.historyElement.innerHTML = this.history
+                .map(item => `<div>${item.expression} = ${item.result}</div>`)
+                .join('');
+        }
+
+        updateDisplay() {
+            // Only update result now, input is handled directly
+            this.resultElement.textContent = this.result;
+            if(this.expression.trim() !== "") {
+                this.liveEvaluate();
+            }
+        }
+        
+        async liveEvaluate() {
+            if (this.debounceTimer) clearTimeout(this.debounceTimer);
+            this.debounceTimer = setTimeout(async () => {
+                try {
+                    const res = await evaluateFendWithTimeout(this.expression, 1000);
+                    this.result = res.includes('Error') ? 'Error' : this.formatResult(res);
+                    this.resultElement.textContent = this.result;
+                } catch (_) {
+                    this.resultElement.textContent = "Error";
+                }
+            }, 300);
+        }
+    }
+
+    new Calculator();
+</script>
