@@ -43,8 +43,7 @@
                         <div class="calc-history" id="calc-history"></div>
                         <div class="calc-io">
                             <div class="calc-input-line">
-                                <span class="calc-expression" id="calc-expression"></span>
-                                <span class="calc-cursor">|</span>
+                                <input type="text" class="calc-input-field" id="calc-expression" autocomplete="off" spellcheck="false">
                             </div>
                             <div class="calc-output-line">
                                 <span class="calc-result" id="calc-result"></span>
@@ -56,7 +55,10 @@
                     <div class="button-row">
                         <button class="calc-btn function" data-action="clear">C</button>
                         <button class="calc-btn function" data-action="backspace">⌫</button>
-                        <button class="calc-btn function" data-action="brackets">()</button>
+                        <div class="brackets-group">
+                            <button class="calc-btn function half" data-action="open-bracket">(</button>
+                            <button class="calc-btn function half" data-action="close-bracket">)</button>
+                        </div>
                         <button class="calc-btn operator" data-action="divide">÷</button>
                     </div>
                     <div class="button-row">
@@ -100,7 +102,7 @@
                 Powered by <a href="https://github.com/fend-rs/fend_core" target="_blank">fend</a>
             </div>
             <script type="module">
-              import init, { evaluateFendWithTimeout } from "https://cdn.jsdelivr.net/npm/fend-wasm-web@1.5.5/+esm";
+              import init, { evaluateFendWithTimeout } from "/js/fend/fend.esm.js";
               await init();
               
               class Calculator {
@@ -124,37 +126,51 @@
                       this.lastClearClick = 0;
                       this.debounceTimer = null;
                       
+                      this.input = document.querySelector('.calc-input-field');
+                      this.expression = this.input.value;
+                      
                       this.setupEventListeners();
                       this.updateDisplay();
                   }
 
                   setupEventListeners() {
                       document.querySelectorAll('.calc-btn').forEach(button => {
-                          button.addEventListener('click', async () => {
+                          button.addEventListener('click', () => {
                               const action = button.dataset.action;
                               if (action) {
                                   this.handleAction(action);
                               } else {
-                                  this.appendNumber(button.textContent);
+                                  // Insert at cursor position
+                                  const pos = this.input.selectionStart;
+                                  const text = this.input.value;
+                                  this.input.value = text.slice(0, pos) + button.textContent + text.slice(pos);
+                                  // Move cursor after inserted text
+                                  this.input.selectionStart = this.input.selectionEnd = pos + button.textContent.length;
+                                  this.input.focus();
+                                  this.expression = this.input.value;
+                                  this.liveEvaluate();
                               }
                           });
                       });
 
-                      // Add focus tracking
-                      this.container.addEventListener('focus', () => {
-                          this.isFocused = true;
-                      }, true);
-                      
-                      this.container.addEventListener('blur', () => {
-                          this.isFocused = false;
-                      }, true);
-
-                      // Replace existing keydown listener with focused version
-                      document.addEventListener('keydown', (e) => {
-                          if (this.isFocused) {
-                              this.handleKeypress(e);
+                      // Input field events
+                      this.input.addEventListener('input', () => {
+                          this.expression = this.input.value;
+                          if (this.expression.trim()) {
+                              this.liveEvaluate();
+                          } else {
+                              this.resultElement.textContent = '';
                           }
                       });
+
+                      this.input.addEventListener('keydown', (e) => {
+                          if (e.key === 'Enter') {
+                              e.preventDefault();
+                              this.calculate();
+                          }
+                      });
+
+                      // Remove old keypress handler since we're using the input now
                   }
 
                   // Updated keypress handler to disable space scrolling and ignore letter keys with ctrl or alt held
@@ -200,8 +216,11 @@
                           case 'decimal':
                               this.appendDecimal();
                               break;
-                          case 'brackets':
-                              this.appendBrackets();
+                          case 'open-bracket':
+                              this.appendExpression('(');
+                              break;
+                          case 'close-bracket':
+                              this.appendExpression(')');
                               break;
                           case 'add':
                               this.appendOperator('+');
@@ -257,75 +276,99 @@
                   }
 
                   appendOperator(operator) {
-                      if (this.result && !this.expression) {
-                          this.expression = this.result;
-                      }
-                      if (this.expression) {
-                          this.expression += ` ${operator} `;
-                      }
-                      this.updateDisplay();
+                      // Convert symbols for evaluation
+                      const evalOp = operator === '×' ? '*' : (operator === '÷' ? '/' : operator);
+                      
+                      const pos = this.input.selectionStart;
+                      const text = this.input.value;
+                      const insert = ` ${evalOp} `;
+                      this.input.value = text.slice(0, pos) + insert + text.slice(pos);
+                      this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
+                      this.input.focus();
+                      this.expression = this.input.value;
+                      this.liveEvaluate();
                   }
 
                   appendFunction(func) {
-                      if (this.result && !this.expression) {
-                          this.clear();
-                      }
-                      this.expression += `${func}(`;
-                      this.updateDisplay();
+                      const pos = this.input.selectionStart;
+                      const text = this.input.value;
+                      const insert = `${func}(`;
+                      this.input.value = text.slice(0, pos) + insert + text.slice(pos);
+                      this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
+                      this.input.focus();
+                      this.expression = this.input.value;
+                      this.liveEvaluate();
                   }
 
                   appendConstant(constant) {
-                      if (this.result && !this.expression) {
-                          this.clear();
-                      }
-                      this.expression += constant;
-                      this.updateDisplay();
+                      const pos = this.input.selectionStart;
+                      const text = this.input.value;
+                      this.input.value = text.slice(0, pos) + constant + text.slice(pos);
+                      this.input.selectionStart = this.input.selectionEnd = pos + constant.length;
+                      this.input.focus();
+                      this.expression = this.input.value;
+                      this.liveEvaluate();
                   }
 
                   appendDecimal() {
-                      if (this.result && !this.expression) {
-                          this.expression = '0';
+                      const pos = this.input.selectionStart;
+                      const text = this.input.value;
+                      
+                      // Get the part of the number we're currently editing
+                      const beforeCursor = text.slice(0, pos).split(/[\s()*/+-]/).pop();
+                      
+                      // Only add decimal if there isn't one in the current number
+                      if (!beforeCursor || !beforeCursor.includes('.')) {
+                          const insert = beforeCursor ? '.' : '0.';
+                          this.input.value = text.slice(0, pos) + insert + text.slice(pos);
+                          this.input.selectionStart = this.input.selectionEnd = pos + insert.length;
+                          this.input.focus();
+                          this.expression = this.input.value;
+                          this.liveEvaluate();
                       }
-                      const parts = this.expression.split(/[\s()]/);
-                      const lastPart = parts[parts.length - 1];
-                      if (!lastPart.includes('.')) {
-                          this.expression += lastPart ? '.' : '0.';
-                      }
-                      this.updateDisplay();
                   }
 
-                  appendBrackets() {
-                      if (this.result && !this.expression) {
-                          this.clear();
-                      }
-                      const openCount = (this.expression.match(/\(/g) || []).length;
-                      const closeCount = (this.expression.match(/\)/g) || []).length;
-                      this.expression += openCount > closeCount ? ')' : '(';
-                      this.updateDisplay();
+                  appendExpression(text) {
+                      const pos = this.input.selectionStart;
+                      const value = this.input.value;
+                      this.input.value = value.slice(0, pos) + text + value.slice(pos);
+                      this.input.selectionStart = this.input.selectionEnd = pos + text.length;
+                      this.input.focus();
+                      this.expression = this.input.value;
+                      this.liveEvaluate();
                   }
 
                   clear() {
+                      this.input.value = '';
                       this.expression = '';
                       this.result = '';
+                      this.input.focus();
                       this.updateDisplay();
                   }
 
                   backspace() {
-                      if (this.expression.endsWith(' ')) {
-                          this.expression = this.expression.slice(0, -3);
+                      const pos = this.input.selectionStart;
+                      const text = this.input.value;
+                      if (text.slice(pos - 3, pos) === ' * ' || text.slice(pos - 3, pos) === ' + ' || 
+                          text.slice(pos - 3, pos) === ' - ' || text.slice(pos - 3, pos) === ' / ' ||
+                          text.slice(pos - 3, pos) === ' % ' || text.slice(pos - 3, pos) === ' ^ ') {
+                          this.input.value = text.slice(0, pos - 3) + text.slice(pos);
+                          this.input.selectionStart = this.input.selectionEnd = pos - 3;
                       } else {
-                          this.expression = this.expression.slice(0, -1);
+                          this.input.value = text.slice(0, pos - 1) + text.slice(pos);
+                          this.input.selectionStart = this.input.selectionEnd = pos - 1;
                       }
-                      this.updateDisplay();
+                      this.input.focus();
+                      this.expression = this.input.value;
+                      this.liveEvaluate();
                   }
 
                   async calculate() {
                       if (!this.expression) return;
                       try {
-                          // Use fend-wasm-web to evaluate with a 1000ms timeout.
                           const res = await evaluateFendWithTimeout(this.expression, 1000);
                           this.addToHistory(this.expression, res);
-                          this.result = res;
+                          this.result = res.includes('Error') ? 'Error' : res;
                           this.expression = '';
                           this.updateDisplay();
                       } catch (_) {
@@ -359,7 +402,7 @@
                   }
 
                   updateDisplay() {
-                      this.expressionElement.textContent = this.expression;
+                      // Only update result now, input is handled directly
                       this.resultElement.textContent = this.result;
                       if(this.expression.trim() !== "") {
                           this.liveEvaluate();
@@ -371,7 +414,7 @@
                       this.debounceTimer = setTimeout(async () => {
                           try {
                               const res = await evaluateFendWithTimeout(this.expression, 1000);
-                              this.result = this.formatResult(res);
+                              this.result = res.includes('Error') ? 'Error' : this.formatResult(res);
                               this.resultElement.textContent = this.result;
                           } catch (_) {
                               this.resultElement.textContent = "Error";
@@ -538,17 +581,6 @@
         color: var(--text-primary);
         font-size: 1.2em;
     }
-    .calculator .calc-cursor {
-        color: var(--accent-primary);
-        animation: blink 1s step-end infinite;
-        margin-left: 2px;
-        font-weight: bold;
-        user-select: none;
-        visibility: hidden;
-    }
-    .calculator .calc-container:focus .calc-cursor {
-        visibility: visible;
-    }
     @keyframes blink {
         50% { opacity: 0; }
     }
@@ -621,17 +653,6 @@
         font-weight: bold;
         line-height: 1.2;
     }
-    .calculator .calc-cursor {
-        color: var(--accent-primary);
-        animation: blink 1s step-end infinite;
-        margin-left: 2px;
-        font-weight: bold;
-        user-select: none;
-        visibility: hidden; /* hide cursor by default */
-    }
-    .calculator .calc-container:focus .calc-cursor {
-        visibility: visible; /* show cursor when the container is focused */
-    }
     .calculator .calc-history div {
         margin: 4px 0;
         line-height: 1.2;
@@ -660,5 +681,26 @@
     /* Override any rules that hide the history container */
     .calculator .calc-history {
         display: block !important;
+    }
+    .calculator .brackets-group {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 2px;
+    }
+    
+    .calculator .calc-btn.half {
+        padding: 12px 6px;
+        font-size: 1em;
+    }
+
+    .calculator .calc-input-field {
+        width: 100%;
+        background: transparent;
+        border: none;
+        color: var(--text-primary);
+        font-size: 1.2em;
+        font-family: monospace;
+        outline: none;
+        padding: 4px 0;
     }
 </style>
