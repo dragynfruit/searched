@@ -47,6 +47,7 @@
                 <div class="button-row">
                     <button class="calc-btn number">0</button>
                     <button class="calc-btn number" data-action="decimal">.</button>
+                    <button class="calc-btn operator" data-action="percent">%</button>
                     <button class="calc-btn equals" data-action="equals">=</button>
                 </div>
             </div>
