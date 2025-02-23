@@ -2,6 +2,7 @@ use log::{debug, error, info};
 use reqwest::Client;
 use std::{path::PathBuf, process, sync::Arc};
 
+use axum::http::{header, StatusCode};
 use axum::{
     extract::{Extension, Query, State},
     middleware,
@@ -9,7 +10,6 @@ use axum::{
     routing::{get, post},
     Router,
 };
-use axum::http::{header, StatusCode};
 use once_cell::sync::Lazy;
 use regex::Regex;
 use searched::Kind;
@@ -105,12 +105,12 @@ async fn detect_widget_async(
     query: &str,
     client: &Client,
     db: &sled::Db,
-    enable_widgets: bool,
+    settings: &Settings,
 ) -> Result<Option<widgets::Widget>, ()> {
-    Ok(if !enable_widgets {
+    Ok(if !settings.enable_widgets {
         None
     } else {
-        widgets::detect_widget(query, client, db).await
+        widgets::detect_widget(query, client, db, settings).await
     })
 }
 
@@ -143,7 +143,7 @@ pub async fn search_results(
 
         // Run widget detection and search concurrently with proper Result handling
         let (widget_result, search_results) = try_join!(
-            detect_widget_async(&q, &st.client, &st.db, settings.enable_widgets),
+            detect_widget_async(&q, &st.client, &st.db, &settings),
             async {
                 Ok::<_, ()>(if query.provider == "all" {
                     vec![] // TODO: Implement all-provider search
@@ -225,7 +225,10 @@ pub async fn opensearch() -> impl IntoResponse {
     let xml = include_str!("../static/opensearch.xml");
     Response::builder()
         .status(StatusCode::OK)
-        .header(header::CONTENT_TYPE, "application/opensearchdescription+xml")
+        .header(
+            header::CONTENT_TYPE,
+            "application/opensearchdescription+xml",
+        )
         .body(xml.to_string())
         .unwrap()
 }

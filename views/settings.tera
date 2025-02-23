@@ -151,8 +151,18 @@
         padding: 8px 12px;
         border-radius: 6px;
         font-size: 14px;
-        min-width: 140px;
+        min-width: 180px; /* Increased to accommodate longer timezone names */
         cursor: pointer;
+    }
+
+    .settings-group select optgroup {
+        color: var(--text-secondary);
+        font-size: 0.9em;
+    }
+
+    .settings-group select option {
+        color: var(--text-primary);
+        padding: 4px 8px;
     }
 
     .settings-group input[type="checkbox"] {
@@ -304,7 +314,6 @@
         <input type="radio" name="tabs" id="tab3" class="tab-input">
         <input type="radio" name="tabs" id="tab4" class="tab-input">
         <input type="radio" name="tabs" id="tab5" class="tab-input">
-        <input type="radio" name="tabs" id="tab6" class="tab-input">
 
         <div class="tabs">
             <label for="tab1" class="tab-label">Appearance</label>
@@ -312,7 +321,6 @@
             <label for="tab3" class="tab-label">Results</label>
             <label for="tab4" class="tab-label">Search Engines</label>
             <label for="tab5" class="tab-label">Widgets</label>
-            <label for="tab6" class="tab-label">Units</label>
         </div>
 
         <!-- Move tab content to be siblings of the radio inputs -->
@@ -402,14 +410,8 @@
                     <input type="hidden" name="enable_widgets" value="false">
                     <input type="checkbox" id="enable_widgets" name="enable_widgets" {% if settings.enable_widgets %}checked{% endif %} value="true">
                 </div>
-            </div>
-        </div>
-
-        <div id="content6" class="tab-content">
-            <div class="settings-section">
-                <h2>Units</h2>
                 <div class="settings-group">
-                    <label for="temperature_unit">Temperature</label>
+                    <label for="temperature_unit">Temperature Unit</label>
                     <select id="temperature_unit" name="temperature_unit">
                         <option value="C" {% if settings.temperature_unit == "C" %}selected{% endif %}>Celsius (°C)</option>
                         <option value="F" {% if settings.temperature_unit == "F" %}selected{% endif %}>Fahrenheit (°F)</option>
@@ -418,8 +420,37 @@
                 <div class="settings-group">
                     <label for="timezone">Timezone</label>
                     <select id="timezone" name="timezone">
-                        <option value="UTC" {% if settings.timezone == "UTC" %}selected{% endif %}>UTC</option>
-                        <option value="local" {% if settings.timezone == "local" %}selected{% endif %}>Local Browser Time</option>
+                        <optgroup label="System">
+                            <option value="local" {% if settings.timezone == "local" %}selected{% endif %}>Local Browser Time</option>
+                            <option value="UTC" {% if settings.timezone == "UTC" %}selected{% endif %}>UTC</option>
+                        </optgroup>
+                        <optgroup label="United States & Canada">
+                            <option value="America/New_York" {% if settings.timezone == "America/New_York" %}selected{% endif %}>Eastern Time (ET)</option>
+                            <option value="America/Chicago" {% if settings.timezone == "America/Chicago" %}selected{% endif %}>Central Time (CT)</option>
+                            <option value="America/Denver" {% if settings.timezone == "America/Denver" %}selected{% endif %}>Mountain Time (MT)</option>
+                            <option value="America/Los_Angeles" {% if settings.timezone == "America/Los_Angeles" %}selected{% endif %}>Pacific Time (PT)</option>
+                            <option value="America/Anchorage" {% if settings.timezone == "America/Anchorage" %}selected{% endif %}>Alaska Time</option>
+                            <option value="Pacific/Honolulu" {% if settings.timezone == "Pacific/Honolulu" %}selected{% endif %}>Hawaii Time</option>
+                        </optgroup>
+                        <optgroup label="Europe">
+                            <option value="Europe/London" {% if settings.timezone == "Europe/London" %}selected{% endif %}>London (GMT/BST)</option>
+                            <option value="Europe/Paris" {% if settings.timezone == "Europe/Paris" %}selected{% endif %}>Paris, Berlin, Rome (CET)</option>
+                            <option value="Europe/Helsinki" {% if settings.timezone == "Europe/Helsinki" %}selected{% endif %}>Helsinki (EET)</option>
+                            <option value="Europe/Moscow" {% if settings.timezone == "Europe/Moscow" %}selected{% endif %}>Moscow (MSK)</option>
+                        </optgroup>
+                        <optgroup label="Asia & Pacific">
+                            <option value="Asia/Dubai" {% if settings.timezone == "Asia/Dubai" %}selected{% endif %}>Dubai (GST)</option>
+                            <option value="Asia/Shanghai" {% if settings.timezone == "Asia/Shanghai" %}selected{% endif %}>China (CST)</option>
+                            <option value="Asia/Tokyo" {% if settings.timezone == "Asia/Tokyo" %}selected{% endif %}>Tokyo (JST)</option>
+                            <option value="Asia/Singapore" {% if settings.timezone == "Asia/Singapore" %}selected{% endif %}>Singapore (SGT)</option>
+                            <option value="Australia/Sydney" {% if settings.timezone == "Australia/Sydney" %}selected{% endif %}>Sydney (AEST)</option>
+                        </optgroup>
+                        <optgroup label="Other Regions">
+                            <option value="Asia/Kolkata" {% if settings.timezone == "Asia/Kolkata" %}selected{% endif %}>India (IST)</option>
+                            <option value="America/Sao_Paulo" {% if settings.timezone == "America/Sao_Paulo" %}selected{% endif %}>São Paulo (BRT)</option>
+                            <option value="Africa/Johannesburg" {% if settings.timezone == "Africa/Johannesburg" %}selected{% endif %}>Johannesburg (SAST)</option>
+                            <option value="Pacific/Auckland" {% if settings.timezone == "Pacific/Auckland" %}selected{% endif %}>New Zealand (NZST)</option>
+                        </optgroup>
                     </select>
                 </div>
             </div>

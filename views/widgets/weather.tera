@@ -58,8 +58,8 @@
                                 {% endif %}
                             {% endif %}
                         </div>
-                        <div class="temperature">{{ widget.Weather.temperature | round }}°F</div>
-                        <div class="feels-like">Feels like {{ widget.Weather.feels_like | round }}°F</div>
+                        <div class="temperature">{{ widget.Weather.temperature | round }}° {{ settings.temperature_unit}}</div>
+                        <div class="feels-like">Feels like {{ widget.Weather.feels_like | round }}° {{ settings.temperature_unit}}</div>
                     </div>
                 </div>
 
@@ -103,7 +103,7 @@
                         {% for hour in widget.Weather.hourly %}
                             <div class="forecast-item">
                                 <div class="forecast-hour">{{ hour.time }}</div>
-                                <div class="forecast-temp">{{ hour.temperature | round }}°</div>
+                                <div class="forecast-temp">{{ hour.temperature | round }}{% if settings.temperature_unit == "F" %}°F{% else %}°C{% endif %}</div>
                             </div>
                         {% endfor %}
                     </div>

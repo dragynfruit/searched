@@ -3,6 +3,8 @@ use regex::Regex;
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
 
+use crate::settings;
+
 static WEATHER_QUERY_RE: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"(?i)\b(weather|forecast|temperature)\b").unwrap());
 static WEATHER_IN_RE: Lazy<Regex> =
@@ -164,17 +166,22 @@ impl LocationDisplay {
 }
 
 impl Weather {
-    pub async fn detect(query: &str, client: &Client, db: &sled::Db) -> Option<Self> {
+    pub async fn detect(
+        query: &str,
+        client: &Client,
+        db: &sled::Db,
+        settings: &settings::Settings,
+    ) -> Option<Self> {
         let query = query.trim();
         // First, check for "weather in {place}"
         if let Some(caps) = WEATHER_IN_RE.captures(query) {
             let place = caps.name("place")?.as_str().trim();
-            return Self::fetch_weather(place, client, db).await;
+            return Self::fetch_weather(place, client, db, settings).await;
         }
         // Also accept "{place} weather"
         if let Some(caps) = PLACE_WEATHER_RE.captures(query) {
             let place = caps.name("place")?.as_str().trim();
-            return Self::fetch_weather(place, client, db).await;
+            return Self::fetch_weather(place, client, db, settings).await;
         }
         // Fallback: if a generic weather query is detected, use a default place or return dummy data.
         if WEATHER_QUERY_RE.is_match(query) {
@@ -195,7 +202,12 @@ impl Weather {
         None
     }
 
-    async fn fetch_weather(location: &str, client: &Client, db: &sled::Db) -> Option<Self> {
+    async fn fetch_weather(
+        location: &str,
+        client: &Client,
+        db: &sled::Db,
+        settings: &settings::Settings,
+    ) -> Option<Self> {
         // Get coordinates with caching
         let (lat, lon, display_name) = Self::get_coordinates(location, client, db).await?;
         let weather_cache = db.open_tree("weather").ok()?;
@@ -216,9 +228,15 @@ impl Weather {
             }
         }
 
+        let temp_unit = if settings.temperature_unit == "F" {
+            "fahrenheit"
+        } else {
+            "celsius"
+        };
+
         let url = format!(
-            "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch",
-            lat, lon
+            "https://api.open-meteo.com/v1/forecast?latitude={}&longitude={}&current=temperature_2m,relative_humidity_2m,apparent_temperature,is_day,precipitation,weather_code,wind_speed_10m,wind_direction_10m&hourly=temperature_2m&temperature_unit={}&wind_speed_unit=mph&precipitation_unit=inch",
+            lat, lon, temp_unit
         );
 
         match client.get(&url).send().await {

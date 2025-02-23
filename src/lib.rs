@@ -118,3 +118,8 @@ pub struct ImageResult {
     pub preview_url: String,
     pub full_size_url: String,
 }
+
+pub fn format_temperature(temp: f64, unit: &str) -> String {
+    let symbol = if unit == "F" { "°F" } else { "°C" };
+    format!("{:.1}{}", temp, symbol)
+}

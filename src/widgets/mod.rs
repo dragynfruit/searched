@@ -33,6 +33,8 @@ use weather::Weather;
 use wikipedia::Wikipedia;
 use xkcd::Xkcd;
 
+use crate::settings;
+
 #[derive(Debug, Serialize)]
 pub enum Widget {
     Calculator(calculator::Calculator),
@@ -52,7 +54,12 @@ pub enum Widget {
     Game(Game),
 }
 
-pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Option<Widget> {
+pub async fn detect_widget(
+    query: &str,
+    client: &Client,
+    db: &sled::Db,
+    settings: &settings::Settings,
+) -> Option<Widget> {
     if let Some(calculator) = Calculator::detect(query) {
         return Some(Widget::Calculator(calculator));
     }
@@ -77,7 +84,7 @@ pub async fn detect_widget(query: &str, client: &Client, db: &sled::Db) -> Optio
         return Some(Widget::DiceRoll(dice));
     }
 
-    if let Some(weather) = Weather::detect(query, client, db).await {
+    if let Some(weather) = Weather::detect(query, client, db, settings).await {
         return Some(Widget::Weather(weather));
     }
 
