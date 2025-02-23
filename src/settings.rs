@@ -24,6 +24,8 @@ pub struct Settings {
     pub safesearch: SafeSearch,
     pub enable_widgets: bool,
     pub show_full_path: bool,
+    pub temperature_unit: String,
+    pub timezone: String,
 }
 
 impl Default for Settings {
@@ -39,6 +41,8 @@ impl Default for Settings {
             safesearch: SafeSearch::default(),
             enable_widgets: true,
             show_full_path: false,
+            temperature_unit: "C".to_string(),
+            timezone: "UTC".to_string(),
         }
     }
 }
@@ -106,6 +110,16 @@ impl Settings {
                 .get("show_full_path")
                 .and_then(|v| v.as_bool())
                 .unwrap_or(defaults.show_full_path),
+            temperature_unit: json_value
+                .get("temperature_unit")
+                .and_then(|v| v.as_str())
+                .map(String::from)
+                .unwrap_or(defaults.temperature_unit),
+            timezone: json_value
+                .get("timezone")
+                .and_then(|v| v.as_str())
+                .map(String::from)
+                .unwrap_or(defaults.timezone),
         }
     }
 }
@@ -122,6 +136,8 @@ pub struct SettingsBuilder {
     safesearch: Option<SafeSearch>,
     enable_widgets: Option<bool>,
     show_full_path: Option<bool>,
+    temperature_unit: Option<String>,
+    timezone: Option<String>,
 }
 
 impl SettingsBuilder {
@@ -175,6 +191,16 @@ impl SettingsBuilder {
         self
     }
 
+    pub fn temperature_unit<S: Into<String>>(mut self, temperature_unit: S) -> Self {
+        self.temperature_unit = Some(temperature_unit.into());
+        self
+    }
+
+    pub fn timezone<S: Into<String>>(mut self, timezone: S) -> Self {
+        self.timezone = Some(timezone.into());
+        self
+    }
+
     pub fn build(self) -> Settings {
         let defaults = Settings::default();
         Settings {
@@ -188,6 +214,8 @@ impl SettingsBuilder {
             safesearch: self.safesearch.unwrap_or(defaults.safesearch),
             enable_widgets: self.enable_widgets.unwrap_or(defaults.enable_widgets),
             show_full_path: self.show_full_path.unwrap_or(defaults.show_full_path),
+            temperature_unit: self.temperature_unit.unwrap_or(defaults.temperature_unit),
+            timezone: self.timezone.unwrap_or(defaults.timezone),
         }
     }
 }
@@ -288,6 +316,20 @@ pub async fn update_settings(Form(params): Form<HashMap<String, String>>) -> imp
                 .get("show_full_path")
                 .map(|v| v == "true")
                 .unwrap_or(defaults.show_full_path),
+        )
+        .temperature_unit(
+            params
+                .get("temperature_unit")
+                .map(|t| t.to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or(defaults.temperature_unit),
+        )
+        .timezone(
+            params
+                .get("timezone")
+                .map(|t| t.to_string())
+                .filter(|s| !s.is_empty())
+                .unwrap_or(defaults.timezone),
         )
         .build();
 

@@ -43,7 +43,7 @@
         font-weight: 500;
         color: var(--text-secondary);
         cursor: pointer;
-        transition: all 0.2s ease;
+        transition: color 0.2s ease, background-color 0.2s ease, opacity 0.2s ease;
         border-radius: 6px;
         background-color: transparent;
         opacity: 0.8;
@@ -79,6 +79,18 @@
         opacity: 1;
     }
 
+    #tab5:checked ~ .tabs label[for="tab5"] {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+        opacity: 1;
+    }
+
+    #tab6:checked ~ .tabs label[for="tab6"] {
+        background-color: var(--accent-primary);
+        color: var(--bg-primary);
+        opacity: 1;
+    }
+
     .tab-input:checked + .tab-label {
         display: none;
     }
@@ -96,7 +108,9 @@
     #tab1:checked ~ .tab-content#content1,
     #tab2:checked ~ .tab-content#content2,
     #tab3:checked ~ .tab-content#content3,
-    #tab4:checked ~ .tab-content#content4 {
+    #tab4:checked ~ .tab-content#content4,
+    #tab5:checked ~ .tab-content#content5,
+    #tab6:checked ~ .tab-content#content6 {
         display: block;
         opacity: 1;
         transform: translateY(0);
@@ -240,20 +254,20 @@
         justify-content: center;
     }
 
-    @media screen and (max-width: 520px) {
+    @media screen and (max-width: 550px) {
         #settings-container {
-            padding: 15px;
-            margin: 20px 15px;
+            padding: 12px;
+            margin: 20px 12px;
         }
 
         .settings-group {
-            padding: 15px;
+            padding: 12px;
         }
 
         .tabs > .tab-label {
-            padding: 8px 12px;
-            font-size: 13px;
-            margin-right: 2px;
+            padding: 8px 10px;
+            font-size: 12px;
+            margin-right: 0px;
         }
     }
 
@@ -289,12 +303,16 @@
         <input type="radio" name="tabs" id="tab2" class="tab-input">
         <input type="radio" name="tabs" id="tab3" class="tab-input">
         <input type="radio" name="tabs" id="tab4" class="tab-input">
+        <input type="radio" name="tabs" id="tab5" class="tab-input">
+        <input type="radio" name="tabs" id="tab6" class="tab-input">
 
         <div class="tabs">
             <label for="tab1" class="tab-label">Appearance</label>
             <label for="tab2" class="tab-label">Privacy</label>
             <label for="tab3" class="tab-label">Results</label>
             <label for="tab4" class="tab-label">Search Engines</label>
+            <label for="tab5" class="tab-label">Widgets</label>
+            <label for="tab6" class="tab-label">Units</label>
         </div>
 
         <!-- Move tab content to be siblings of the radio inputs -->
@@ -364,11 +382,6 @@
                         <option value="off" {% if settings.safesearch == "off" %}selected{% endif %}>Off</option>
                     </select>
                 </div>
-                <div class="settings-group">
-                    <label for="enable_widgets">Enable Widgets</label>
-                    <input type="hidden" name="enable_widgets" value="false">
-                    <input type="checkbox" id="enable_widgets" name="enable_widgets" {% if settings.enable_widgets %}checked{% endif %} value="true">
-                </div>
             </div>
         </div>
 
@@ -377,6 +390,37 @@
                 <h2>Search Engines</h2>
                 <div class="settings-group">
                     <p style="color: #999; text-align: center; width: 100%; margin: 0;">No engine settings available yet</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="content5" class="tab-content">
+            <div class="settings-section">
+                <h2>Widgets</h2>
+                <div class="settings-group">
+                    <label for="enable_widgets">Enable Widgets</label>
+                    <input type="hidden" name="enable_widgets" value="false">
+                    <input type="checkbox" id="enable_widgets" name="enable_widgets" {% if settings.enable_widgets %}checked{% endif %} value="true">
+                </div>
+            </div>
+        </div>
+
+        <div id="content6" class="tab-content">
+            <div class="settings-section">
+                <h2>Units</h2>
+                <div class="settings-group">
+                    <label for="temperature_unit">Temperature</label>
+                    <select id="temperature_unit" name="temperature_unit">
+                        <option value="C" {% if settings.temperature_unit == "C" %}selected{% endif %}>Celsius (°C)</option>
+                        <option value="F" {% if settings.temperature_unit == "F" %}selected{% endif %}>Fahrenheit (°F)</option>
+                    </select>
+                </div>
+                <div class="settings-group">
+                    <label for="timezone">Timezone</label>
+                    <select id="timezone" name="timezone">
+                        <option value="UTC" {% if settings.timezone == "UTC" %}selected{% endif %}>UTC</option>
+                        <option value="local" {% if settings.timezone == "local" %}selected{% endif %}>Local Browser Time</option>
+                    </select>
                 </div>
             </div>
         </div>
