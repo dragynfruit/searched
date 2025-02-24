@@ -13,6 +13,14 @@ use std::{
     hash::{Hash, Hasher},
 };
 
+static ALLOWED_CONTENT_TYPES: &[&str] = &[
+    "image/jpeg",
+    "image/png",
+    "image/gif",
+    "image/webp",
+    "image/svg+xml",
+];
+
 #[derive(Deserialize)]
 pub struct ImageParams {
     url: String,
@@ -90,6 +98,10 @@ fn build_image_response(data: Option<(Vec<u8>, String)>) -> Response {
     }
 }
 
+fn is_allowed_content_type(content_type: &str) -> bool {
+    ALLOWED_CONTENT_TYPES.contains(&content_type)
+}
+
 #[axum::debug_handler]
 pub async fn proxy_image(
     Query(params): Query<ImageParams>,
@@ -120,6 +132,13 @@ pub async fn proxy_image(
                     .filter(|ct| ct.starts_with("image/"))
                     .map(|s| s.to_string())
                 {
+                    if !is_allowed_content_type(&content_type) {
+                        return Response::builder()
+                            .status(StatusCode::UNSUPPORTED_MEDIA_TYPE)
+                            .body(Body::empty())
+                            .unwrap();
+                    }
+
                     if let Ok(bytes) = response.bytes().await {
                         let image_bytes = bytes.to_vec();
 
