@@ -1,4 +1,4 @@
-use base64::{engine::general_purpose::STANDARD, Engine};
+use base64::{Engine, engine::general_purpose::STANDARD};
 use image::ImageFormat;
 use once_cell::sync::Lazy;
 use regex::Regex;

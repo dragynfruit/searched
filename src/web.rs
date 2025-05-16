@@ -2,17 +2,16 @@ use log::{debug, error, info};
 use reqwest::Client;
 use std::{path::PathBuf, process, sync::Arc};
 
-use axum::http::{header, StatusCode};
+use axum::http::{StatusCode, header};
 use axum::{
+    Router,
     extract::{Extension, Query, State},
     middleware,
     response::{Html, IntoResponse, Redirect, Response},
     routing::{get, post},
-    Router,
 };
 use once_cell::sync::Lazy;
-use regex::Regex;
-use searched::Kind;
+use searched::{Kind, SearchResult};
 use serde::Deserialize;
 use tera::{Context, Tera};
 use tokio::sync::RwLock;
@@ -22,12 +21,13 @@ use tower_http::services::ServeDir;
 use crate::modules::favicon::favicon;
 use crate::modules::image_proxy::proxy_image;
 use crate::{
+    AppState,
     modules::{text_matcher::highlight_text, url_cleaner},
     settings::{
-        export_settings, import_settings, import_settings_form, settings_middleware,
-        update_settings, Settings,
+        Settings, export_settings, import_settings, import_settings_form, settings_middleware,
+        update_settings,
     },
-    widgets, AppState,
+    widgets,
 };
 
 pub static TERA: Lazy<Arc<RwLock<Tera>>> = Lazy::new(|| {
@@ -70,11 +70,6 @@ pub struct SearchParams {
     k: Option<Kind>,
     s: Option<String>,
     p: Option<usize>,
-}
-
-fn strip_html_tags(text: &str) -> String {
-    static TAG_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"<[^>]*>").unwrap());
-    TAG_RE.replace_all(text, "").into_owned()
 }
 
 fn create_tera() -> Tera {
@@ -125,10 +120,6 @@ pub async fn search_results(
     context.insert("settings", &settings);
 
     if let Some(q) = params.q {
-        if q == "rust" {
-            return Redirect::to("https://rust-lang.org").into_response();
-        }
-
         let kind = params.k.unwrap_or_default();
         let query = searched::Query {
             provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
@@ -142,29 +133,14 @@ pub async fn search_results(
         let search_start = std::time::Instant::now();
 
         // Run widget detection and search concurrently with proper Result handling
-        let (widget_result, search_results) = try_join!(
+        let (widget_option, mut search_results) = try_join!(
             detect_widget_async(&q, &st.client, &st.db, &settings),
-            async {
-                Ok::<_, ()>(if query.provider == "all" {
-                    vec![] // TODO: Implement all-provider search
-                } else {
-                    st.eng.search(query.clone()).await
-                })
-            }
+            async { Ok(st.eng.search(query.clone()).await) as Result<_, ()> }
         )
-        .unwrap_or((None, vec![]));
-
-        let mut search_results = search_results;
+        .unwrap_or((None, Vec::<SearchResult>::new()));
 
         // Process search results
         for result in &mut search_results {
-            result.title = strip_html_tags(&result.title);
-            if let Some(general) = &mut result.general {
-                if let Some(snippet) = &general.snippet {
-                    general.snippet = Some(strip_html_tags(snippet));
-                }
-            }
-
             if settings.bold_terms {
                 result.title = highlight_text(&result.title, &q);
             }
@@ -178,7 +154,7 @@ pub async fn search_results(
         debug!("Search completed in {}ms", search_time);
 
         // Add widget if detected
-        if let Some(widget) = widget_result {
+        if let Some(widget) = widget_option {
             context.insert("widget", &widget);
         }
 

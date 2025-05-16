@@ -3,7 +3,7 @@ use std::{collections::HashMap, sync::Arc};
 use fend_core::Context;
 use mlua::prelude::*;
 use reqwest::Client;
-use scraper::{node::Element, Html, Selector};
+use scraper::{Html, Selector, node::Element};
 use tokio::sync::Mutex;
 use url::Url;
 
@@ -275,6 +275,28 @@ impl LuaUserData for Scraper {
     }
 }
 
+fn strip_html_tags(html: String) -> String {
+    let mut result = String::with_capacity(html.len());
+    let mut in_tag = false;
+
+    for c in html.chars() {
+        match c {
+            '<' => {
+                in_tag = true;
+            }
+            '>' => {
+                in_tag = false;
+            }
+            _ => {
+                if !in_tag {
+                    result.push(c);
+                }
+            }
+        }
+    }
+    result
+}
+
 /// Lua wrapper for [scraper::Element]
 #[derive(Clone)]
 pub struct ElementWrapper(String, Element);
@@ -282,6 +304,7 @@ unsafe impl Send for ElementWrapper {}
 impl LuaUserData for ElementWrapper {
     fn add_fields<F: LuaUserDataFields<Self>>(fields: &mut F) {
         fields.add_field_method_get("inner_html", |_, this| Ok(this.0.clone()));
+        fields.add_field_method_get("inner_text", |_, this| Ok(strip_html_tags(this.0.clone())));
     }
     fn add_methods<M: LuaUserDataMethods<Self>>(methods: &mut M) {
         methods.add_method("attr", |_, this, value: String| {

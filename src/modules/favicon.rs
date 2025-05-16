@@ -2,13 +2,13 @@ use crate::AppState;
 use axum::{
     body::Body,
     extract::{Query, State},
-    http::{header, StatusCode},
+    http::{StatusCode, header},
     response::{IntoResponse, Response},
 };
 use image::{
-    codecs::png::PngEncoder,
-    imageops::{resize, FilterType},
     DynamicImage, ImageFormat,
+    codecs::png::PngEncoder,
+    imageops::{FilterType, resize},
 };
 use log::debug;
 use scraper::{Html, Selector};

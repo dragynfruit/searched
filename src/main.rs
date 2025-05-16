@@ -22,7 +22,7 @@ use axum::{
     http::{HeaderMap, HeaderValue},
     middleware,
 };
-use log::{debug, error, info, LevelFilter};
+use log::{LevelFilter, debug, error, info};
 use modules::url_cleaner;
 use reqwest::Client;
 use searched::lua_support::PluginEngine;
@@ -72,16 +72,13 @@ async fn main() -> Result<(), Box<dyn Error>> {
     ] {
         headers.append(key, HeaderValue::from_str(val)?);
     }
-    let client = Client::builder()
-        .default_headers(headers)
-        .build()?;
+    let client = Client::builder().default_headers(headers).build()?;
 
     debug!("Opening database");
     let db = sled::open("data/db")?;
 
     info!("Initializing components...");
 
-    // Initialize tracking rules if enabled
     debug!("Checking URL tracking rules");
     url_cleaner::ensure_rules_exist().await;
 
@@ -90,11 +87,7 @@ async fn main() -> Result<(), Box<dyn Error>> {
 
     info!("Setting up web server");
     let app = web::router()
-        .with_state(AppState {
-            eng,
-            client: client.clone(),
-            db,
-        })
+        .with_state(AppState { eng, client, db })
         .layer(middleware::from_fn(settings::settings_middleware));
 
     let bind_addr = "0.0.0.0:6969";

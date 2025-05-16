@@ -116,9 +116,5 @@ fn parse_time_string(query: &str) -> Option<u64> {
         };
         total_ms += ms;
     }
-    if total_ms > 0 {
-        Some(total_ms)
-    } else {
-        None
-    }
+    if total_ms > 0 { Some(total_ms) } else { None }
 }

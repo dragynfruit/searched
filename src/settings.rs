@@ -6,7 +6,7 @@ use axum::{
     response::{IntoResponse, Response},
 };
 use axum_extra::extract::CookieJar;
-use base64::{engine::general_purpose, Engine as _};
+use base64::{Engine as _, engine::general_purpose};
 use log::{debug, warn};
 use searched::SafeSearch;
 use serde::{Deserialize, Serialize};

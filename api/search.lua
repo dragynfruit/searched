@@ -47,6 +47,7 @@ Query = {}
 --- @class Element
 ---
 --- @field public inner_html string
+--- @field public inner_text string
 Element = {}
 
 --- Get the value of an attribute

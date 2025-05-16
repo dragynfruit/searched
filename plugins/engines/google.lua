@@ -41,7 +41,7 @@ add_engine('google', function(client, query, _)
             url = links[i]:attr('href'),
             title = titles[i].inner_html,
             general = {
-                snippet = snippets[i].inner_html,
+                snippet = snippets[i].inner_text,
             },
         }
     end

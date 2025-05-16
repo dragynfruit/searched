@@ -1,7 +1,7 @@
 use log::debug;
 use nucleo_matcher::{
-    pattern::{CaseMatching, Normalization, Pattern},
     Config, Matcher,
+    pattern::{CaseMatching, Normalization, Pattern},
 };
 
 pub fn highlight_text(text: &str, query: &str) -> String {

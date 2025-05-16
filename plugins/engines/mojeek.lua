@@ -37,7 +37,7 @@ add_engine('mojeek', function(client, query, _)
         
         local snippet_item = snippets[i]
         if snippet_item then
-            result.general = { snippet = snippet_item.inner_html }
+            result.general = { snippet = snippet_item.inner_text }
         end
 
         table.insert(results, result)

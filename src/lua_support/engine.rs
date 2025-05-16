@@ -1,6 +1,6 @@
 use core::error::Error;
 use std::{
-    fs::{read_dir, File},
+    fs::{File, read_dir},
     io::Read,
     time::Instant,
 };
@@ -9,7 +9,7 @@ use mlua::prelude::*;
 use reqwest::Client;
 
 use super::api::*;
-use crate::{config::ProvidersConfig, Query};
+use crate::{Query, config::ProvidersConfig};
 
 /// A single-threaded plugin engine
 #[derive(Clone)]
@@ -40,7 +40,7 @@ impl PluginEngine {
         lua.globals()
             .set("Client", lua.create_proxy::<ClientWrapper>()?)?;
         lua.globals()
-            .set("HtmlDocument", lua.create_proxy::<Scraper>()?)?; // Add this line
+            .set("HtmlDocument", lua.create_proxy::<Scraper>()?)?;
         lua.globals()
             .set("Element", lua.create_proxy::<ElementWrapper>()?)?;
 
@@ -107,6 +107,8 @@ impl PluginEngine {
         let providers = &self.providers;
 
         if let Some(provider) = providers.0.get(&query.provider) {
+            // If the provider has an engine specified, use that engine.
+            // Otherwise, the provider is also an engine
             let engine = provider
                 .engine
                 .clone()
