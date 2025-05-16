@@ -37,7 +37,7 @@ pub struct AppState {
 }
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<(), Box<dyn Error>> {
     let start = std::time::Instant::now();
 
     env_logger::builder()
@@ -70,15 +70,14 @@ async fn main() {
         ("Priority", "u=1"),
         ("TE", "trailers"),
     ] {
-        headers.append(key, HeaderValue::from_str(val).unwrap());
+        headers.append(key, HeaderValue::from_str(val)?);
     }
-    let client = reqwest::Client::builder()
+    let client = Client::builder()
         .default_headers(headers)
-        .build()
-        .unwrap();
+        .build()?;
 
     debug!("Opening database");
-    let db = sled::open("data/db").unwrap();
+    let db = sled::open("data/db")?;
 
     info!("Initializing components...");
 
@@ -87,7 +86,7 @@ async fn main() {
     url_cleaner::ensure_rules_exist().await;
 
     debug!("Initializing plugin engine");
-    let eng = PluginEngine::new(client.clone()).await.unwrap();
+    let eng = PluginEngine::new(client.clone()).await?;
 
     info!("Setting up web server");
     let app = web::router()
@@ -124,4 +123,5 @@ async fn main() {
     }
 
     info!("Shutting down gracefully...");
+    Ok(())
 }
