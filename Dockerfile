@@ -1,4 +1,4 @@
-FROM docker.io/library/rust:alpine as builder
+FROM docker.io/library/rust:1.87-alpine as builder
 
 WORKDIR /usr/src/searched
 COPY . .
