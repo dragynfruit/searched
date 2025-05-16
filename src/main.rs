@@ -26,7 +26,7 @@ use log::{debug, error, info, LevelFilter};
 use modules::url_cleaner;
 use reqwest::Client;
 use searched::lua_support::PluginEngine;
-use std::process;
+use std::{error::Error, process};
 use tokio::net::TcpListener;
 
 #[derive(Clone)]
