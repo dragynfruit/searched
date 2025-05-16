@@ -4,6 +4,8 @@ WORKDIR /usr/src/searched
 COPY . .
 
 RUN apk add --no-cache -U musl-dev openssl-dev g++
+ENV OPENSSL_STATIC=true
+ENV OPENSSL_DIR=/usr
 RUN cargo build --release --no-default-features --features prod
 
 FROM docker.io/library/alpine:latest
