@@ -3,7 +3,7 @@ FROM docker.io/library/rust:1.87-alpine as builder
 WORKDIR /usr/src/searched
 COPY . .
 
-RUN apk add --no-cache -U musl-dev openssl-dev
+RUN apk add --no-cache -U musl-dev openssl-dev g++
 RUN cargo build --release --no-default-features --features prod
 
 FROM docker.io/library/alpine:latest
