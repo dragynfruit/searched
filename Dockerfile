@@ -1,10 +1,9 @@
-FROM docker.io/library/rust:1.87-alpine as builder
+FROM docker.io/library/rust:alpine as builder
 
 WORKDIR /usr/src/searched
 COPY . .
 
-RUN apk add --no-cache -U musl-dev openssl-dev g++ pkg-config
-ENV OPENSSL_STATIC=true
+RUN apk add --no-cache -U musl-dev openssl-dev g++
 ENV OPENSSL_DIR=/usr
 RUN cargo build --release --no-default-features --features prod
 
