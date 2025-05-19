@@ -1,4 +1,3 @@
-use core::error::Error;
 use std::{
     fs::{File, read_dir},
     io::Read,
@@ -9,7 +8,7 @@ use mlua::prelude::*;
 use reqwest::Client;
 
 use super::api::*;
-use crate::{Query, config::ProvidersConfig};
+use crate::{config::ProvidersConfig, Error, Query};
 
 /// A single-threaded plugin engine
 #[derive(Clone)]
@@ -21,7 +20,7 @@ pub struct PluginEngine {
 }
 impl PluginEngine {
     /// Initialize a new engine for running plugins
-    pub async fn new(client: Client) -> Result<Self, Box<dyn Error>> {
+    pub async fn new(client: Client) -> Result<Self, Box<dyn core::error::Error>> {
         #[cfg(not(feature = "hot_reload"))]
         let providers = ProvidersConfig::load("plugins/providers.toml");
 
@@ -97,7 +96,9 @@ impl PluginEngine {
     }
 
     /// Process the given query
-    pub async fn search(&self, query: Query) -> Vec<crate::SearchResult> {
+    pub async fn search(&self, query: Query, provider: impl Into<String>) -> Result<Vec<crate::SearchResult>, Error> {
+        let provider = provider.into();
+
         #[cfg(feature = "hot_reload")]
         Self::load_engines(&self.lua).await;
 
@@ -106,13 +107,13 @@ impl PluginEngine {
         #[cfg(not(feature = "hot_reload"))]
         let providers = &self.providers;
 
-        if let Some(provider) = providers.0.get(&query.provider) {
+        if let Some(p) = providers.0.get(&provider) {
             // If the provider has an engine specified, use that engine.
             // Otherwise, the provider is also an engine
-            let engine = provider
+            let engine = p
                 .engine
                 .clone()
-                .unwrap_or_else(|| query.provider.clone());
+                .unwrap_or_else(|| provider.clone());
             let target = format!("searched::engine::{engine}");
 
             // Get engine implementation
@@ -122,7 +123,7 @@ impl PluginEngine {
                 .get::<LuaTable>("__searched_engines__")
                 .unwrap()
                 .get::<LuaFunction>(engine)
-                .expect("engine should be loaded");
+                .map_err(|_| Error::EngineNotLoaded)?;
 
             // Run engine for query
             let results = eng_impl
@@ -130,23 +131,23 @@ impl PluginEngine {
                     ClientWrapper(self.client.clone()),
                     query.clone(),
                     self.lua
-                        .to_value(&provider.clone().extra.unwrap_or_default()),
+                        .to_value(&p.clone().extra.unwrap_or_default()),
                 ))
                 .await;
 
             match results {
                 Ok(results) => {
-                    return results
+                    return Ok(results
                         .into_iter()
                         .map(|r| self.lua.from_value(LuaValue::Table(r)).unwrap())
-                        .collect();
+                        .collect());
                 }
                 Err(err) => {
-                    error!(target: &target, "failed to get results from provider {}: {}", query.provider, err);
+                    error!(target: &target, "failed to get results from provider {provider}: {err}");
                 }
             }
         }
 
-        Vec::new()
+        Ok(Vec::new())
     }
 }

@@ -11,7 +11,7 @@ use axum::{
     routing::{get, post},
 };
 use once_cell::sync::Lazy;
-use searched::{Kind, SearchResult};
+use searched::{Error, Kind, SearchResult};
 use serde::Deserialize;
 use tera::{Context, Tera};
 use tokio::sync::RwLock;
@@ -122,7 +122,6 @@ pub async fn search_results(
     if let Some(q) = params.q {
         let kind = params.k.unwrap_or_default();
         let query = searched::Query {
-            provider: params.s.clone().unwrap_or("duckduckgo".to_string()),
             query: q.clone(),
             kind: kind.clone(),
             page: params.p.unwrap_or(1),
@@ -135,7 +134,7 @@ pub async fn search_results(
         // Run widget detection and search concurrently with proper Result handling
         let (widget_option, mut search_results) = try_join!(
             detect_widget_async(&q, &st.client, &st.db, &settings),
-            async { Ok(st.eng.search(query.clone()).await) as Result<_, ()> }
+            async { Ok(st.eng.search(query.clone(), params.s.clone().unwrap_or("duckduckgo".to_string())).await.unwrap()) as Result<_, ()> }
         )
         .unwrap_or((None, Vec::<SearchResult>::new()));
 

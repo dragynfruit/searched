@@ -8,6 +8,9 @@ extern crate searched_parser;
 
 pub mod config;
 pub mod lua_support;
+mod error;
+
+pub use error::Error;
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -81,8 +84,6 @@ impl std::fmt::Display for SafeSearch {
 
 #[derive(Debug, Default, PartialEq, Clone, Deserialize, Serialize)]
 pub struct Query {
-    #[serde(rename(deserialize = "pr"))]
-    pub provider: String,
     #[serde(rename(deserialize = "q"))]
     pub query: String,
     #[serde(rename(deserialize = "k"))]
