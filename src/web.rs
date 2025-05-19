@@ -135,7 +135,8 @@ pub async fn search_results(
         // Run widget detection and search concurrently with proper Result handling
         let (widget_option, mut search_results) = try_join!(
             detect_widget_async(&q, &st.client, &st.db, &settings),
-            async { Ok(st.eng.search(query.clone(), params.s.clone().unwrap_or("duckduckgo".to_string())).await.unwrap()) as Result<_, ()> }
+            //async { Ok(st.eng.search(query.clone(), params.s.clone().unwrap_or("duckduckgo".to_string())).await.unwrap()) as Result<_, ()> }
+            async { Ok(st.eng.search_multi(query.clone(), vec!["duckduckgo".to_owned(), "stract".to_owned(), "qwant".to_owned(), "yahoo".to_owned(), "ask".to_owned()]).await.unwrap()) as Result<_, ()> }
         )
         .unwrap_or((None, Vec::<SearchResult>::new()));
 

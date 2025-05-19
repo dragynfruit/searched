@@ -131,7 +131,11 @@ impl PluginEngine {
             }
         }
 
-        let mut results = results.keys().map(|r| r.clone()).collect::<Vec<_>>();
+        let mut results = results.into_iter().collect::<Vec<_>>();
+        results.sort_by_key(|r| r.1.len());
+        results.reverse();
+
+        let mut results = results.iter().map(|(r, _)| r.clone()).collect::<Vec<_>>();
         results.dedup_by_key(|r| r.url.clone());
 
         Ok(results)
