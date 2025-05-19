@@ -7,8 +7,9 @@ extern crate serde;
 extern crate searched_parser;
 
 pub mod config;
-pub mod lua_support;
 mod error;
+pub mod lua_support;
+pub mod settings;
 
 pub use error::Error;
 
@@ -94,7 +95,7 @@ pub struct Query {
     pub safe: SafeSearch,
 }
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Hash, PartialEq, Eq, Debug, Default, Clone, Deserialize, Serialize)]
 pub struct SearchResult {
     pub url: String,
     pub title: String,
@@ -103,20 +104,19 @@ pub struct SearchResult {
     pub image: Option<ImageResult>,
 }
 
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Hash, PartialEq, Eq, Debug, Default, Clone, Deserialize, Serialize)]
 pub struct GeneralResult {
     pub snippet: Option<String>,
 }
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Hash, PartialEq, Eq, Debug, Default, Clone, Deserialize, Serialize)]
 pub struct ForumResult {
     pub poster_image: Option<String>,
     pub poster_username: String,
     pub poster_url: Option<String>,
     pub tags: Option<Vec<String>>,
 }
-#[derive(Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Hash, PartialEq, Eq, Debug, Default, Clone, Deserialize, Serialize)]
 pub struct ImageResult {
     pub preview_url: String,
     pub full_size_url: String,
 }
-

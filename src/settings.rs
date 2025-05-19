@@ -8,7 +8,7 @@ use axum::{
 use axum_extra::extract::CookieJar;
 use base64::{Engine as _, engine::general_purpose};
 use log::{debug, warn};
-use searched::SafeSearch;
+use crate::SafeSearch;
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 

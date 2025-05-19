@@ -7,7 +7,12 @@ extern crate serde;
 extern crate sled;
 extern crate tera;
 
-mod settings;
+use mimalloc::MiMalloc;
+
+#[global_allocator]
+static GLOBAL: MiMalloc = MiMalloc;
+
+use searched::settings;
 mod web;
 mod widgets;
 

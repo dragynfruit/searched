@@ -58,6 +58,7 @@ const MOTD: &'static [&'static str] = &[
     "Look ma, no JS!",
     "What's technical debt?",
     "Compiling searched v0.1.0",
+    "Clinton the cat >>> Louis",
 ];
 
 fn get_motd() -> &'static str {

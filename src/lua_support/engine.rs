@@ -1,4 +1,5 @@
 use std::{
+    collections::HashMap,
     fs::{File, read_dir},
     io::Read,
     time::Instant,
@@ -6,9 +7,10 @@ use std::{
 
 use mlua::prelude::*;
 use reqwest::Client;
+use tokio::task::JoinSet;
 
 use super::api::*;
-use crate::{config::ProvidersConfig, Error, Query};
+use crate::{Error, Query, SearchResult, config::ProvidersConfig, settings::Settings};
 
 /// A single-threaded plugin engine
 #[derive(Clone)]
@@ -95,8 +97,52 @@ impl PluginEngine {
         }
     }
 
+    pub async fn search_multi(
+        &self,
+        query: Query,
+        providers: Vec<String>,
+    ) -> Result<Vec<crate::SearchResult>, Error> {
+        let mut set = JoinSet::new();
+
+        for provider in providers {
+            let eng = self.clone();
+            let query = query.clone();
+            let provider = provider.clone();
+
+            set.spawn(async move {
+                match Self::search(&eng, query, &provider).await {
+                    Ok(res) => (res, provider),
+                    Err(_) => (Vec::new(), provider),
+                }
+            });
+        }
+
+        let mut results: HashMap<SearchResult, Vec<String>> = HashMap::new();
+
+        let result_batches = set.join_all().await;
+
+        for (batch, provider) in result_batches {
+            for res in batch {
+                if let Some(providers) = results.get_mut(&res) {
+                    providers.push(provider.clone());
+                } else {
+                    results.insert(res, vec![provider.clone()]);
+                }
+            }
+        }
+
+        let mut results = results.keys().map(|r| r.clone()).collect::<Vec<_>>();
+        results.dedup_by_key(|r| r.url.clone());
+
+        Ok(results)
+    }
+
     /// Process the given query
-    pub async fn search(&self, query: Query, provider: impl Into<String>) -> Result<Vec<crate::SearchResult>, Error> {
+    pub async fn search(
+        &self,
+        query: Query,
+        provider: impl Into<String>,
+    ) -> Result<Vec<crate::SearchResult>, Error> {
         let provider = provider.into();
 
         #[cfg(feature = "hot_reload")]
@@ -110,10 +156,7 @@ impl PluginEngine {
         if let Some(p) = providers.0.get(&provider) {
             // If the provider has an engine specified, use that engine.
             // Otherwise, the provider is also an engine
-            let engine = p
-                .engine
-                .clone()
-                .unwrap_or_else(|| provider.clone());
+            let engine = p.engine.clone().unwrap_or_else(|| provider.clone());
             let target = format!("searched::engine::{engine}");
 
             // Get engine implementation
@@ -130,8 +173,7 @@ impl PluginEngine {
                 .call_async::<Vec<LuaTable>>((
                     ClientWrapper(self.client.clone()),
                     query.clone(),
-                    self.lua
-                        .to_value(&p.clone().extra.unwrap_or_default()),
+                    self.lua.to_value(&p.clone().extra.unwrap_or_default()),
                 ))
                 .await;
 
