@@ -65,62 +65,65 @@ pub async fn ensure_rules_exist() {
     }
 }
 
-pub fn clean_url(url: &str) -> String {
+pub fn clean_url(url: Url) -> Url {
+    let mut parsed_url = url.clone();
+    let url = url.to_string();
+
     debug!("Cleaning URL: {}", url);
     if let Ok(Some(rules_bytes)) = DB.get("rules") {
         if let Ok(rules_str) = String::from_utf8(rules_bytes.to_vec()) {
             if let Ok(rules) = serde_json::from_str::<Rules>(&rules_str) {
-                if let Ok(mut parsed_url) = Url::parse(url) {
-                    for provider in rules.providers.values() {
-                        if let Ok(pattern) = Regex::new(&provider.url_pattern) {
-                            if pattern.is_match(url) {
-                                // Skip if URL matches any exception
-                                if provider.exceptions.iter().any(|e| {
-                                    Regex::new(e).map(|r| r.is_match(url)).unwrap_or(false)
-                                }) {
-                                    continue;
-                                }
+                for provider in rules.providers.values() {
+                    if let Ok(pattern) = Regex::new(&provider.url_pattern) {
+                        if pattern.is_match(&url) {
+                            // Skip if URL matches any exception
+                            if provider
+                                .exceptions
+                                .iter()
+                                .any(|e| Regex::new(e).map(|r| r.is_match(&url)).unwrap_or(false))
+                            {
+                                continue;
+                            }
 
-                                // Apply tracking parameter removal rules
-                                let pairs: Vec<(String, String)> = parsed_url
-                                    .query_pairs()
-                                    .map(|(k, v)| (k.to_string(), v.to_string()))
-                                    .filter(|(k, _)| {
-                                        !provider.rules.iter().any(|rule| {
-                                            Regex::new(rule).map(|r| r.is_match(k)).unwrap_or(false)
-                                        })
+                            // Apply tracking parameter removal rules
+                            let pairs: Vec<(String, String)> = parsed_url
+                                .query_pairs()
+                                .map(|(k, v)| (k.to_string(), v.to_string()))
+                                .filter(|(k, _)| {
+                                    !provider.rules.iter().any(|rule| {
+                                        Regex::new(rule).map(|r| r.is_match(k)).unwrap_or(false)
                                     })
-                                    .collect();
+                                })
+                                .collect();
 
-                                if !pairs.is_empty() {
-                                    parsed_url.query_pairs_mut().clear();
-                                    for (k, v) in pairs {
-                                        parsed_url.query_pairs_mut().append_pair(&k, &v);
-                                    }
-                                } else {
-                                    parsed_url.set_query(None);
+                            if !pairs.is_empty() {
+                                parsed_url.query_pairs_mut().clear();
+                                for (k, v) in pairs {
+                                    parsed_url.query_pairs_mut().append_pair(&k, &v);
                                 }
+                            } else {
+                                parsed_url.set_query(None);
+                            }
 
-                                // Apply raw rules (like path cleanup)
-                                for raw_rule in &provider.raw_rules {
-                                    if let Ok(regex) = Regex::new(raw_rule) {
-                                        let path = parsed_url.path().to_string();
-                                        let cleaned = regex.replace_all(&path, "").to_string();
-                                        parsed_url.set_path(&cleaned);
-                                    }
+                            // Apply raw rules (like path cleanup)
+                            for raw_rule in &provider.raw_rules {
+                                if let Ok(regex) = Regex::new(raw_rule) {
+                                    let path = parsed_url.path().to_string();
+                                    let cleaned = regex.replace_all(&path, "").to_string();
+                                    parsed_url.set_path(&cleaned);
                                 }
+                            }
 
-                                // Handle redirections if force_redirection is true
-                                if provider.force_redirection {
-                                    for redirection in &provider.redirections {
-                                        if let Ok(regex) = Regex::new(redirection) {
-                                            if let Some(caps) = regex.captures(url) {
-                                                if let Some(real_url) = caps.get(1) {
-                                                    if let Ok(decoded) =
-                                                        urlencoding::decode(real_url.as_str())
-                                                    {
-                                                        return decoded.to_string();
-                                                    }
+                            // Handle redirections if force_redirection is true
+                            if provider.force_redirection {
+                                for redirection in &provider.redirections {
+                                    if let Ok(regex) = Regex::new(redirection) {
+                                        if let Some(caps) = regex.captures(&url) {
+                                            if let Some(real_url) = caps.get(1) {
+                                                if let Ok(decoded) =
+                                                    urlencoding::decode(real_url.as_str())
+                                                {
+                                                    return Url::parse(&decoded).unwrap();
                                                 }
                                             }
                                         }
@@ -129,10 +132,10 @@ pub fn clean_url(url: &str) -> String {
                             }
                         }
                     }
-                    return parsed_url.to_string();
                 }
+                return parsed_url;
             }
         }
     }
-    url.to_string()
+    Url::parse(&url).unwrap()
 }

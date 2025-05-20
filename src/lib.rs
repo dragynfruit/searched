@@ -12,6 +12,7 @@ pub mod lua_support;
 pub mod settings;
 
 pub use error::Error;
+use url::Url;
 
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -95,10 +96,12 @@ pub struct Query {
     pub safe: SafeSearch,
 }
 
-#[derive(Hash, PartialEq, Eq, Debug, Default, Clone, Deserialize, Serialize)]
+#[derive(Hash, PartialEq, Eq, Debug, Clone, Deserialize, Serialize)]
 pub struct SearchResult {
-    pub url: String,
+    pub url: Url,
     pub title: String,
+    #[serde(default)]
+    pub providers: Vec<String>,
     pub general: Option<GeneralResult>,
     pub forum: Option<ForumResult>,
     pub image: Option<ImageResult>,

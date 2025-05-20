@@ -3,8 +3,9 @@
 --- @class Result
 --- A search result
 ---
---- @field public url string
+--- @field public url Url
 --- @field public title string
+--- @field public providers string[]
 --- @field public general? GeneralResult
 --- @field public forum? ForumResult
 --- @field public image? ImageResult

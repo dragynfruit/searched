@@ -320,6 +320,20 @@ pub fn add_engine(lua: &Lua, (name, callback): (String, LuaFunction)) -> LuaResu
 
     Ok(())
 }
+pub fn add_merger(lua: &Lua, (name, callback): (String, LuaFunction)) -> LuaResult<()> {
+    lua.globals()
+        .get::<LuaTable>("__searched_mergers__")?
+        .set(name, callback.clone())?;
+
+    Ok(())
+}
+pub fn add_ranker(lua: &Lua, (name, callback): (String, LuaFunction)) -> LuaResult<()> {
+    lua.globals()
+        .get::<LuaTable>("__searched_rankers__")?
+        .set(name, callback.clone())?;
+
+    Ok(())
+}
 pub fn stringify_params(_: &Lua, params: LuaTable) -> LuaResult<String> {
     Ok(params
         .pairs::<String, String>()

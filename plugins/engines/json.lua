@@ -3,10 +3,10 @@
 -- -- (c) 2024 Dragynfruit
 
 --- More advanced way to get nested keys based on / separator
---- 
+---
 --- @param data table
 --- @param key string
---- 
+---
 --- @return any
 local function get_key(data, key)
 	if key == nil then
@@ -45,9 +45,10 @@ add_engine('json', function(client, query, opts)
 		page = tostring(query.page),
 	}):string()
 
-	local data = client:req("GET", url)
+	local data = client
+		:req('GET', url)
 		:headers({
-			['Accept'] = 'application/json'
+			['Accept'] = 'application/json',
 		})
 		:send()
 

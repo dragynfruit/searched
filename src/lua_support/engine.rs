@@ -8,6 +8,7 @@ use std::{
 use mlua::prelude::*;
 use reqwest::Client;
 use tokio::task::JoinSet;
+use url::Url;
 
 use super::api::*;
 use crate::{Error, Query, SearchResult, config::ProvidersConfig, settings::Settings};
@@ -33,6 +34,10 @@ impl PluginEngine {
         // Add Lua global variables we need
         lua.globals()
             .set("__searched_engines__", lua.create_table()?)?;
+        lua.globals()
+            .set("__searched_mergers__", lua.create_table()?)?;
+        lua.globals()
+            .set("__searched_rankers__", lua.create_table()?)?;
 
         // Add Lua interfaces
         lua.globals()
@@ -49,6 +54,10 @@ impl PluginEngine {
         lua.globals()
             .set("add_engine", lua.create_function(add_engine)?)?;
         lua.globals()
+            .set("add_merger", lua.create_function(add_merger)?)?;
+        lua.globals()
+            .set("add_ranker", lua.create_function(add_ranker)?)?;
+        lua.globals()
             .set("stringify_params", lua.create_function(stringify_params)?)?;
         lua.globals()
             .set("parse_json", lua.create_function(parse_json)?)?;
@@ -58,7 +67,7 @@ impl PluginEngine {
         debug!("Initialized plugin engine! loading engines...");
 
         // Load engines
-        Self::load_engines(&lua).await;
+        Self::load_plugins(&lua).await;
 
         debug!("loaded engines!");
 
@@ -70,8 +79,9 @@ impl PluginEngine {
         })
     }
 
-    pub async fn load_engines(lua: &Lua) {
-        for path in read_dir("plugins/engines").unwrap() {
+    pub async fn load_plugins(lua: &Lua) {
+        for plugin_kind in ["engines", "ranking"] {
+        for path in read_dir(&format!("plugins/{plugin_kind}")).unwrap() {
             if let Ok(path) = path {
                 // Do war crime level code
                 let name = path
@@ -95,9 +105,77 @@ impl PluginEngine {
                 debug!("loaded {name} in {:?}!", load_st.elapsed());
             }
         }
+        }
     }
 
-    pub async fn search_multi(
+    pub async fn search(&self, query: Query, providers: Vec<String>) -> Result<Vec<SearchResult>, Error> {
+        let results = self.search_multi(query.clone(), providers).await?;
+        let merged = self.merge("multiprovider".to_owned(), query.clone(), results).await?;
+        let ranked = self.rank("multiprovider".to_owned(), query, merged).await?;
+
+        Ok(ranked)
+    }
+
+    async fn merge(&self, merger: String, query: Query, results: Vec<SearchResult>) -> Result<Vec<SearchResult>, Error> {
+        let merger_impl = self.lua.globals().get::<LuaTable>("__searched_mergers__").unwrap().get::<LuaFunction>(merger).unwrap();
+
+        let results = merger_impl
+            .call_async::<Vec<LuaTable>>((
+                self.lua.to_value(&results).unwrap_or(LuaValue::Nil),
+                self.lua.create_table().unwrap(),
+            ))
+            .await;
+
+        match results {
+            Ok(results) => {
+                return Ok(results
+                    .into_iter()
+                    .filter_map(|r| {
+                        let res: SearchResult = self.lua.from_value(LuaValue::Table(r)).unwrap();
+                        if res.providers.is_empty() {
+                            None
+                        } else {
+                            Some(res)
+                        }
+                    })
+                    .collect());
+            }
+            Err(_) => {}
+        }
+
+        Ok(Vec::new())
+    }
+
+    async fn rank(&self, ranker: String, query: Query, results: Vec<SearchResult>) -> Result<Vec<SearchResult>, Error> {
+        let ranker_impl = self.lua.globals().get::<LuaTable>("__searched_rankers__").unwrap().get::<LuaFunction>(ranker).unwrap();
+
+        let weights = ranker_impl
+            .call_async::<Vec<LuaNumber>>((
+                self.lua.to_value(&results).unwrap_or(LuaValue::Nil),
+                self.lua.create_table().unwrap(),
+            ))
+            .await;
+
+        match weights {
+            Ok(weights) => {
+                let mut res_weights = results
+                    .into_iter()
+                    .zip(weights)
+                    .collect::<Vec<_>>();
+                res_weights.sort_by_key(|r| (r.1 * 100.0) as u16);
+                res_weights.reverse();
+                return Ok(res_weights
+                    .into_iter()
+                    .unzip::<SearchResult, f64, Vec<_>, Vec<_>>()
+                    .0);
+            }
+            Err(_) => {}
+        }
+
+        Ok(Vec::new())
+    }
+
+    async fn search_multi(
         &self,
         query: Query,
         providers: Vec<String>,
@@ -110,39 +188,39 @@ impl PluginEngine {
             let provider = provider.clone();
 
             set.spawn(async move {
-                match Self::search(&eng, query, &provider).await {
-                    Ok(res) => (res, provider),
-                    Err(_) => (Vec::new(), provider),
+                match Self::search_single(&eng, query, &provider).await {
+                    Ok(res) => res,
+                    Err(_) => Vec::new(),
                 }
             });
         }
 
-        let mut results: HashMap<SearchResult, Vec<String>> = HashMap::new();
+        //let mut results: HashMap<Url, Vec<SearchResult>> = HashMap::new();
 
         let result_batches = set.join_all().await;
 
-        for (batch, provider) in result_batches {
-            for res in batch {
-                if let Some(providers) = results.get_mut(&res) {
-                    providers.push(provider.clone());
-                } else {
-                    results.insert(res, vec![provider.clone()]);
-                }
-            }
-        }
+        //for (batch, provider) in result_batches {
+        //    for res in batch {
+        //        if let Some(results) = results.get_mut(&res.url) {
+        //            results.push(res);
+        //        } else {
+        //            results.insert(res.url, vec![res.clone()]);
+        //        }
+        //    }
+        //}
 
-        let mut results = results.into_iter().collect::<Vec<_>>();
-        results.sort_by_key(|r| r.1.len());
-        results.reverse();
+        //let mut results = results.into_iter().collect::<Vec<_>>();
+        //results.sort_by_key(|r| r.1.len());
+        //results.reverse();
 
-        let mut results = results.iter().map(|(r, _)| r.clone()).collect::<Vec<_>>();
-        results.dedup_by_key(|r| r.url.clone());
+        //let mut results = results.iter().map(|(r, _)| r.clone()).collect::<Vec<_>>();
+        //results.dedup_by_key(|r| r.url.clone());
 
-        Ok(results)
+        Ok(result_batches.concat())
     }
 
     /// Process the given query
-    pub async fn search(
+    async fn search_single(
         &self,
         query: Query,
         provider: impl Into<String>,
@@ -150,7 +228,7 @@ impl PluginEngine {
         let provider = provider.into();
 
         #[cfg(feature = "hot_reload")]
-        Self::load_engines(&self.lua).await;
+        Self::load_plugins(&self.lua).await;
 
         #[cfg(feature = "hot_reload")]
         let providers = ProvidersConfig::load("plugins/providers.toml");
@@ -158,6 +236,8 @@ impl PluginEngine {
         let providers = &self.providers;
 
         if let Some(p) = providers.0.get(&provider) {
+            let providers = vec![provider.clone()];
+
             // If the provider has an engine specified, use that engine.
             // Otherwise, the provider is also an engine
             let engine = p.engine.clone().unwrap_or_else(|| provider.clone());
@@ -185,7 +265,11 @@ impl PluginEngine {
                 Ok(results) => {
                     return Ok(results
                         .into_iter()
-                        .map(|r| self.lua.from_value(LuaValue::Table(r)).unwrap())
+                        .map(|r| {
+                            let mut result: SearchResult = self.lua.from_value(LuaValue::Table(r)).unwrap();
+                            result.providers = providers.clone();
+                            result
+                        })
                         .collect());
                 }
                 Err(err) => {

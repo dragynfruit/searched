@@ -33,7 +33,7 @@ tokio = { version = "1.45.0", features = [
   "macros",
   "signal",
 ] }
-url = "2.5.4"
+url = { version = "2.5.4", features = ["serde"] }
 serde_qs = "0.15.0"
 mlua = { version = "0.10.3", features = ["async", "serialize", "send", "vendored"] }
 axum-macros = "0.5.0"

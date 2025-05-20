@@ -118,6 +118,11 @@
             </p>
         </td>
     </tr>
+		<tr>
+			<td>
+				<p>{% for provider in result.providers %}{{ provider }} {% endfor %}</p>
+			</td>
+		</tr>
     {% endif %}
     {% if not compact %}
     <tr></tr>
